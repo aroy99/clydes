@@ -150,7 +150,6 @@ public class Map implements Playable{
   private void flood(int mouseX, int mouseY, TileList type) {
     if (mouseX < 0 || mouseX >= tiles[0].length ||
         mouseY < 0 || mouseY >= tiles.length){
-      System.out.println("Escape no Jutsu!");
       return;
     }
     if(tiles[mouseY][mouseX].getType() != type ||
@@ -169,11 +168,12 @@ public class Map implements Playable{
      * @return Mouse is in map
      */
     private boolean checkBounds() {
-        return  Mouse.getX()/MainE.getScale()<256 && 
-               (Mouse.getY()-(int)y)/(16*MainE.getScale()) >=0 &&
+        return  (Mouse.getX()/MainE.getScale()<Palette.xOffset*16 ||
+                Mouse.getY()/MainE.getScale()<Palette.yOffset*16) &&
+              ((Mouse.getY()-(int)y)/(16*MainE.getScale()) >=0 &&
                (Mouse.getY()-(int)y)/(16*MainE.getScale()) <tiles.length &&
                (Mouse.getX()-(int)x)/(16*MainE.getScale()) >=0 &&
-               (Mouse.getX()-(int)x)/(16*MainE.getScale()) <tiles[0].length;
+               (Mouse.getX()-(int)x)/(16*MainE.getScale()) <tiles[0].length);
     }
     
     /**

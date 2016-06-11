@@ -5,13 +5,13 @@
  */
 package komorebi.clyde.states;
 
+import static org.lwjgl.opengl.GL11.glLoadIdentity;
+import static org.lwjgl.opengl.GL11.glOrtho;
+import static org.lwjgl.opengl.GL11.glViewport;
 import komorebi.clyde.editor.Palette;
-import komorebi.clyde.engine.MainE;
 import komorebi.clyde.map.Map;
-import komorebi.clyde.map.Tile;
-import komorebi.clyde.map.TileList;
 
-import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.Display;
 
 /**
  * Represents the level editor
@@ -23,6 +23,10 @@ public class Editor extends State{
     
     private Map map;
     private static Palette pal;
+    public static float aspect;
+    public static float xSpan = 1;
+    public static float ySpan = 1;
+
     
     public Editor(){
         pal = new Palette();
@@ -35,7 +39,7 @@ public class Editor extends State{
      */
     @Override
     public void getInput() {
-        
+        if(Display.wasResized())resize();
         pal.getInput();
         map.getInput();
     }
@@ -69,5 +73,29 @@ public class Editor extends State{
         // TODO Auto-generated method stub
         return pal;
     }
+    
+    /**
+     * Resizes the window
+     */
+    private static void resize() {
+        final int height = Display.getHeight();
+        final int width = Display.getWidth();
+        aspect = (float)width/height;
+        xSpan = 1;
+        ySpan = 1;
+        
+        if(aspect > 1){
+            xSpan *= aspect;
+        }else{
+            ySpan = xSpan/aspect;
+        }
+        glViewport(0, 0, width, height);
+
+        glLoadIdentity();
+        glOrtho(0,width,0,height,-1,1);     //Updates 3D space
+//        glOrtho(-xSpan,xSpan,-ySpan,ySpan,-1,1);     //Updates 3D space
+        pal.reload();
+    }
+
 
 }
