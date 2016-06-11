@@ -45,12 +45,20 @@ import org.newdawn.slick.openal.SoundStore;
  */
 public class Main {
 
-    private static GameHandler gamehandler;
-    public static int scale;
-    private static BufferedReader read;
+    private GameHandler gamehandler;
+    public int scale;
+    private BufferedReader read;
 
 
     public static void main(String[] args){
+        new Main().run();
+    }
+
+
+    /**
+     * Runs the game
+     */
+    private void run() {
         try {
             read = new BufferedReader(
                        new FileReader(new File("res/settings")));
@@ -74,14 +82,14 @@ public class Main {
 
         initGame();
         gameLoop();
-        cleanUp();
+        cleanUp();        
     }
 
 
     /**
      * 	Initializes the Display using the Display Class, properly Scaling it
      */
-    public static void initDisplay(){
+    public void initDisplay(){
         //create display
         try {
             Display.setDisplayMode(new DisplayMode(256*scale,224*scale));
@@ -98,22 +106,22 @@ public class Main {
      *  Creates a new game and initializes the audio
      *  @see GameHandler
      */
-    private static void initGame(){
+    private void initGame(){
         gamehandler = new GameHandler();
         AudioHandler.init();
     }
 
 
-    private static void getInput(){
+    private void getInput(){
         gamehandler.getInput();
     }
 
-    private static void update(){
+    private void update(){
         gamehandler.update();
     }
 
 
-    private static void render(){
+    private void render(){
         glClear(GL_COLOR_BUFFER_BIT);	//clears the matrix with black
         glLoadIdentity();
 
@@ -128,7 +136,7 @@ public class Main {
     /**
      * 	Goes through the game loop, starting the music once
      */
-    private static void gameLoop(){
+    private void gameLoop(){
 
         while(!Display.isCloseRequested()){
             getInput();
@@ -150,7 +158,7 @@ public class Main {
      *  <p>
      *  Size: 256 x 224
      */
-    private static void initGL(){
+    private void initGL(){
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();		       //resets the Matrix
         glOrtho(0,256,0,224,-1,1);     //creates a 3D space
@@ -169,12 +177,12 @@ public class Main {
     /**
      *	Destroys the display and keyboard, closing the window
      */
-    private static void cleanUp(){
+    private void cleanUp(){
         Display.destroy();
         AL.destroy();
     }
     
-    public static int getScale(){
+    public int getScale(){
         return scale;
     }
 

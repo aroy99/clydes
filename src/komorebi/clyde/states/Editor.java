@@ -9,8 +9,10 @@ import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glOrtho;
 import static org.lwjgl.opengl.GL11.glViewport;
 import komorebi.clyde.editor.Palette;
+import komorebi.clyde.engine.Main;
 import komorebi.clyde.map.Map;
 
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 
 /**
@@ -22,6 +24,7 @@ import org.lwjgl.opengl.Display;
 public class Editor extends State{
     
     private Map map;
+    private String[] args;
     private static Palette pal;
     public static float aspect;
     public static float xSpan = 1;
@@ -39,7 +42,11 @@ public class Editor extends State{
      */
     @Override
     public void getInput() {
-        if(Display.wasResized())resize();
+//        if(Display.wasResized())resize();
+        if(Keyboard.isKeyDown(Keyboard.KEY_P)){
+            Display.destroy();
+            Main.main(args);
+        }
         pal.getInput();
         map.getInput();
     }

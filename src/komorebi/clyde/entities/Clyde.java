@@ -91,6 +91,8 @@ public class Clyde extends Entity implements Playable{
      */
     @Override
     public void update() {
+        int speed = 8;
+        
         if(left){
             dx = -1;
             dir = Face.LEFT;
@@ -122,16 +124,21 @@ public class Clyde extends Entity implements Playable{
         if(run){
             dx *=2;
             dy *=2;
-            upAni.setSpeed(4);
-            downAni.setSpeed(4);
-            leftAni.setSpeed(4);
-            rightAni.setSpeed(4);
+            speed = 4;
         }else{
-            upAni.setSpeed(8);
-            downAni.setSpeed(8);
-            leftAni.setSpeed(8);
-            rightAni.setSpeed(8);
+            speed = 8;
         }
+        
+        if((up && (left || right)) || (down && (left || right))){
+            dx *= Math.sqrt(2)/2;
+            dy *= Math.sqrt(2)/2;
+            speed = (int) Math.round(speed / (Math.sqrt(2)/2));
+        }
+        
+        upAni.setSpeed(speed);
+        downAni.setSpeed(speed);
+        leftAni.setSpeed(speed);
+        rightAni.setSpeed(speed);
         
         x += dx;
         y += dy;
