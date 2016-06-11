@@ -144,7 +144,7 @@ public class Main {
             render();
             SoundStore.get().poll(0);
 
-            if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)){
+            if(Keyboard.isKeyDown(Keyboard.KEY_F4)){
                 break;
             }
 

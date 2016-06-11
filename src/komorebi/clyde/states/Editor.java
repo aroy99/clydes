@@ -8,6 +8,9 @@ package komorebi.clyde.states;
 import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glOrtho;
 import static org.lwjgl.opengl.GL11.glViewport;
+
+import java.io.IOException;
+
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.engine.Main;
 import komorebi.clyde.map.Map;
@@ -44,8 +47,13 @@ public class Editor extends State{
     public void getInput() {
 //        if(Display.wasResized())resize();
         if(Keyboard.isKeyDown(Keyboard.KEY_P)){
-            Display.destroy();
-            Main.main(args);
+            Runtime runTime = Runtime.getRuntime();
+            try {
+                Process process = runTime.exec("java -jar \"RealGame v 0.1.jar\"");
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
         pal.getInput();
         map.getInput();
