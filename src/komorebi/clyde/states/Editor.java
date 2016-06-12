@@ -33,7 +33,7 @@ public class Editor extends State{
     public static float xSpan = 1;
     public static float ySpan = 1;
 
-    
+
     public Editor(){
         pal = new Palette();
         map = new Map(20, 20);

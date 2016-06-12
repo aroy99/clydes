@@ -9,6 +9,7 @@ import org.lwjgl.input.Keyboard;
 
 import komorebi.clyde.engine.GameHandler;
 import komorebi.clyde.entities.Clyde;
+import komorebi.clyde.map.Map;
 
 /**
  * Represents the game
@@ -19,7 +20,8 @@ import komorebi.clyde.entities.Clyde;
 public class Game extends State{
 
     public Game(){
-        play = new Clyde(32,32);
+        play = new Clyde(120,100);
+        map = new Map("res/maps/map1");
 
     }
     
@@ -47,7 +49,13 @@ public class Game extends State{
     @Override
     public void render() {
         // TODO Auto-generated method stub
+        map.render();
         play.render();
+
+    }
+    
+    public static Map getMap(){
+        return map;
     }
 
 }

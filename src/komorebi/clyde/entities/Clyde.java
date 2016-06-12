@@ -7,6 +7,7 @@ package komorebi.clyde.entities;
 
 import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Playable;
+import komorebi.clyde.states.Game;
 
 import org.lwjgl.input.Keyboard;
 
@@ -129,19 +130,20 @@ public class Clyde extends Entity implements Playable{
             speed = 8;
         }
         
+       
         if((up && (left || right)) || (down && (left || right))){
             dx *= Math.sqrt(2)/2;
             dy *= Math.sqrt(2)/2;
             speed = (int) Math.round(speed / (Math.sqrt(2)/2));
         }
+       
         
         upAni.setSpeed(speed);
         downAni.setSpeed(speed);
         leftAni.setSpeed(speed);
         rightAni.setSpeed(speed);
         
-        x += dx;
-        y += dy;
+        Game.getMap().move(-dx, -dy);
         
     }
 

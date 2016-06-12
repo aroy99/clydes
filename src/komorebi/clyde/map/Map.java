@@ -5,6 +5,15 @@
  */
 package komorebi.clyde.map;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.sql.Savepoint;
+
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.engine.MainE;
 import komorebi.clyde.engine.Playable;
@@ -26,6 +35,7 @@ public class Map implements Playable{
     private boolean mButtonWasDown, mButtonIsDown;//Middle Button Pressed
     private boolean up, down, left, right;        //Directions for movement
     private boolean isReset, wasReset;            //Reset the map
+    private boolean isSave, wasSave;              //Save the map
     
     private Palette pal;
     private Tile[][] tiles;                       //The Map itself
@@ -33,6 +43,9 @@ public class Map implements Playable{
     private float x, y;
     private float dx, dy;
     private float speed = 10;
+    private boolean isResetTile, wasResetTile;
+    
+    private int fileNum = 1;
     
     
     /**
@@ -49,6 +62,40 @@ public class Map implements Playable{
                 tiles[i][j] = new Tile(j, i, TileList.BLANK);
             }
         }
+    }
+    
+    /**
+     * Creates a map from a map file, used for the game
+     * 
+     * @param key The location of the map
+     */
+    public Map(String key){
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(
+                    new File(key)));
+            int rows = Integer.parseInt(reader.readLine());
+            int cols = Integer.parseInt(reader.readLine());
+
+            tiles = new Tile[rows][cols];
+
+
+            for (int i = 0; i < tiles.length; i++) {
+                String[] str = reader.readLine().split(" ");
+                int index = 0;
+                for (int j = 0; j < cols; j++, index++) {
+                    if(str[index].equals("")){
+                        index++;
+                    }
+                    tiles[i][j] =new Tile(j, i, 
+                            TileList.getTile(Integer.parseInt(str[index])));
+                }
+            }
+
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
     
     @Override
@@ -70,7 +117,9 @@ public class Map implements Playable{
         down = (Keyboard.isKeyDown(Keyboard.KEY_DOWN)    ||
                 Keyboard.isKeyDown(Keyboard.KEY_S))      &&
                    !(Keyboard.isKeyDown(Keyboard.KEY_UP)     ||
-                     Keyboard.isKeyDown(Keyboard.KEY_W));
+                     Keyboard.isKeyDown(Keyboard.KEY_W) ||
+                    (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)||
+                     Keyboard.isKeyDown(Keyboard.KEY_RCONTROL)));
         
         left = (Keyboard.isKeyDown(Keyboard.KEY_LEFT)    ||
                 Keyboard.isKeyDown(Keyboard.KEY_A))      &&
@@ -83,7 +132,52 @@ public class Map implements Playable{
                      Keyboard.isKeyDown(Keyboard.KEY_A));
 
         wasReset = isReset;
-        isReset=(Keyboard.isKeyDown(Keyboard.KEY_R));
+        isReset=Keyboard.isKeyDown(Keyboard.KEY_R) &&
+               !(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)||
+                 Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
+        
+        wasResetTile = isResetTile;
+        isResetTile = Keyboard.isKeyDown(Keyboard.KEY_R) &&
+                   (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)||
+                    Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
+        
+        if(isSave && !wasSave){
+            save();
+        }
+        wasSave = isSave;
+        isSave = Keyboard.isKeyDown(Keyboard.KEY_S) &&
+                (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)||
+                        Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
+    }
+
+    /**
+     * Saves the Map file
+     */
+    private void save() {
+        // TODO Auto-generated method stub
+        try {
+            File file;
+            do{
+                file = new File("res/maps/map"+fileNum);
+                if(file.exists())fileNum++;
+            }while(file.exists());
+            PrintWriter writer = new PrintWriter("res/maps/map"+fileNum, "UTF-8");
+            
+            writer.println(tiles.length);
+            writer.println(tiles[0].length);
+            
+            for (Tile[] tile : tiles) {
+                for (Tile t : tile) {
+                    writer.print(t.getType().getID() + " ");
+                }
+                writer.println();
+            }
+            System.out.println("Save complete");
+            writer.close();
+        } catch (FileNotFoundException | UnsupportedEncodingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -98,17 +192,31 @@ public class Map implements Playable{
     @Override
     public void update() {
         //Sets mouse tile to the one from the palette
-        if(lButtonIsDown && checkBounds())
+        if(lButtonIsDown && checkBounds()){
             tiles[getMouseY()][getMouseX()].setType(pal.getSelected().getType());
+        }
         
         //Sets palette's selected to mouse tile
-        if(rButtonIsDown && !rButtonWasDown && checkBounds())
+        if(rButtonIsDown && !rButtonWasDown && checkBounds()){
             pal.setLoc(tiles[getMouseY()][getMouseX()].getType());
+        }
 
         //Flood Fills tiles
-        if(mButtonIsDown && !mButtonWasDown && checkBounds())
+        if(mButtonIsDown && !mButtonWasDown && checkBounds()){
             flood(getMouseX(), getMouseY(), 
                     tiles[getMouseY()][getMouseX()].getType());
+        }
+        
+        //Resets tiles to default
+        if(isResetTile && !wasResetTile){
+            for (int i = 0; i < tiles.length; i++) {
+                for (int j = 0; j < tiles[0].length; j++) {
+                    tiles[i][j].setType(TileList.BLANK);;
+                }
+            }
+
+        }
+        
         
         if(up)   dy =  speed;
         if(down) dy = -speed;
@@ -168,7 +276,7 @@ public class Map implements Playable{
      * @return Mouse is in map
      */
     private boolean checkBounds() {
-        return  (Mouse.getX()/MainE.getScale()<Palette.xOffset*16 ||
+        return (Mouse.getX()/MainE.getScale()<Palette.xOffset*16 ||
                 Mouse.getY()/MainE.getScale()<Palette.yOffset*16) &&
               ((Mouse.getY()-(int)y)/(16*MainE.getScale()) >=0 &&
                (Mouse.getY()-(int)y)/(16*MainE.getScale()) <tiles.length &&
@@ -192,5 +300,15 @@ public class Map implements Playable{
         return ((Mouse.getY()/MainE.getScale())-(int)y)/(16);
     }
 
+    public void move(float dx, float dy) {
+        x+=dx;
+        x+=dy;
+        for (int i = 0; i < tiles.length; i++) {
+            for (int j = 0; j < tiles[0].length; j++) {
+                tiles[i][j].move(dx, dy);
+                tiles[i][j].update();
+            }
+        }    
+    }
 
 }
