@@ -21,7 +21,7 @@ public class Game extends State{
 
     public Game(){
         play = new Clyde(120,100);
-        map = new Map("res/maps/map1");
+        map = new Map("res/maps/map7");
 
     }
     

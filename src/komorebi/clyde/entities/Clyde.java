@@ -134,7 +134,7 @@ public class Clyde extends Entity implements Playable{
         if((up && (left || right)) || (down && (left || right))){
             dx *= Math.sqrt(2)/2;
             dy *= Math.sqrt(2)/2;
-            speed = (int) Math.round(speed / (Math.sqrt(2)/2));
+            speed = (int)Math.round(speed / (Math.sqrt(2)/2));
         }
        
         

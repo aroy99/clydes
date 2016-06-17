@@ -24,12 +24,12 @@ import org.lwjgl.opengl.Display;
  */
 public class Palette implements Playable{
 
-  private Tile[][] tiles = new Tile[14][4]; //Holds current palette tiles
+  private Tile[][] tiles = new Tile[16][4]; //Holds current palette tiles
                                             /**Offset of palette in tiles*/
   public static int xOffset = Display.getWidth()/(MainE.scale*16) - 4;
-  public static int yOffset = Display.getHeight()/(MainE.scale*16) - 14;
+  public static int yOffset = Display.getHeight()/(MainE.scale*16) - 16;
 
-  private int selX = xOffset, selY = yOffset + 13;  //Selector X and Y, in tiles
+  private int selX = xOffset, selY = yOffset + 15;  //Selector X and Y, in tiles
   private Animation selection;              //The Selector itself
 
   //Removes repeated input
@@ -43,6 +43,9 @@ public class Palette implements Playable{
     for (int i = tiles.length-1, k=0; i >= 0; i--) {
       for (int j = 0; j < tiles[0].length; j++, k++) {
         tiles[i][j] = new Tile(j+xOffset, i + yOffset, TileList.getTile(k));
+        System.out.println(tiles[i][j] + 
+                        "\nX: " + tiles[i][j].getX()+
+                        ", Y: " + tiles[i][j].getY());
       }
     }
     

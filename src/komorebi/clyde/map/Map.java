@@ -14,6 +14,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.sql.Savepoint;
 
+import javax.swing.JFrame;
+
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.engine.MainE;
 import komorebi.clyde.engine.Playable;
@@ -155,6 +157,8 @@ public class Map implements Playable{
      */
     private void save() {
         // TODO Auto-generated method stub
+        
+        
         try {
             File file;
             do{
