@@ -39,6 +39,8 @@ public class Map implements Playable{
     private boolean isReset, wasReset;            //Reset the map
     private boolean isSave, wasSave;              //Save the map
     
+    private boolean isGrid, wasGrid;              //Turn on/off Grid
+    
     private Palette pal;
     private Tile[][] tiles;                       //The Map itself
     
@@ -105,7 +107,9 @@ public class Map implements Playable{
         lButtonIsDown = Mouse.isButtonDown(0);
         
         rButtonWasDown = rButtonIsDown;
-        rButtonIsDown = Mouse.isButtonDown(1);
+        rButtonIsDown = Mouse.isButtonDown(1) &&
+                !(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)||
+                        Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
         
         mButtonWasDown = mButtonIsDown;
         mButtonIsDown = Mouse.isButtonDown(2);        
@@ -120,8 +124,7 @@ public class Map implements Playable{
                 Keyboard.isKeyDown(Keyboard.KEY_S))      &&
                    !(Keyboard.isKeyDown(Keyboard.KEY_UP)     ||
                      Keyboard.isKeyDown(Keyboard.KEY_W) ||
-                    (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)||
-                     Keyboard.isKeyDown(Keyboard.KEY_RCONTROL)));
+                     controlPressed());
         
         left = (Keyboard.isKeyDown(Keyboard.KEY_LEFT)    ||
                 Keyboard.isKeyDown(Keyboard.KEY_A))      &&
@@ -134,22 +137,29 @@ public class Map implements Playable{
                      Keyboard.isKeyDown(Keyboard.KEY_A));
 
         wasReset = isReset;
-        isReset=Keyboard.isKeyDown(Keyboard.KEY_R) &&
-               !(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)||
-                 Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
+        isReset=Keyboard.isKeyDown(Keyboard.KEY_R) && !controlPressed();
         
         wasResetTile = isResetTile;
-        isResetTile = Keyboard.isKeyDown(Keyboard.KEY_R) &&
-                   (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)||
-                    Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
+        isResetTile = Keyboard.isKeyDown(Keyboard.KEY_R) && controlPressed();
         
         if(isSave && !wasSave){
             save();
         }
         wasSave = isSave;
-        isSave = Keyboard.isKeyDown(Keyboard.KEY_S) &&
-                (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)||
-                        Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
+        isSave = Keyboard.isKeyDown(Keyboard.KEY_S) && controlPressed();
+        
+        wasGrid = isGrid;
+        isGrid = Keyboard.isKeyDown(Keyboard.KEY_G) && controlPressed();
+
+    }
+
+    /**
+     * @return if the control key was pressed
+     */
+    private boolean controlPressed() {
+        // TODO Auto-generated method stub
+        return (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)||
+                Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
     }
 
     /**
@@ -221,21 +231,17 @@ public class Map implements Playable{
 
         }
         
+        if(isGrid && !wasGrid){
+            Tile.changeGrid();
+        }
+        
         
         if(up)   dy =  speed;
         if(down) dy = -speed;
         if(right)dx =  speed;
         if(left) dx = -speed;
         
-        for (int i = 0; i < tiles.length; i++) {
-            for (int j = 0; j < tiles[0].length; j++) {
-                tiles[i][j].move(dx, dy);
-                tiles[i][j].update();
-            }
-        }
-        
-        x+=dx;
-        y+=dy;
+        move(dx, dy);
         
         if(isReset && !wasReset){
             x = 0;
@@ -316,3 +322,4 @@ public class Map implements Playable{
     }
 
 }
+

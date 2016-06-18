@@ -10,9 +10,11 @@ import komorebi.clyde.engine.Renderable;
 
 /**
  * @author Aaron Roy
- * @version 
  */
 public class Tile implements Renderable{
+    
+    private static boolean grid;        //Whether the grid is on or not
+    
     private float x, y;                 //Location of the tile
     private float dx,dy;                //Amount tile will move each frame
     public static final int SIZE = 16;  //Width and height of a tile
@@ -31,6 +33,9 @@ public class Tile implements Renderable{
         type = t;
     }
     
+    /**
+     * Currently has a lot of test tiles (all tests start with x)
+     */
     public void render(){
         int texx, texy;
         switch(type){
@@ -101,7 +106,8 @@ public class Tile implements Renderable{
         default        :texx=32;texy= 32;break; 
         }                    
         
-        Draw.rect(x,y, SIZE, SIZE, texx, texy, texx+SIZE, texy+SIZE, 1);
+        Draw.rect(x,y, SIZE, SIZE, texx, texy, 1);
+        if(grid)Draw.rect(x, y, SIZE, SIZE, 0, 16, 2);
     }
     
     public TileList getType(){
@@ -149,4 +155,12 @@ public class Tile implements Renderable{
         this.x = x;
         this.y = y;
     }
+    
+    /**
+     * Swtiches the state of the grid of every tile
+     */
+    public static void changeGrid(){
+        grid = !grid;
+    }
+
 }

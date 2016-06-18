@@ -42,6 +42,22 @@ public class Draw {
   /** To ensure rotations can only happen in multiples of 90 degrees.*/
   private static final int RIGHT_ANGLE = 90;
   
+  /**
+   * Draws a sprite on the screen from the specified image, assumed the texsx
+   * and texsy are the same as sx and sy
+   * 
+   * @param x the X position on the screen, starting from the left         
+   * @param y the Y position on the screen, starting from the <i>bottom</i>
+   * @param sx the width                                                   
+   * @param sy the height                                                  
+   * @param texx X position on the picture, starting from the left         
+   * @param texy Y position on the picture, starting from the <i>top</i>   
+   * @param texID Use 0 for Pacman, 1 for ghosts
+   */
+  public static void rect(float x, float y, float sx, float sy, int texx, int texy, int texID) {
+      rect(x, y, sx, sy, texx, texy, texx + (int)sx, texy + (int)sy, texID);
+  }
+  
   public static void rect(float x, float y, float sx, float sy, int texx, 
       int texy, int texsx, int texsy, int texID) {
     rect(x, y, sx, sy, texx, texy, texsx, texsy, 0, texID);

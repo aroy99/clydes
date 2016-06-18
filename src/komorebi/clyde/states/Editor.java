@@ -51,7 +51,6 @@ public class Editor extends State{
             try {
                 Process process = runTime.exec("java -jar \"RealGame v 0.1.jar\"");
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -64,7 +63,6 @@ public class Editor extends State{
      */
     @Override
     public void update() {
-        // TODO Auto-generated method stub
         pal.update();
         map.update();
     }
@@ -85,7 +83,6 @@ public class Editor extends State{
      * @return pal
      */
     public static Palette getPalette() {
-        // TODO Auto-generated method stub
         return pal;
     }
     
