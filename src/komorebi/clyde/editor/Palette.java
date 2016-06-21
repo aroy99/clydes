@@ -31,7 +31,7 @@ public class Palette implements Playable{
   private Tile[][] tiles = new Tile[HEIGHT][WIDTH]; 
                                             
   //Offset of palette in tiles
-  public static int xOffset = Display.getWidth()/(MainE.scale*16) - 4;
+  public static int xOffset = Display.getWidth()/(MainE.scale*16) - WIDTH;
   public static int yOffset = Display.getHeight()/(MainE.scale*16) - HEIGHT;
                                   
   //Selector X and Y, in tiles
@@ -42,6 +42,8 @@ public class Palette implements Playable{
 
   //Removes repeated input
   private boolean lButtonWasDown, lButtonIsDown;//Left Click
+  private boolean rButtonIsDown, rButtonWasDown;//Right Button Clicked
+
 
 
   /**
@@ -64,8 +66,30 @@ public class Palette implements Playable{
   }
 
   /**
+   * Gets clicks and tells what tile was clicked
+   */
+  @Override
+  public void getInput() {
+    lButtonWasDown = lButtonIsDown;
+    lButtonIsDown = Mouse.isButtonDown(0);
+  }
+
+  /* (non-Javadoc)
+   * @see komorebi.clyde.engine.Renderable#update()
+   */
+  @Override
+  public void update() {
+    if (checkBounds() && lButtonIsDown && !lButtonWasDown) {
+      selX = (Mouse.getX() / (16 * MainE.getScale()));
+      selY = (Mouse.getY() / (16 * MainE.getScale()));
+    }
+
+  }
+  
+  /**
    * Renders everything in tiles and selection box
    */
+  @Override
   public void render(){
     for(Tile[] t : tiles){
       for (Tile tile : t) {
@@ -74,14 +98,6 @@ public class Palette implements Playable{
     }
 
     selection.play(selX*16, selY*16);
-  }
-
-  /**
-   * Gets clicks and tells what tile was clicked
-   */
-  public void getInput() {
-    lButtonWasDown = lButtonIsDown;
-    lButtonIsDown = Mouse.isButtonDown(0);
   }
 
   public Tile getSelected(){
@@ -97,20 +113,6 @@ public class Palette implements Playable{
         }
       }
     }
-  }
-
-  /* (non-Javadoc)
-   * @see komorebi.clyde.engine.Renderable#update()
-   */
-  @Override
-  public void update() {
-    if (Mouse.getX() /( MainE.getScale()*16) >= xOffset &&
-            Mouse.getY() /( MainE.getScale()*16) >= yOffset
-        && lButtonIsDown && !lButtonWasDown) {
-      selX = (Mouse.getX() / (16 * MainE.getScale()));
-      selY = (Mouse.getY() / (16 * MainE.getScale()));
-    }
-
   }
   
   /**
@@ -131,5 +133,32 @@ public class Palette implements Playable{
       }
 
   }
+  
+  /**
+   * Checks if the Mouse is in bounds of the map
+   * @return Mouse is in map
+   */
+  private boolean checkBounds() {
+      return (Mouse.getX()/MainE.getScale()>=Palette.xOffset*16 &&
+              Mouse.getY()/MainE.getScale()>=Palette.yOffset*16);
+  }
+  
+  /**
+   * Converts Mouse X into a tile index, adjusting for map position
+   * @return adjusted mouse x
+   */
+  private int getMouseX(){
+      return (Mouse.getX()/MainE.getScale())/(16);
+  }
+
+  /**
+   * Converts Mouse Y into a tile index, adjusting for map position
+   * @return adjusted mouse y
+   */
+  private int getMouseY() {
+      return (Mouse.getY()/MainE.getScale())/(16);
+  }
+
+
 
 }

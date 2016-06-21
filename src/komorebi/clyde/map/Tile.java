@@ -34,6 +34,21 @@ public class Tile implements Renderable{
     }
     
     /**
+     * Creates a tile at the current coordinates
+     * 
+     * @param tx x will become this*16
+     * @param ty y will become this*16
+     * @param t the type of this tile
+     * @param fill to differentiate this from the other
+     */
+    public Tile(float x,float y, TileList t, boolean fill){
+        this.x = x;
+        this.y = y;
+        type = t;
+    }
+
+    
+    /**
      * Currently has a lot of test tiles (all tests start with x)
      */
     public void render(){
