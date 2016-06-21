@@ -26,7 +26,7 @@ import org.lwjgl.opengl.Display;
  */
 public class Editor extends State{
     
-    private Map map;
+    private static Map currMap;
     private String[] args;
     private static Palette pal;
     public static float aspect;
@@ -36,7 +36,8 @@ public class Editor extends State{
 
     public Editor(){
         pal = new Palette();
-        map = new Map(20, 20);
+        currMap = new Map(20, 20);
+        pal.setMap(currMap);
     }
     
     
@@ -55,7 +56,7 @@ public class Editor extends State{
             }
         }
         pal.getInput();
-        map.getInput();
+        currMap.getInput();
     }
 
     /* (non-Javadoc)
@@ -64,7 +65,7 @@ public class Editor extends State{
     @Override
     public void update() {
         pal.update();
-        map.update();
+        currMap.update();
     }
 
     /* (non-Javadoc)
@@ -72,7 +73,7 @@ public class Editor extends State{
      */
     @Override
     public void render() {
-        map.render();
+        currMap.render();
         pal.render();
     }
 
@@ -85,6 +86,7 @@ public class Editor extends State{
     public static Palette getPalette() {
         return pal;
     }
+    
     
     /**
      * Resizes the window
@@ -108,6 +110,5 @@ public class Editor extends State{
 //        glOrtho(-xSpan,xSpan,-ySpan,ySpan,-1,1);     //Updates 3D space
         pal.reload();
     }
-
 
 }

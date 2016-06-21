@@ -110,6 +110,9 @@ public class Map implements Playable{
 
     }
 
+    /* (non-Javadoc)
+     * @see komorebi.clyde.engine.Playable#getInput()
+     */
     @Override
     public void getInput() {
         lButtonWasDown = lButtonIsDown;
@@ -152,6 +155,9 @@ public class Map implements Playable{
 
     }
     
+    /* (non-Javadoc)
+     * @see komorebi.clyde.engine.Renderable#update()
+     */
     @Override
     public void update() {
         //Sets mouse tile to the one from the palette
@@ -162,6 +168,7 @@ public class Map implements Playable{
         //Sets palette's selected to mouse tile
         if(rButtonIsDown && !rButtonWasDown && checkBounds()){
             pal.setLoc(tiles[getMouseY()][getMouseX()].getType());
+            clearSelection();
         }
 
         //Flood Fills tiles
@@ -190,8 +197,7 @@ public class Map implements Playable{
         }
         
         if(isClearSel && isSelection && !wasClearSel){
-            selection = null;
-            isSelection = false;
+            clearSelection();
         }
 
         //Resets tiles to default
@@ -235,6 +241,9 @@ public class Map implements Playable{
         dy = 0;
     }
     
+    /* (non-Javadoc)
+     * @see komorebi.clyde.engine.Renderable#render()
+     */
     @Override
     public void render() {
         for (Tile[] tileL : tiles) {
@@ -278,7 +287,20 @@ public class Map implements Playable{
             }
         }
     }
-
+    
+    /**
+     * @return x
+     */
+    public float getX() {
+        return x;
+    }
+    
+    /**
+     * @return y
+     */
+    public float getY() {
+        return y;
+    }
 
     /**
      * @return if the up key was pressed
@@ -453,6 +475,36 @@ public class Map implements Playable{
      */
     private int getMouseY() {
         return ((Mouse.getY()/MainE.getScale())-(int)y)/(16);
+    }
+    
+    public Tile[][] getSelection(){
+        return selection;
+    }
+    
+    public void setSelection(Tile[][] sel){
+        selection = sel;
+    }
+    
+    public int getWidth(){
+        return tiles[0].length;
+    }
+    
+    public int getHeight(){
+        return tiles.length;
+    }
+
+    /**
+     * Sets isSelection to s
+     * 
+     * @param s
+     */
+    public void setSelection() {
+        isSelection = true;        
+    }
+    
+    public void clearSelection(){
+        selection = null;
+        isSelection = false;
     }
 
 }
