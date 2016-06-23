@@ -273,7 +273,7 @@ public class Map implements Playable{
         y+=dy;
         for (int i = 0; i < tiles.length; i++) {
             for (int j = 0; j < tiles[0].length; j++) {
-                tiles[i][j].move(dx, dy);
+                tiles[i][j].setLoc(x+j*16, y+i*16);
                 tiles[i][j].update();
             }
         }

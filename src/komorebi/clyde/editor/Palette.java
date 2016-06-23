@@ -25,7 +25,7 @@ import org.lwjgl.opengl.Display;
  */
 public class Palette implements Playable{
 
-    private static final int HEIGHT = 16;
+    private static final int HEIGHT = 32;
     private static final int WIDTH = 4;
 
     //Holds current palette tiles
