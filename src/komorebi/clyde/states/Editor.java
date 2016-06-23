@@ -9,7 +9,12 @@ import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glOrtho;
 import static org.lwjgl.opengl.GL11.glViewport;
 
+import java.awt.Frame;
 import java.io.IOException;
+
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.engine.Main;
@@ -27,7 +32,10 @@ import org.lwjgl.opengl.Display;
 public class Editor extends State{
     
     private static Map currMap;
-    private String[] args;
+    
+    private boolean isLoad;
+    private boolean wasLoad;
+    
     private static Palette pal;
     public static float aspect;
     public static float xSpan = 1;
@@ -55,6 +63,11 @@ public class Editor extends State{
                 e.printStackTrace();
             }
         }
+        
+        wasLoad = isLoad;
+        isLoad = Keyboard.isKeyDown(Keyboard.KEY_L) && controlPressed();
+        
+        
         pal.getInput();
         currMap.getInput();
     }
@@ -64,6 +77,13 @@ public class Editor extends State{
      */
     @Override
     public void update() {
+        if(isLoad && !wasLoad){
+            String path = JOptionPane.showInputDialog("Enter the name of the map to load");
+
+            currMap = new Map("res/maps/"+path);
+            pal.setMap(currMap);
+        }
+        
         pal.update();
         currMap.update();
     }
@@ -110,5 +130,14 @@ public class Editor extends State{
 //        glOrtho(-xSpan,xSpan,-ySpan,ySpan,-1,1);     //Updates 3D space
         pal.reload();
     }
+    
+    /**
+     * @return if the control key was pressed
+     */
+    private boolean controlPressed() {
+        return (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)||
+                Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
+    }
+
 
 }

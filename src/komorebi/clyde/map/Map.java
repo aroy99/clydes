@@ -13,11 +13,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 
+import javax.swing.JOptionPane;
+
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.engine.MainE;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.states.Editor;
 
+import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
@@ -66,6 +69,8 @@ public class Map implements Playable{
      * @param row number of rows (y)
      */
     public Map(int col, int row){
+        x=0;
+        y=0;
         tiles = new Tile[row][col];
         pal = Editor.getPalette();
 
@@ -82,6 +87,9 @@ public class Map implements Playable{
      * @param key The location of the map
      */
     public Map(String key){
+        x=0;
+        y=0;
+        pal = Editor.getPalette();
         try {
             BufferedReader reader = new BufferedReader(new FileReader(
                     new File(key)));
@@ -106,7 +114,24 @@ public class Map implements Playable{
             reader.close();
         } catch (IOException e) {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "The file was not found, therefore, the default settings were used");
+            tiles = new Tile[10][10];
+            pal = Editor.getPalette();
+
+            for (int i = tiles.length-1; i >= 0; i--) {
+                for (int j = 0; j < tiles[0].length; j++) {
+                    tiles[i][j] = new Tile(j, i, TileList.BLANK);
+                }
+            }
+        }         
+        Keyboard.destroy();
+        try {
+            Keyboard.create();
+        } catch (LWJGLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
+
 
     }
 
@@ -127,7 +152,7 @@ public class Map implements Playable{
         startDragging = Mouse.isButtonDown(1) && controlPressed() && 
                 !isDragging;
 
-        isDragging = Mouse.isButtonDown(1) && controlPressed();
+        isDragging = Mouse.isButtonDown(1) && isDragging || startDragging;
         
         //Makes sure that up and down / left and right can't be both true
         up =   upPressed()   && !downPressed();

@@ -61,9 +61,6 @@ public class MainE {
    * @param args not used
    */
   public static void main(String[] args) {
-    frame = new JDialog() {
-      private JTextField field = new JTextField();
-    };
 
     try {
       read = new BufferedReader(
