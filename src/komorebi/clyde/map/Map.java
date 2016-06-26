@@ -13,7 +13,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.engine.MainE;
@@ -69,8 +71,6 @@ public class Map implements Playable{
      * @param row number of rows (y)
      */
     public Map(int col, int row){
-        x=0;
-        y=0;
         tiles = new Tile[row][col];
         pal = Editor.getPalette();
 
@@ -87,8 +87,6 @@ public class Map implements Playable{
      * @param key The location of the map
      */
     public Map(String key){
-        x=0;
-        y=0;
         pal = Editor.getPalette();
         try {
             BufferedReader reader = new BufferedReader(new FileReader(
@@ -373,38 +371,37 @@ public class Map implements Playable{
      */
     private void save() {
 
-        try {
-            File file;
-            do{
-                fileNum++;
-                if(fileNum<10){
-                    file = new File("res/maps/map0"+fileNum);
-                }else {
-                    file = new File("res/maps/map"+fileNum);
-                }
-            }while(file.exists());
+        JFileChooser chooser = new JFileChooser("res/maps/");
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                "Map Files", "map");
+        chooser.setFileFilter(filter);
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setDialogTitle("Enter the name of the map to save");
+        int returnee = chooser.showSaveDialog(null);
+
+        if(returnee == JFileChooser.APPROVE_OPTION){
+
+            String path = chooser.getSelectedFile().getAbsolutePath();
             
             PrintWriter writer;
-            
-            if(fileNum<10){
-                writer = new PrintWriter("res/maps/map0"+fileNum, "UTF-8");
-            }else {
-                writer = new PrintWriter("res/maps/map"+fileNum, "UTF-8");
-            }
-            
-            writer.println(tiles.length);
-            writer.println(tiles[0].length);
 
-            for (Tile[] tile : tiles) {
-                for (Tile t : tile) {
-                    writer.print(t.getType().getID() + " ");
+            try {
+                writer = new PrintWriter(path+".map", "UTF-8");
+                writer.println(tiles.length);
+                writer.println(tiles[0].length);
+
+                for (Tile[] tile : tiles) {
+                    for (Tile t : tile) {
+                        writer.print(t.getType().getID() + " ");
+                    }
+                    writer.println();
                 }
-                writer.println();
+                System.out.println("Save complete");
+                writer.close();
+            } catch (FileNotFoundException | UnsupportedEncodingException e) {
+                e.printStackTrace();
             }
-            System.out.println("Save complete");
-            writer.close();
-        } catch (FileNotFoundException | UnsupportedEncodingException e) {
-            e.printStackTrace();
+
         }
     }
 

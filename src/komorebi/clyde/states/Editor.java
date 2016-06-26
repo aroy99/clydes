@@ -9,15 +9,13 @@ import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glOrtho;
 import static org.lwjgl.opengl.GL11.glViewport;
 
-import java.awt.Frame;
 import java.io.IOException;
 
-import javax.swing.JDialog;
-import javax.swing.JFrame;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import komorebi.clyde.editor.Palette;
-import komorebi.clyde.engine.Main;
 import komorebi.clyde.map.Map;
 
 import org.lwjgl.input.Keyboard;
@@ -58,7 +56,7 @@ public class Editor extends State{
         if(Keyboard.isKeyDown(Keyboard.KEY_P)){
             Runtime runTime = Runtime.getRuntime();
             try {
-                Process process = runTime.exec("java -jar \"RealGame v 0.1.jar\"");
+                runTime.exec("java -jar \"RealGame v 0.1.jar\"");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -78,10 +76,18 @@ public class Editor extends State{
     @Override
     public void update() {
         if(isLoad && !wasLoad){
-            String path = JOptionPane.showInputDialog("Enter the name of the map to load");
+            JFileChooser chooser = new JFileChooser("res/maps/");
+            FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                    "Map Files", "map");
+            chooser.setFileFilter(filter);
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            chooser.setDialogTitle("Enter the name of the map to load");
+            int returnee = chooser.showOpenDialog(null);
 
-            currMap = new Map("res/maps/"+path);
-            pal.setMap(currMap);
+            if(returnee == JFileChooser.APPROVE_OPTION){
+                currMap = new Map(chooser.getSelectedFile().getAbsolutePath());
+                pal.setMap(currMap);
+            }
         }
         
         pal.update();
