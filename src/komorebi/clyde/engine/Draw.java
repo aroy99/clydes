@@ -37,7 +37,7 @@ public class Draw {
   private static boolean texLoaded;
   
   /** Holds all of the textures for this class.*/
-  private static Texture[] tex = new Texture[3];
+  private static Texture[] tex = new Texture[9];
   
   /** To ensure rotations can only happen in multiples of 90 degrees.*/
   private static final int RIGHT_ANGLE = 90;
@@ -96,6 +96,9 @@ public class Draw {
     glPopMatrix();
 
   }
+  
+
+  
 
   /**
    * Loads textures.<p>
@@ -115,6 +118,23 @@ public class Draw {
       
       tex[2] = TextureLoader.getTexture("PNG", new FileInputStream(
           new File("res/EditorSheet.png")));
+      
+      tex[3] = TextureLoader.getTexture("PNG", new FileInputStream(
+              new File("res/NPCFiller.png")));
+      
+      tex[4] = TextureLoader.getTexture("PNG", new FileInputStream(
+              new File("res/NPCFiller2.png")));
+      
+      tex[5] = TextureLoader.getTexture("PNG", new FileInputStream(
+              new File("res/FillerFont.png")));
+      
+      tex[6] = TextureLoader.getTexture("PNG", new FileInputStream(
+              new File("res/Textfield2.png")));
+      
+      tex[7] = TextureLoader.getTexture("PNG", new FileInputStream(
+              new File("res/Picker.png")));
+      tex[8] = TextureLoader.getTexture("PNG", new FileInputStream(
+              new File("res/Fader.png")));
       
     } catch (Exception e) {
       e.printStackTrace();

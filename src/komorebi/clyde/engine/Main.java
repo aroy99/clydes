@@ -28,6 +28,7 @@ import java.io.IOException;
 
 import komorebi.clyde.engine.AudioHandler;
 import komorebi.clyde.engine.GameHandler;
+import komorebi.clyde.states.Game;
 
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -172,10 +173,17 @@ public class Main {
     private static void cleanUp(){
         Display.destroy();
         AL.destroy();
+        System.exit(0);
     }
     
     public static int getScale(){
         return scale;
     }
+    
+    public static Game getGame()
+    {
+		return GameHandler.game;
+    }
+   
 
 }

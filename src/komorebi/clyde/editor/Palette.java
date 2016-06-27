@@ -39,7 +39,6 @@ public class Palette implements Playable{
     for (int i = tiles.length-1, k=0; i >= 0; i--) {
       for (int j = 0; j < tiles[0].length; j++, k++) {
         tiles[i][j] = new Tile(j+X_OFFSET, i, TileList.getTile(k));
-        System.out.println(k);
       }
     }
 

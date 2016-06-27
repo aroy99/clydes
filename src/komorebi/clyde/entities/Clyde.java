@@ -21,6 +21,7 @@ public class Clyde extends Entity implements Playable{
     private boolean left;
     private boolean right;
     private boolean run;
+    private boolean canMove = true;
     
     private float dx;
     private float dy;
@@ -91,51 +92,59 @@ public class Clyde extends Entity implements Playable{
      */
     @Override
     public void update() {
-        if(left){
-            dx = -1;
-            dir = Face.LEFT;
-            leftAni.resume();
-        }if(right){
-            dx = 1;
-            dir = Face.RIGHT;
-            rightAni.resume();
-        }if(!(left || right)){
-            dx = 0;
-            leftAni.hStop();
-            rightAni.hStop();
-        }
+        if (canMove)
+        {
+        	if(left){
+        		dx = -1;
+        		dir = Face.LEFT;
+        		leftAni.resume();
+        	}if(right){
+        		dx = 1;
+        		dir = Face.RIGHT;
+        		rightAni.resume();
+        	}if(!(left || right)){
+        		dx = 0;
+        		leftAni.hStop();
+        		rightAni.hStop();
+        	}
         
-        if(up){
-            dy = 1;
-            dir = Face.UP;
-            upAni.resume();
-        }if(down){
-            dy = -1;
-            dir = Face.DOWN;
-            downAni.resume();
-        }if(!(up || down)){
-            dy = 0;
-            downAni.hStop();
-            upAni.hStop();
-        }
+        	if(up){
+        		dy = 1;
+        		dir = Face.UP;
+        		upAni.resume();
+        	}if(down){
+        		dy = -1;
+        		dir = Face.DOWN;
+        		downAni.resume();
+        	}if(!(up || down)){
+        		dy = 0;
+        		downAni.hStop();
+        		upAni.hStop();
+        	}
 
-        if(run){
-            dx *=2;
-            dy *=2;
-            upAni.setSpeed(4);
-            downAni.setSpeed(4);
-            leftAni.setSpeed(4);
-            rightAni.setSpeed(4);
-        }else{
-            upAni.setSpeed(8);
-            downAni.setSpeed(8);
-            leftAni.setSpeed(8);
-            rightAni.setSpeed(8);
+        	if(run){
+        		dx *=2;
+        		dy *=2;
+        		upAni.setSpeed(4);
+        		downAni.setSpeed(4);
+        		leftAni.setSpeed(4);
+        		rightAni.setSpeed(4);
+        	}else{
+        		upAni.setSpeed(8);
+        		downAni.setSpeed(8);
+        		leftAni.setSpeed(8);
+        		rightAni.setSpeed(8);
+        	}
+        
+        	x += dx;
+        	y += dy;
+        } else
+        {
+        	upAni.hStop();
+        	downAni.hStop();
+        	leftAni.hStop();
+        	rightAni.hStop();
         }
-        
-        x += dx;
-        y += dy;
-        
     }
 
     /* (non-Javadoc)
@@ -162,5 +171,24 @@ public class Clyde extends Entity implements Playable{
             break;
         }
     }
+    
+    public void lock()
+    {
+    	canMove=false;
+    }
+    
+    public void unlock()
+    {
+    	canMove=true;
+    }
 
+    public int getTileX()
+    {
+    	return ((int) x)/16;
+    }
+    
+    public int getTileY()
+    {
+    	return ((int) y)/16;
+    }
 }

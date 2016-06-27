@@ -22,7 +22,7 @@ public abstract class Entity implements Renderable{
     protected Entities ent;
     
     public enum Entities{
-        CLYDE, FILLER;
+        CLYDE, FILLER, NPC;
     }
     
     public Entity(float x,float y,int sx,int sy){
@@ -30,6 +30,16 @@ public abstract class Entity implements Renderable{
         this.y = y;
         this.sx = sx;
         this.sy = sy;
+    }
+    
+    public float getX()
+    {
+    	return x;
+    }
+    
+    public float getY()
+    {
+    	return y;
     }
     
 }
