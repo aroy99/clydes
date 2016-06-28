@@ -110,9 +110,9 @@ public class Map implements Playable{
             }
 
             reader.close();
-        } catch (IOException e) {
+        } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "The file was not found, therefore, the default settings were used");
+            JOptionPane.showMessageDialog(null, "The file was not found / was corrupt, therefore, the default settings were used");
             tiles = new Tile[10][10];
             pal = Editor.getPalette();
 
@@ -386,7 +386,11 @@ public class Map implements Playable{
             PrintWriter writer;
 
             try {
-                writer = new PrintWriter(path+".map", "UTF-8");
+                if(path.substring(path.length()-4).equals(".map")){
+                    writer = new PrintWriter(path, "UTF-8");
+                }else{
+                    writer = new PrintWriter(path+".map", "UTF-8");
+                }
                 writer.println(tiles.length);
                 writer.println(tiles[0].length);
 
