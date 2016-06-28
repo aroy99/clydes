@@ -316,8 +316,8 @@ public class Tile implements Renderable{
         default        :texx=  0;texy=  0;break;
         }                    
         
-        Draw.rect(x,y, SIZE, SIZE, texx, texy, 1);
-        if(grid)Draw.rect(x, y, SIZE, SIZE, 0, 16, 2);
+        Draw.rect(x,y, SIZE, SIZE, texx, texy, texx+SIZE, texy+SIZE, 1);
+        if(grid)Draw.rect(x, y, SIZE, SIZE, 0, 16, SIZE, 16+SIZE, 2);
     }
     
     public TileList getType(){

@@ -54,8 +54,9 @@ public class Map implements Playable{
 
     private Palette pal;
     private Tile[][] tiles;                       //The Map itself
-    
     private Tile[][] selection;
+    
+    
 
     private float x, y;         //Current location
     private int initX, initY; //Location at the beginning of a drag
@@ -108,6 +109,13 @@ public class Map implements Playable{
                             TileList.getTile(Integer.parseInt(str[index])));
                 }
             }
+            String s;
+            
+            while ((s=reader.readLine())!=null)
+            {
+            	
+            }
+            
 
             reader.close();
         } catch (IOException | NumberFormatException e) {

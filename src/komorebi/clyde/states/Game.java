@@ -45,7 +45,7 @@ public class Game extends State{
 
     public Game(){
         play = new Clyde(120,100);
-        map = new Map("res/Terra.png");
+        map = new Map("res/maps/Some Town.map");
         
         npcs = new ArrayList<NPC>();
         scripts = new ArrayList<Script>();
