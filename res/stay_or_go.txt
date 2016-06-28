@@ -1,7 +1,7 @@
 lock
-ask "What should we do?" "Call Joe" "Go"
-branch Call Joe
-fadeout
+ask "What should we do?" "Stay" "Go"
+branch Stay
+unlock
 branch Go
 fadeout
 pause 20
