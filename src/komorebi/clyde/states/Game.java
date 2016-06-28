@@ -1,10 +1,7 @@
 /**
- * Game.java		May 16, 2016, 9:52:23 PM
- *
- * -
+ * Game.java        May 16, 2016, 9:52:23 PM
  */
 package komorebi.clyde.states;
-
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,7 +12,9 @@ import java.util.ArrayList;
 
 import org.lwjgl.input.Keyboard;
 
+import komorebi.clyde.engine.GameHandler;
 import komorebi.clyde.entities.Clyde;
+import komorebi.clyde.map.Map;
 
 import komorebi.clyde.entities.NPC;
 import komorebi.clyde.entities.NPCType;
@@ -29,24 +28,24 @@ import komorebi.clyde.script.Script;
  * @version 
  */
 public class Game extends State{
-	
-	public ArrayList<NPC> npcs;
-	public ArrayList<Script> scripts;
-	
-	private boolean hasText, hasChoice, choosesLeft;
-	private int pickIndex;
-	private int maxOpt;
-	
-	private NPC speaker;
-	
-	private boolean wasSpaceDown, wasLeftDown, wasRightDown;
-	
-	private BufferedReader read;
-	
+
+    public ArrayList<NPC> npcs;
+    public ArrayList<Script> scripts;
+    
+    private boolean hasText, hasChoice, choosesLeft;
+    private int pickIndex;
+    private int maxOpt;
+    
+    private NPC speaker;
+    
+    private boolean wasSpaceDown, wasLeftDown, wasRightDown;
+    
+    private BufferedReader read;
+
+
     public Game(){
-    	
-    	
-        play = new Clyde(32,32);
+        play = new Clyde(120,100);
+        map = new Map("res/Terra.png");
         
         npcs = new ArrayList<NPC>();
         scripts = new ArrayList<Script>();
@@ -63,8 +62,8 @@ public class Game extends State{
         scripts.add(new Script("joe", joe, 5, 5, false));
         scripts.add(new Script("vin", vin, 1, 1, false));
         */
-        
-        
+
+
     }
     
     /* (non-Javadoc)
@@ -72,59 +71,56 @@ public class Game extends State{
      */
     @Override
     public void getInput() {
+        // TODO Auto-generated method stub
+        play.getInput();
         
-        play.getInput();  
-        
-        
-        if (Keyboard.isKeyDown(Keyboard.KEY_SPACE) && !wasSpaceDown)
+                if (Keyboard.isKeyDown(Keyboard.KEY_SPACE) && !wasSpaceDown)
         {
-        	wasSpaceDown = true;
-        	if (hasText&&Keyboard.isKeyDown(Keyboard.KEY_SPACE))
+            wasSpaceDown = true;
+            if (hasText&&Keyboard.isKeyDown(Keyboard.KEY_SPACE))
             {
-            	speaker.clearText();
-            	
-            	if (hasChoice) {
-            		speaker.branch(pickIndex);
-            	}
-            	hasChoice=false;
-            	hasText=false;
+                speaker.clearText();
+                
+                if (hasChoice) {
+                    speaker.branch(pickIndex);
+                }
+                hasChoice=false;
+                hasText=false;
             }
         } else if (!Keyboard.isKeyDown(Keyboard.KEY_SPACE))
         {
-        	wasSpaceDown = false;
+            wasSpaceDown = false;
         }
         
         if (Keyboard.isKeyDown(Keyboard.KEY_LEFT) && !wasLeftDown)
         {
-        	wasLeftDown = true;
-        	if (hasChoice&&Keyboard.isKeyDown(Keyboard.KEY_LEFT))
-        	{
-        		pickIndex--;
-        		if (pickIndex<1) pickIndex = maxOpt;
-        		speaker.setPickerIndex(pickIndex);
-        		//choosesLeft=!choosesLeft;
-        		
-        	}  
+            wasLeftDown = true;
+            if (hasChoice&&Keyboard.isKeyDown(Keyboard.KEY_LEFT))
+            {
+                pickIndex--;
+                if (pickIndex<1) pickIndex = maxOpt;
+                speaker.setPickerIndex(pickIndex);
+                //choosesLeft=!choosesLeft;
+                
+            }  
         } else if (!Keyboard.isKeyDown(Keyboard.KEY_LEFT))
         {
-        	wasLeftDown = false;
+            wasLeftDown = false;
         }
         
         if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT) && !wasRightDown)
         {
-        	wasRightDown = true;
-        	if (hasChoice&&Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
-        	{
-        		pickIndex++;
-        		if (pickIndex>maxOpt) pickIndex = 1;
-        		speaker.setPickerIndex(pickIndex);
-        	}
+            wasRightDown = true;
+            if (hasChoice&&Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
+            {
+                pickIndex++;
+                if (pickIndex>maxOpt) pickIndex = 1;
+                speaker.setPickerIndex(pickIndex);
+            }
         } else if (!Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
         {
-        	wasRightDown = false;
+            wasRightDown = false;
         }
-        
-        
     }
 
     /* (non-Javadoc)
@@ -134,23 +130,24 @@ public class Game extends State{
     public void update() {
         // TODO Auto-generated method stub
         play.update();
+        
         for (NPC person: NPC.getNPCs())
         {
-        	person.update();
+            person.update();
         }
         
         for (Script s: scripts)
         {
-        	if (!s.hasRun() && s.isLocationIntersected(play))
-        	{
-        		s.run();
-        	}
+            if (!s.hasRun() && s.isLocationIntersected(play))
+            {
+                s.run();
+            }
         }
         
         Fader.update();
         
         //System.out.println(play.getTileX() + ", " + play.getTileY());
-        
+
     }
 
     /* (non-Javadoc)
@@ -159,93 +156,96 @@ public class Game extends State{
     @Override
     public void render() {
         // TODO Auto-generated method stub
+        map.render();
         play.render();
-        
-        int j=0;
         
         for (NPC person: NPC.getNPCs())
         {
-        	person.render();
-        	j++;
+            person.render();
         }
         
         Fader.render();
-        
+
     }
     
-    public Clyde getClyde()
+    public static Map getMap(){
+        return map;
+    }
+    
+        public Clyde getClyde()
     {
-    	return play;
+        return play;
     }
     
     
     public void setSpeaker(NPC npc)
     {
-    	this.speaker = npc;
-    	this.hasText = true;
+        this.speaker = npc;
+        this.hasText = true;
     }
     
     public void setAsker(NPC npc)
     {
-    	this.speaker = npc;
-    	this.hasText = true;
-    	this.hasChoice = true;
-    	//this.choosesLeft = true;
-    	
-    	pickIndex = 1;
+        this.speaker = npc;
+        this.hasText = true;
+        this.hasChoice = true;
+        //this.choosesLeft = true;
+        
+        pickIndex = 1;
     }
     
     public void setMaxOptions(int i)
     {
-    	maxOpt = i;
+        maxOpt = i;
     }
     
     public NPC getNpc(String s)
     {
-    	for (NPC person: NPC.getNPCs())
-    	{
-    		if (person.getName().equals(s))
-    		{
-    			return person;
-    		}
-    	}
-		return null;
+        for (NPC person: NPC.getNPCs())
+        {
+            if (person.getName().equals(s))
+            {
+                return person;
+            }
+        }
+        return null;
     }
     
     public void loadMap(String mapFile)
     {
-    	try {
-			read = new BufferedReader(
-			        new FileReader(new File("res/"+mapFile+".txt")));
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-		}
-		String s;
+        try {
+            read = new BufferedReader(
+                    new FileReader(new File("res/"+mapFile+".txt")));
+        } catch (FileNotFoundException e1) {
+            e1.printStackTrace();
+        }
+        String s;
 
-		try {
-			while ((s = read.readLine()) != null) {
-				if (s.startsWith("npc"))
-				{
-					s = s.replace("npc ", "");
-					String[] split = s.split(" ");
-					
-					NPC.add(new NPC(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), NPCType.toEnum(split[3])));
-				}
-				else if (s.startsWith("script"))
-				{
-					s = s.replace("script ", "");
-					String[] split = s.split(" ");
-					
-					scripts.add(new Script(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), false, NPC.get(split[3])));
-				}
-				
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
+        try {
+            while ((s = read.readLine()) != null) {
+                if (s.startsWith("npc"))
+                {
+                    s = s.replace("npc ", "");
+                    String[] split = s.split(" ");
+                    
+                    NPC.add(new NPC(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), NPCType.toEnum(split[3])));
+                }
+                else if (s.startsWith("script"))
+                {
+                    s = s.replace("script ", "");
+                    String[] split = s.split(" ");
+                    
+                    scripts.add(new Script(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), false, NPC.get(split[3])));
+                }
+                
+            }
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        
     }
-    
+
+
 }

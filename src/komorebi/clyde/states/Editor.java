@@ -5,13 +5,21 @@
  */
 package komorebi.clyde.states;
 
-import komorebi.clyde.editor.Palette;
-import komorebi.clyde.engine.MainE;
-import komorebi.clyde.map.Map;
-import komorebi.clyde.map.Tile;
-import komorebi.clyde.map.TileList;
+import static org.lwjgl.opengl.GL11.glLoadIdentity;
+import static org.lwjgl.opengl.GL11.glOrtho;
+import static org.lwjgl.opengl.GL11.glViewport;
 
-import org.lwjgl.input.Mouse;
+import java.io.IOException;
+
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import komorebi.clyde.editor.Palette;
+import komorebi.clyde.map.Map;
+
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.opengl.Display;
 
 /**
  * Represents the level editor
@@ -21,12 +29,21 @@ import org.lwjgl.input.Mouse;
  */
 public class Editor extends State{
     
-    private Map map;
-    private static Palette pal;
+    private static Map currMap;
     
+    private boolean isLoad;
+    private boolean wasLoad;
+    
+    private static Palette pal;
+    public static float aspect;
+    public static float xSpan = 1;
+    public static float ySpan = 1;
+
+
     public Editor(){
         pal = new Palette();
-        map = new Map(20, 20);
+        currMap = new Map(20, 20);
+        pal.setMap(currMap);
     }
     
     
@@ -35,9 +52,22 @@ public class Editor extends State{
      */
     @Override
     public void getInput() {
+//        if(Display.wasResized())resize();
+        if(Keyboard.isKeyDown(Keyboard.KEY_P)){
+            Runtime runTime = Runtime.getRuntime();
+            try {
+                runTime.exec("java -jar \"RealGame v 0.1.jar\"");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        wasLoad = isLoad;
+        isLoad = Keyboard.isKeyDown(Keyboard.KEY_L) && controlPressed();
+        
         
         pal.getInput();
-        map.getInput();
+        currMap.getInput();
     }
 
     /* (non-Javadoc)
@@ -45,9 +75,23 @@ public class Editor extends State{
      */
     @Override
     public void update() {
-        // TODO Auto-generated method stub
+        if(isLoad && !wasLoad){
+            JFileChooser chooser = new JFileChooser("res/maps/");
+            FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                    "Map Files", "map");
+            chooser.setFileFilter(filter);
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            chooser.setDialogTitle("Enter the name of the map to load");
+            int returnee = chooser.showOpenDialog(null);
+
+            if(returnee == JFileChooser.APPROVE_OPTION){
+                currMap = new Map(chooser.getSelectedFile().getAbsolutePath());
+                pal.setMap(currMap);
+            }
+        }
+        
         pal.update();
-        map.update();
+        currMap.update();
     }
 
     /* (non-Javadoc)
@@ -55,7 +99,7 @@ public class Editor extends State{
      */
     @Override
     public void render() {
-        map.render();
+        currMap.render();
         pal.render();
     }
 
@@ -66,8 +110,40 @@ public class Editor extends State{
      * @return pal
      */
     public static Palette getPalette() {
-        // TODO Auto-generated method stub
         return pal;
     }
+    
+    
+    /**
+     * Resizes the window
+     */
+    private static void resize() {
+        final int height = Display.getHeight();
+        final int width = Display.getWidth();
+        aspect = (float)width/height;
+        xSpan = 1;
+        ySpan = 1;
+        
+        if(aspect > 1){
+            xSpan *= aspect;
+        }else{
+            ySpan = xSpan/aspect;
+        }
+        glViewport(0, 0, width, height);
+
+        glLoadIdentity();
+        glOrtho(0,width,0,height,-1,1);     //Updates 3D space
+//        glOrtho(-xSpan,xSpan,-ySpan,ySpan,-1,1);     //Updates 3D space
+        pal.reload();
+    }
+    
+    /**
+     * @return if the control key was pressed
+     */
+    private boolean controlPressed() {
+        return (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL)||
+                Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
+    }
+
 
 }

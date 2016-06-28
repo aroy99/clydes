@@ -6,6 +6,7 @@
 package komorebi.clyde.states;
 
 import komorebi.clyde.entities.Clyde;
+import komorebi.clyde.map.Map;
 
 /**
  * Represents a state in the game
@@ -15,6 +16,7 @@ import komorebi.clyde.entities.Clyde;
  */
 public abstract class State {
     protected static Clyde play;
+    protected static Map map;
 
     public enum States{
         GAME, EDITOR;

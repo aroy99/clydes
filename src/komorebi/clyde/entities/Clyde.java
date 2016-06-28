@@ -1,18 +1,17 @@
 /**
- * Clyde.java		May 15, 2016, 11:58:06 PM
- *
- * -
+ * Clyde.java       May 15, 2016, 11:58:06 PM
  */
 package komorebi.clyde.entities;
 
 import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Playable;
+import komorebi.clyde.states.Game;
 
 import org.lwjgl.input.Keyboard;
 
 /**
  * @author Aaron Roy
- * @version 0.0.2.0
+ * @author Andrew Faulkenberry
  */
 public class Clyde extends Entity implements Playable{
 
@@ -92,58 +91,63 @@ public class Clyde extends Entity implements Playable{
      */
     @Override
     public void update() {
-        if (canMove)
-        {
-        	if(left){
-        		dx = -1;
-        		dir = Face.LEFT;
-        		leftAni.resume();
-        	}if(right){
-        		dx = 1;
-        		dir = Face.RIGHT;
-        		rightAni.resume();
-        	}if(!(left || right)){
-        		dx = 0;
-        		leftAni.hStop();
-        		rightAni.hStop();
-        	}
+        int speed = 8;
         
-        	if(up){
-        		dy = 1;
-        		dir = Face.UP;
-        		upAni.resume();
-        	}if(down){
-        		dy = -1;
-        		dir = Face.DOWN;
-        		downAni.resume();
-        	}if(!(up || down)){
-        		dy = 0;
-        		downAni.hStop();
-        		upAni.hStop();
-        	}
+        if (canMove) {
 
-        	if(run){
-        		dx *=2;
-        		dy *=2;
-        		upAni.setSpeed(4);
-        		downAni.setSpeed(4);
-        		leftAni.setSpeed(4);
-        		rightAni.setSpeed(4);
-        	}else{
-        		upAni.setSpeed(8);
-        		downAni.setSpeed(8);
-        		leftAni.setSpeed(8);
-        		rightAni.setSpeed(8);
-        	}
-        
-        	x += dx;
-        	y += dy;
-        } else
-        {
-        	upAni.hStop();
-        	downAni.hStop();
-        	leftAni.hStop();
-        	rightAni.hStop();
+            if(left){
+                dx = -1;
+                dir = Face.LEFT;
+                leftAni.resume();
+            }if(right){
+                dx = 1;
+                dir = Face.RIGHT;
+                rightAni.resume();
+            }if(!(left || right)){
+                dx = 0;
+                leftAni.hStop();
+                rightAni.hStop();
+            }
+            
+            if(up){
+                dy = 1;
+                dir = Face.UP;
+                upAni.resume();
+            }if(down){
+                dy = -1;
+                dir = Face.DOWN;
+                downAni.resume();
+            }if(!(up || down)){
+                dy = 0;
+                downAni.hStop();
+                upAni.hStop();
+            }
+
+            if(run){
+                dx *=2;
+                dy *=2;
+                speed /=2;
+            }
+            
+           
+            if((up && (left || right)) || (down && (left || right))){
+                dx *= Math.sqrt(2)/2;
+                dy *= Math.sqrt(2)/2;
+                speed = (int)Math.round(speed / (Math.sqrt(2)/2));
+            }
+           
+            
+            upAni.setSpeed(speed);
+            downAni.setSpeed(speed);
+            leftAni.setSpeed(speed);
+            rightAni.setSpeed(speed);
+            
+            Game.getMap().move(-dx, -dy);
+        }else {
+            upAni.hStop();
+            downAni.hStop();
+            leftAni.hStop();
+            rightAni.hStop();
         }
     }
 
@@ -172,23 +176,25 @@ public class Clyde extends Entity implements Playable{
         }
     }
     
-    public void lock()
+        public void lock()
     {
-    	canMove=false;
+        canMove=false;
     }
     
     public void unlock()
     {
-    	canMove=true;
+        canMove=true;
     }
 
     public int getTileX()
     {
-    	return ((int) x)/16;
+        return  (int)x/16;
     }
     
     public int getTileY()
     {
-    	return ((int) y)/16;
+        return  (int)y/16;
     }
+
+
 }

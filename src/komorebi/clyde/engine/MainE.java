@@ -32,6 +32,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JTextField;
 
+import komorebi.clyde.editor.Palette;
 import komorebi.clyde.states.Editor;
 
 import org.lwjgl.LWJGLException;
@@ -50,7 +51,7 @@ import org.newdawn.slick.openal.SoundStore;
 public class MainE {
 
   public static Editor edit;
-  public static int scale;
+  public static int scale = 1;
   private static BufferedReader read;
 
   private static JDialog frame;
@@ -60,9 +61,6 @@ public class MainE {
    * @param args not used
    */
   public static void main(String[] args) {
-    frame = new JDialog() {
-      private JTextField field = new JTextField();
-    };
 
     try {
       read = new BufferedReader(
@@ -101,8 +99,9 @@ public class MainE {
   public static void initDisplay() {
     //create display
     try {
-      Display.setDisplayMode(new DisplayMode(800 * scale, 600 * scale));
+      Display.setDisplayMode(new DisplayMode(800 * scale, 608 * scale));
       Display.setTitle("Clyde\'s");
+//      Display.setResizable(true);
       Display.create();
       Display.setVSyncEnabled(true);
 
@@ -170,7 +169,7 @@ public class MainE {
   private static void initGl() {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();              //resets the Matrix
-    glOrtho(0,800,0,600,-1,1);     //creates a 3D space
+    glOrtho(0,800,0,608,-1,1);     //creates a 3D space
     glMatrixMode(GL_MODELVIEW);
     glEnable(GL_TEXTURE_2D);       //enables Textures
     glEnable(GL_BLEND);
@@ -182,7 +181,7 @@ public class MainE {
 
     glDisable(GL_DEPTH_TEST);      //kills off the third dimension
   }
-
+  
   /**
    *  Destroys the display and keyboard, closing the window.
    */

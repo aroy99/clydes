@@ -28,7 +28,6 @@ import java.io.IOException;
 
 import komorebi.clyde.engine.AudioHandler;
 import komorebi.clyde.engine.GameHandler;
-import komorebi.clyde.states.Game;
 
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -46,12 +45,20 @@ import org.newdawn.slick.openal.SoundStore;
  */
 public class Main {
 
-    private static GameHandler gamehandler;
-    public static int scale;
-    private static BufferedReader read;
+    private GameHandler gamehandler;
+    public int scale;
+    private BufferedReader read;
 
 
     public static void main(String[] args){
+        new Main().run();
+    }
+
+
+    /**
+     * Runs the game
+     */
+    private void run() {
         try {
             read = new BufferedReader(
                        new FileReader(new File("res/settings")));
@@ -62,10 +69,7 @@ public class Main {
                 if(scale == 0)scale = Integer.parseInt(s);
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-            scale = 1;
-        } catch(NumberFormatException e){
+        } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
             scale = 1;
         }
@@ -75,14 +79,14 @@ public class Main {
 
         initGame();
         gameLoop();
-        cleanUp();
+        cleanUp();        
     }
 
 
     /**
-     * 	Initializes the Display using the Display Class, properly Scaling it
+     *  Initializes the Display using the Display Class, properly Scaling it
      */
-    public static void initDisplay(){
+    public void initDisplay(){
         //create display
         try {
             Display.setDisplayMode(new DisplayMode(256*scale,224*scale));
@@ -99,23 +103,23 @@ public class Main {
      *  Creates a new game and initializes the audio
      *  @see GameHandler
      */
-    private static void initGame(){
+    private void initGame(){
         gamehandler = new GameHandler();
         AudioHandler.init();
     }
 
 
-    private static void getInput(){
+    private void getInput(){
         gamehandler.getInput();
     }
 
-    private static void update(){
+    private void update(){
         gamehandler.update();
     }
 
 
-    private static void render(){
-        glClear(GL_COLOR_BUFFER_BIT);	//clears the matrix with black
+    private void render(){
+        glClear(GL_COLOR_BUFFER_BIT);   //clears the matrix with black
         glLoadIdentity();
 
         gamehandler.render();
@@ -127,9 +131,9 @@ public class Main {
 
 
     /**
-     * 	Goes through the game loop, starting the music once
+     *  Goes through the game loop, starting the music once
      */
-    private static void gameLoop(){
+    private void gameLoop(){
 
         while(!Display.isCloseRequested()){
             getInput();
@@ -137,7 +141,7 @@ public class Main {
             render();
             SoundStore.get().poll(0);
 
-            if(Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)){
+            if(Keyboard.isKeyDown(Keyboard.KEY_F4)){
                 break;
             }
 
@@ -145,15 +149,15 @@ public class Main {
     }
 
     /**
-     *	Currently Enabled:<br>
-     *	-Textures<br>
-     *	-Transparency
+     *  Currently Enabled:<br>
+     *  -Textures<br>
+     *  -Transparency
      *  <p>
      *  Size: 256 x 224
      */
-    private static void initGL(){
+    private void initGL(){
         glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();		       //resets the Matrix
+        glLoadIdentity();              //resets the Matrix
         glOrtho(0,256,0,224,-1,1);     //creates a 3D space
         glMatrixMode(GL_MODELVIEW);
         glEnable(GL_TEXTURE_2D);       //enables Textures
@@ -168,22 +172,22 @@ public class Main {
     }
 
     /**
-     *	Destroys the display and keyboard, closing the window
+     *  Destroys the display and keyboard, closing the window
      */
-    private static void cleanUp(){
+    private void cleanUp(){
         Display.destroy();
         AL.destroy();
         System.exit(0);
     }
     
-    public static int getScale(){
+    public int getScale(){
         return scale;
     }
     
-    public static Game getGame()
+        public static Game getGame()
     {
-		return GameHandler.game;
+        return GameHandler.game;
     }
-   
+
 
 }
