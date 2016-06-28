@@ -45,7 +45,7 @@ public class Game extends State{
 
     public Game(){
         play = new Clyde(120,100);
-        map = new Map("res/Terra.png");
+        map = new Map("res/maps/Some Town.map");
         
         npcs = new ArrayList<NPC>();
         scripts = new ArrayList<Script>();
@@ -215,7 +215,7 @@ public class Game extends State{
     {
         try {
             read = new BufferedReader(
-                    new FileReader(new File("res/"+mapFile+".txt")));
+                    new FileReader(new File("res/scripts/"+mapFile+".txt")));
         } catch (FileNotFoundException e1) {
             e1.printStackTrace();
         }

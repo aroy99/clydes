@@ -14,7 +14,7 @@ import komorebi.clyde.engine.Draw;
  */
 public class TextHandler {
 
-	public static final int SCALE = 48;
+	public static final int SCALE = 12;
 	
 	private boolean hasChoice;
 	private int pickerIndex;
@@ -57,21 +57,21 @@ public class TextHandler {
 		switch(c)
 		{
 		case' ':case'!':case'"':case'$':case'%':case'\'':case'(':case')':case'*':case'+':
-			return 9;
+			return 0;
 		case',':case'-':case'.':case'/':case'0':case'1':case'2':case'3':case'4':case'5':case'6':case'7':
-			return SCALE+9;
+			return SCALE;
 		case'8':case'9':case':':case';':case'=':case'?':case'A':case'B':case'C':
-			return SCALE*2 +9;
+			return SCALE*2;
 		case'D':case'E':case'F':case'G':case'H':case'I':case'J':case'K':case'L':case'M':case'N':case'O':
-			return SCALE*3 +9;
+			return SCALE*3;
 		case'P':case'Q':case'R':case'S':case'T':case'U':case'V':case'W':case'X':case'Y':case'Z':
-			return SCALE*4 +9;
+			return SCALE*4;
 		case'a':case'b':case'c':case'd':case'e':case'f':case'g':
-			return SCALE*5 +9;
+			return SCALE*5;
 		case'h':case'i':case'j':case'k':case'l':case'm':case'n':case'o':case'p':case'q':case'r':case's':
-			return SCALE*6 +9;
+			return SCALE*6;
 		case'[':case']':case'~':case't':case'u':case'v':case'w':case'x':case'y':case'z':
-			return SCALE*7 +9;
+			return SCALE*7;
 		}
 		
 		return 0;
@@ -113,15 +113,17 @@ public class TextHandler {
 				
 				int under = 0, texUnder = 0;
 				
-				if (letters[i]=='g'||letters[i]=='j'||letters[i]=='p'||letters[i]=='q'||letters[i]=='y')
+				if (letters[i]=='g'||letters[i]=='j'||letters[i]=='p'||
+				        letters[i]=='q'||letters[i]=='y')
 				{   
 					under = size;
-					texUnder = 24;
+					texUnder = 8;
 				}
 					
 				
-				Draw.rect(horiz, vert-under, size, size+under, getTexX(letters[i]), getTexY(letters[i]), 
-						getTexX(letters[i])+24, getTexY(letters[i]) + 24+texUnder, 5);
+				Draw.rect(horiz, vert-under, size, size+under, 
+				        getTexX(letters[i]), getTexY(letters[i]), 
+						getTexX(letters[i])+8, getTexY(letters[i]) + 8+texUnder, 5);
 				horiz+=size;
 			}
 		}

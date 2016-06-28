@@ -447,7 +447,7 @@ public class NPC extends Entity {
 		text.write(args[0], 20, 58, 8);
 		if (args.length>1) text.write(args[1], 30, 40, 8);
 		if (args.length>2) text.write(args[2], 100, 40, 8);
-		if (args.length>3) text.write(args[3], 30, 22, 8);
+		if (args.length>3) text.write(args[3], 30, 22,8);
 		if (args.length>4) text.write(args[4], 100, 22, 8);
 		
 		this.instructor = ex;

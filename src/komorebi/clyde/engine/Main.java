@@ -28,6 +28,7 @@ import java.io.IOException;
 
 import komorebi.clyde.engine.AudioHandler;
 import komorebi.clyde.engine.GameHandler;
+import komorebi.clyde.states.Game;
 
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;

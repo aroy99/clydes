@@ -44,7 +44,7 @@ public class ScriptHandler {
 		
 		try {
 			read = new BufferedReader(
-			        new FileReader(new File("res/"+script+".txt")));
+			        new FileReader(new File("res/scripts/"+script+".txt")));
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 		}
