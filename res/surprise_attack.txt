@@ -1,5 +1,4 @@
 lock
 jog right right right right right right
-turn down
 say Boo!
 unlock

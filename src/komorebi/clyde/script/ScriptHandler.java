@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
+import komorebi.clyde.engine.Main;
 import komorebi.clyde.entities.NPC;
 import komorebi.clyde.entities.NPCType;
 
@@ -22,16 +23,21 @@ public class ScriptHandler {
 	private static BufferedReader read;
 	
 	private static InstructionList currentBranch;
-	private static BranchList branches = new BranchList();
+	private static BranchList branches;
+	private static NPC npc;
+	
 	
 	/**
 	 * Interprets a given script and has a given NPC execute them
 	 * @param script The script to be executed
 	 * @param npc The NPC to whom the script refers
 	 */
-	public static void read(String script, NPC npc)
+	public static void read(String script)
 	{
+	
 		InstructionList ex = new InstructionList("Main");
+		branches = new BranchList();
+		
 		setCurrentBranch(ex);
 		branches.add(ex);
 		
@@ -180,6 +186,28 @@ public class ScriptHandler {
 				} else if (s.startsWith("fadein"))
 				{
 					currentBranch.add(Instructions.FADE_IN);
+				} else if (s.startsWith("run"))
+				{
+					s = s.replace("run ","");
+					currentBranch.add(Instructions.RUN_SCRIPT, s, Main.getGame().getNpc(s));
+				} else if (s.startsWith("npc"))
+				{
+					s = s.replace("npc ", "");
+					
+					npc = NPC.get(s);
+				} else if (s.startsWith("sprite"))
+				{
+					s = s.replace("sprite ", "");
+					npc.setAttributes(NPCType.toEnum(s));
+					
+				} else if (s.startsWith("at"))
+				{
+					s = s.replace("at ","");
+					String[] args = s.split(",");
+					
+					
+					npc.setLocation(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
+					npc.setVisible(true);
 				}
 				
 			}
@@ -189,6 +217,14 @@ public class ScriptHandler {
 		}
 		
 		(new Thread(new Execution(npc, branches))).start();
+	}
+	
+	public static void read(String script, NPC person)
+	{
+		
+		npc = person;
+		read(script);
+		
 	}
 	
 	private static void setCurrentBranch(InstructionList list)

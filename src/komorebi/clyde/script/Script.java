@@ -14,25 +14,35 @@ import komorebi.clyde.entities.NPC;
 public class Script {
 
 	private String script;
-	private NPC npc;
 	private boolean hasRun = false;
 	private boolean isRepeatable;
+	private NPC npc;
 	
 	private int x, y;
 	
-	public Script(String s, NPC person, int x, int y, boolean repeat)
+	public Script(String s, int x, int y, boolean repeat)
 	{
 		script = s;
-		npc = person;
 		isRepeatable = repeat;
 		this.x=x;
 		this.y=y;
 		
 	}
 	
+	public Script(String s, int x, int y, boolean repeat, NPC person)
+	{
+		script = s;
+		isRepeatable = repeat;
+		this.x=x;
+		this.y=y;
+		this.npc = person;
+		
+	}
+	
 	public void run()
 	{
 		hasRun = true;
+		
 		ScriptHandler.read(script, npc);
 	}
 	
@@ -54,5 +64,6 @@ public class Script {
 	public int getTileY() {
 		return y;
 	}
+	
 	
 }

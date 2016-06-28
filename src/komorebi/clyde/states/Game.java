@@ -6,6 +6,11 @@
 package komorebi.clyde.states;
 
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import org.lwjgl.input.Keyboard;
@@ -36,6 +41,8 @@ public class Game extends State{
 	
 	private boolean wasSpaceDown, wasLeftDown, wasRightDown;
 	
+	private BufferedReader read;
+	
     public Game(){
     	
     	
@@ -44,14 +51,20 @@ public class Game extends State{
         npcs = new ArrayList<NPC>();
         scripts = new ArrayList<Script>();
         
-        NPC joe = new NPC(-1,6, NPCType.POKEMON);
-        NPC vin = new NPC(0,0, NPCType.NESS);
+        loadMap("Map1");
         
-        npcs.add(joe);
+        //NPC joe = new NPC("joe",-1,6, NPCType.POKEMON);
+        //NPC vin = new NPC("vin",0,0, NPCType.NESS);
+        
+        
+        /*npcs.add(joe);
         npcs.add(vin);
         
         scripts.add(new Script("joe", joe, 5, 5, false));
         scripts.add(new Script("vin", vin, 1, 1, false));
+        */
+        
+        
     }
     
     /* (non-Javadoc)
@@ -121,12 +134,10 @@ public class Game extends State{
     public void update() {
         // TODO Auto-generated method stub
         play.update();
-        for (NPC person: npcs)
+        for (NPC person: NPC.getNPCs())
         {
         	person.update();
         }
-        
-        
         
         for (Script s: scripts)
         {
@@ -150,9 +161,12 @@ public class Game extends State{
         // TODO Auto-generated method stub
         play.render();
         
-        for (NPC person: npcs)
+        int j=0;
+        
+        for (NPC person: NPC.getNPCs())
         {
         	person.render();
+        	j++;
         }
         
         Fader.render();
@@ -184,6 +198,54 @@ public class Game extends State{
     public void setMaxOptions(int i)
     {
     	maxOpt = i;
+    }
+    
+    public NPC getNpc(String s)
+    {
+    	for (NPC person: NPC.getNPCs())
+    	{
+    		if (person.getName().equals(s))
+    		{
+    			return person;
+    		}
+    	}
+		return null;
+    }
+    
+    public void loadMap(String mapFile)
+    {
+    	try {
+			read = new BufferedReader(
+			        new FileReader(new File("res/"+mapFile+".txt")));
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+		String s;
+
+		try {
+			while ((s = read.readLine()) != null) {
+				if (s.startsWith("npc"))
+				{
+					s = s.replace("npc ", "");
+					String[] split = s.split(" ");
+					
+					NPC.add(new NPC(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), NPCType.toEnum(split[3])));
+				}
+				else if (s.startsWith("script"))
+				{
+					s = s.replace("script ", "");
+					String[] split = s.split(" ");
+					
+					scripts.add(new Script(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), false, NPC.get(split[3])));
+				}
+				
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
     }
     
 }

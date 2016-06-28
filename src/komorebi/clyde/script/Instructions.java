@@ -30,8 +30,10 @@ public enum Instructions {
 	BRANCH,
 	FADE_OUT,
 	FADE_IN,
+	RUN_SCRIPT,
 	WAIT;
 
+	
 	
 }
 

@@ -26,8 +26,8 @@ public class Execution implements Runnable {
 	{
 		branches = toDo;
 		npc = myNpc;
+		
 		isBlank = false;
-		System.out.println(this);
 		currentBranch = "Main";
 	}
 	
@@ -86,6 +86,7 @@ public class Execution implements Runnable {
 					npc.jog(Face.LEFT, 1, this);
 					break;
 				case JOG_RIGHT:
+					System.out.println("Jog right");
 					npc.jog(Face.RIGHT, 1, this);
 					break;
 				case JOG_UP:
@@ -122,7 +123,10 @@ public class Execution implements Runnable {
 				case FADE_IN:
 					Fader.fadeIn(this);
 					break;
-					
+				case RUN_SCRIPT:
+					//Script script = new Script(branches.getBranch(currentBranch).getString(j), branches.getBranch(currentBranch).getNPC(j));
+					//script.run();
+					break;
 				default:
 					break;
 				}

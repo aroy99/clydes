@@ -3,6 +3,8 @@
  */
 package komorebi.clyde.entities;
 
+import java.util.ArrayList;
+
 import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Main;
 import komorebi.clyde.script.Execution;
@@ -15,8 +17,12 @@ import komorebi.clyde.script.TextHandler;
  */
 public class NPC extends Entity {
 
+	private static ArrayList<NPC> npcs = new ArrayList<NPC>();
+	
+	private String name;
+	
 	public Face direction = Face.DOWN;
-	private boolean isMoving, isRunning, isWaiting;
+	private boolean isVisible, isMoving, isRunning, isWaiting;
 	private boolean hasInstructions;
 	
 	private String[] options;
@@ -36,19 +42,38 @@ public class NPC extends Entity {
 	 * @param x The x location (in pixels) of the bottom left corner of the NPC
 	 * @param y The y location (in pixels) of the bottom left corner of the NPC
 	 */
-	public NPC(float x, float y, NPCType type) {
+	public NPC(String name, float x, float y, NPCType type) {
 		super(x*16, y*16, 16, 24);
+		
+		this.name = name;
 		ent=Entities.NPC;
 		
 		setAttributes(type);
 		
 		isMoving=false;
 		hasInstructions=false;
+		isVisible = true;
 		
 		text = new TextHandler();
 		
 		
 	}
+	
+	public NPC(String name)
+	{
+		super(0,0,16,24);
+		this.name = name;
+		ent=Entities.NPC;
+		
+		isVisible = false;
+		
+		isMoving=false;
+		hasInstructions=false;
+		
+		text = new TextHandler();
+		
+	}
+	
 
 	/* (non-Javadoc)
 	 * @see komorebi.clyde.engine.Renderable#update()
@@ -59,7 +84,6 @@ public class NPC extends Entity {
 	 * Updates the behavior of the NPC, such as speed and movement
 	 */
 	public void update() {
-		
 
 		if (framesToGo<=0 && hasInstructions)
 		{
@@ -135,26 +159,31 @@ public class NPC extends Entity {
 	 * Renders the image of the NPC on-screen
 	 */
 	public void render() {
-		switch (direction)
-		{
-		case DOWN:
-			downAni.play(x,y);
-			break;
-		case LEFT:
-			leftAni.play(x,y);
-			break;
-		case RIGHT:
-			rightAni.play(x,y);
-			break;
-		case UP:
-			upAni.play(x,y);
-			break;
-		default:
-			break;
 		
+		if (isVisible) {
+			switch (direction)
+			{
+			case DOWN:
+				downAni.play(x,y);
+				break;
+			case LEFT:
+				leftAni.play(x,y);
+				break;
+			case RIGHT:
+				rightAni.play(x,y);
+				break;
+			case UP:
+				upAni.play(x,y);
+				break;
+			default:
+				break;
+			
+			}
+			
+			text.render();
 		}
 		
-		text.render();
+		
 	}
 	
 	/**
@@ -279,6 +308,7 @@ public class NPC extends Entity {
 	
 	public void jog(Face dir, int tiles, Execution instructor)
 	{	
+		
 		this.instructor = instructor;
 		jog(dir,tiles);
 		this.instructor.getLock().pauseThread();
@@ -389,7 +419,7 @@ public class NPC extends Entity {
 		this.instructor.getLock().pauseThread();
 	}
 	
-	private void setLocation(int x, int y)
+	public void setLocation(int x, int y)
 	{
 		this.x=x*16;
 		this.y=y*16;
@@ -464,5 +494,35 @@ public class NPC extends Entity {
 	public NPCType getType()
 	{
 		return type;
+	}
+	
+	public String getName()
+	{
+		return name;
+	}
+	
+	public static void add(NPC person)
+	{
+		npcs.add(person);
+	}
+	
+	public static NPC get(String s)
+	{
+		for (NPC n: npcs)
+		{
+			if (n.getName().equals(s)) return n;
+		}
+		
+		return null;
+	}
+	
+	public static ArrayList<NPC> getNPCs()
+	{
+		return npcs;
+	}
+	
+	public void setVisible(boolean b)
+	{
+		isVisible = b;
 	}
 }

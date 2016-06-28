@@ -5,6 +5,7 @@ package komorebi.clyde.script;
 
 import java.util.ArrayList;
 
+import komorebi.clyde.entities.NPC;
 import komorebi.clyde.entities.NPCType;
 
 /**
@@ -23,6 +24,7 @@ public class InstructionList {
 	ArrayList<Integer> yLocations;
 	ArrayList<String> words;
 	ArrayList<String[]> questions;
+	ArrayList<NPC> npcs;
 	
 	private int instructionIndex;
 	
@@ -39,7 +41,7 @@ public class InstructionList {
 		yLocations = new ArrayList<Integer>();
 		words = new ArrayList<String>();
 		questions = new ArrayList<String[]>();
-		
+		npcs = new ArrayList<NPC>();
 	}
 	
 	/**
@@ -55,6 +57,7 @@ public class InstructionList {
 		yLocations.add(null);
 		words.add(null);
 		questions.add(null);
+		npcs.add(null);
 	}
 	
 	/**
@@ -71,6 +74,7 @@ public class InstructionList {
 		yLocations.add(null);
 		words.add(null);
 		questions.add(null);
+		npcs.add(null);
 	}
 	
 	/**
@@ -87,6 +91,7 @@ public class InstructionList {
 		yLocations.add(null);
 		words.add(null);
 		questions.add(null);
+		npcs.add(null);
 		
 	}
 	
@@ -105,6 +110,7 @@ public class InstructionList {
 		yLocations.add(x);
 		words.add(null);
 		questions.add(null);
+		npcs.add(null);
 		
 	}
 	
@@ -122,6 +128,7 @@ public class InstructionList {
 		yLocations.add(null);
 		words.add(s);
 		questions.add(null);
+		npcs.add(null);
 	}
 	
 	public void add(Instructions task, String[] q)
@@ -133,6 +140,19 @@ public class InstructionList {
 		yLocations.add(null);
 		words.add(null);
 		questions.add(q);
+		npcs.add(null);
+	}
+	
+	public void add(Instructions task, String script, NPC npc)
+	{
+		instructions.add(task);
+		waitIndices.add(null);
+		sprites.add(null);
+		xLocations.add(null);
+		yLocations.add(null);
+		words.add(script);
+		questions.add(null);
+		npcs.add(npc);
 	}
 	
 	public ArrayList<Instructions> getInstructions()
@@ -188,6 +208,11 @@ public class InstructionList {
 	public int getInstructionIndex()
 	{
 		return instructionIndex;
+	}
+	
+	public NPC getNPC(int i)
+	{
+		return npcs.get(i);
 	}
 	
 }
