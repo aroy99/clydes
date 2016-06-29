@@ -4,6 +4,7 @@
 package komorebi.clyde.states;
 
 import komorebi.clyde.engine.Draw;
+import komorebi.clyde.engine.Renderable;
 import komorebi.clyde.script.Execution;
 
 

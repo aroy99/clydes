@@ -7,6 +7,7 @@ import komorebi.clyde.engine.Main;
 import komorebi.clyde.entities.Face;
 import komorebi.clyde.entities.NPC;
 import komorebi.clyde.states.Fader;
+import komorebi.clyde.states.Game;
 
 /**
  * 
@@ -18,7 +19,7 @@ public class Execution implements Runnable {
 	private Lock lock = new Lock();
 	private BranchList branches;
 	private NPC npc;
-	
+		
 	private String currentBranch;
 	private boolean isBlank;
 	

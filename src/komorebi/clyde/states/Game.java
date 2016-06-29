@@ -38,7 +38,9 @@ public class Game extends State{
     
     private NPC speaker;
     
-    private boolean wasSpaceDown, wasLeftDown, wasRightDown;
+    private boolean isSpace,wasSpace;
+    private boolean isLeft,wasLeft;
+    private boolean isRight,wasRight;
     
     private BufferedReader read;
 
@@ -51,7 +53,7 @@ public class Game extends State{
         scripts = new ArrayList<Script>();
         
         loadMap("Map1");
-        
+                
         //NPC joe = new NPC("joe",-1,6, NPCType.POKEMON);
         //NPC vin = new NPC("vin",0,0, NPCType.NESS);
         
@@ -74,53 +76,14 @@ public class Game extends State{
         // TODO Auto-generated method stub
         play.getInput();
         
-                if (Keyboard.isKeyDown(Keyboard.KEY_SPACE) && !wasSpaceDown)
-        {
-            wasSpaceDown = true;
-            if (hasText&&Keyboard.isKeyDown(Keyboard.KEY_SPACE))
-            {
-                speaker.clearText();
-                
-                if (hasChoice) {
-                    speaker.branch(pickIndex);
-                }
-                hasChoice=false;
-                hasText=false;
-            }
-        } else if (!Keyboard.isKeyDown(Keyboard.KEY_SPACE))
-        {
-            wasSpaceDown = false;
-        }
+        wasSpace = isSpace;
+        isSpace = Keyboard.isKeyDown(Keyboard.KEY_SPACE);
         
-        if (Keyboard.isKeyDown(Keyboard.KEY_LEFT) && !wasLeftDown)
-        {
-            wasLeftDown = true;
-            if (hasChoice&&Keyboard.isKeyDown(Keyboard.KEY_LEFT))
-            {
-                pickIndex--;
-                if (pickIndex<1) pickIndex = maxOpt;
-                speaker.setPickerIndex(pickIndex);
-                //choosesLeft=!choosesLeft;
-                
-            }  
-        } else if (!Keyboard.isKeyDown(Keyboard.KEY_LEFT))
-        {
-            wasLeftDown = false;
-        }
+        wasLeft = isLeft;
+        isLeft = Keyboard.isKeyDown(Keyboard.KEY_LEFT);
         
-        if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT) && !wasRightDown)
-        {
-            wasRightDown = true;
-            if (hasChoice&&Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
-            {
-                pickIndex++;
-                if (pickIndex>maxOpt) pickIndex = 1;
-                speaker.setPickerIndex(pickIndex);
-            }
-        } else if (!Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
-        {
-            wasRightDown = false;
-        }
+        wasRight = isRight;
+        isRight = Keyboard.isKeyDown(Keyboard.KEY_RIGHT);
     }
 
     /* (non-Javadoc)
@@ -128,26 +91,44 @@ public class Game extends State{
      */
     @Override
     public void update() {
-        // TODO Auto-generated method stub
         play.update();
         
-        for (NPC person: NPC.getNPCs())
-        {
+        if (hasText && isSpace && !wasSpace) {
+            speaker.clearText();
+            
+            if (hasChoice) {
+                speaker.branch(pickIndex);
+            }
+            hasChoice=false;
+            hasText=false;
+        }
+        
+        if (hasChoice && isLeft && !wasLeft) {
+            pickIndex--;
+            if (pickIndex<1) pickIndex = maxOpt;
+            speaker.setPickerIndex(pickIndex);
+            
+        }  
+
+        if (hasChoice && isRight && !wasRight) {
+            pickIndex++;
+            if (pickIndex>maxOpt) pickIndex = 1;
+            speaker.setPickerIndex(pickIndex);
+        }
+
+
+        
+        for (NPC person: NPC.getNPCs()) {
             person.update();
         }
         
-        for (Script s: scripts)
-        {
-            if (!s.hasRun() && s.isLocationIntersected(play))
-            {
+        for (Script s: scripts) {
+            if (!s.hasRun() && s.isLocationIntersected(play)) {
                 s.run();
             }
         }
         
         Fader.update();
-        
-        //System.out.println(play.getTileX() + ", " + play.getTileY());
-
     }
 
     /* (non-Javadoc)
