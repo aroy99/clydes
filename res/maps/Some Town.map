@@ -20,3 +20,7 @@
 1 1 1 40 41 42 43 1 1 1 1 1 1 1 24 25 26 27 1 1 
 1 1 1 36 37 38 39 1 1 1 1 1 1 1 20 21 21 23 1 1 
 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 
+npc joe 2 2 NESS
+npc vin 5 5 POKEMON
+script surprise_attack 1 1 joe
+script stay_or_go 4 4 vin

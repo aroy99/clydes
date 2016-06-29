@@ -185,7 +185,7 @@ public class Main {
         return scale;
     }
     
-        public static Game getGame()
+    public static Game getGame()
     {
         return GameHandler.game;
     }
