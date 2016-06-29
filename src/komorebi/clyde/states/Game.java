@@ -180,8 +180,7 @@ public class Game extends State{
         maxOpt = i;
     }
     
-    public NPC getNpc(String s)
-    {
+    public NPC getNpc(String s) {
         for (NPC person: NPC.getNPCs())
         {
             if (person.getName().equals(s))
@@ -192,8 +191,7 @@ public class Game extends State{
         return null;
     }
     
-    public void loadMap(String mapFile)
-    {
+    public void loadMap(String mapFile) {
         try {
             read = new BufferedReader(
                     new FileReader(new File("res/scripts/"+mapFile+".txt")));
