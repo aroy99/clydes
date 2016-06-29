@@ -142,9 +142,7 @@ public class Clyde extends Entity implements Playable{
             leftAni.setSpeed(speed);
             rightAni.setSpeed(speed);
             
-//            Game.getMap().move(-dx, -dy);
-            x+=dx;
-            y+=dy;
+            Game.getMap().move(-dx, -dy);
         }else {
             upAni.hStop();
             downAni.hStop();
