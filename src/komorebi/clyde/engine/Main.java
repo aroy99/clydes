@@ -46,149 +46,152 @@ import org.newdawn.slick.openal.SoundStore;
  */
 public class Main {
 
-    private GameHandler gamehandler;
-    public int scale;
-    private BufferedReader read;
+  private GameHandler gamehandler;
+  public int scale;
+  private BufferedReader read;
 
 
-    public static void main(String[] args){
-        new Main().run();
-    }
+  public static void main(String[] args){
+    new Main().run();
+  }
 
 
-    /**
-     * Runs the game
-     */
-    private void run() {
-        try {
-            read = new BufferedReader(
-                       new FileReader(new File("res/settings")));
-            String s;
+  /**
+   * Runs the game
+   */
+  private void run() {
+    try {
+      read = new BufferedReader(
+          new FileReader(new File("res/settings")));
+      String s;
 
-            while ((s = read.readLine()) != null) {
-                if(s.charAt(0)=='#')continue;
-                if(scale == 0)scale = Integer.parseInt(s);
-            }
-
-        } catch (IOException | NumberFormatException e) {
-            e.printStackTrace();
-            scale = 1;
+      while ((s = read.readLine()) != null) {
+        if(s.charAt(0) == '#'){
+          continue;
         }
-
-        initDisplay();
-        initGL();
-
-        initGame();
-        gameLoop();
-        cleanUp();        
-    }
-
-
-    /**
-     *  Initializes the Display using the Display Class, properly Scaling it
-     */
-    public void initDisplay(){
-        //create display
-        try {
-            Display.setDisplayMode(new DisplayMode(256*scale,224*scale));
-            Display.setTitle("Clyde\'s");
-            Display.create();
-            Display.setVSyncEnabled(true);
-
-        } catch (LWJGLException e) {
-            e.printStackTrace();
+        if(scale == 0){
+          scale = Integer.parseInt(s);
         }
+      }
+
+    } catch (IOException | NumberFormatException e) {
+      e.printStackTrace();
+      scale = 1;
     }
 
-    /**
-     *  Creates a new game and initializes the audio
-     *  @see GameHandler
-     */
-    private void initGame(){
-        gamehandler = new GameHandler();
-        AudioHandler.init();
+    initDisplay();
+    initGL();
+
+    initGame();
+    gameLoop();
+    cleanUp();        
+  }
+
+
+  /**
+   *  Initializes the Display using the Display Class, properly Scaling it
+   */
+  public void initDisplay(){
+    //create display
+    try {
+      Display.setDisplayMode(new DisplayMode(256*scale,224*scale));
+      Display.setTitle("Clyde\'s");
+      Display.create();
+      Display.setVSyncEnabled(true);
+
+    } catch (LWJGLException e) {
+      e.printStackTrace();
     }
+  }
+
+  /**
+   *  Creates a new game and initializes the audio
+   *  @see GameHandler
+   */
+  private void initGame(){
+    gamehandler = new GameHandler();
+    AudioHandler.init();
+  }
 
 
-    private void getInput(){
-        gamehandler.getInput();
+  private void getInput(){
+    gamehandler.getInput();
+  }
+
+  private void update(){
+    gamehandler.update();
+  }
+
+
+  private void render(){
+    glClear(GL_COLOR_BUFFER_BIT);   //clears the matrix with black
+    glLoadIdentity();
+
+    gamehandler.render();
+
+    Display.update();   //updates the display with the changes
+    Display.sync(60);   //makes up for lost time
+
+  }
+
+
+  /**
+   *  Goes through the game loop, starting the music once
+   */
+  private void gameLoop(){
+
+    while(!Display.isCloseRequested()){
+      getInput();
+      update();
+      render();
+      SoundStore.get().poll(0);
+
+      if(Keyboard.isKeyDown(Keyboard.KEY_F4)){
+        break;
+      }
+
     }
+  }
 
-    private void update(){
-        gamehandler.update();
-    }
+  /**
+   *  Currently Enabled:<br>
+   *  -Textures<br>
+   *  -Transparency
+   *  
+   *  <p>Size: 256 x 224
+   */
+  private void initGL(){
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();              //resets the Matrix
+    glOrtho(0,256,0,224,-1,1);     //creates a 3D space
+    glMatrixMode(GL_MODELVIEW);
+    glEnable(GL_TEXTURE_2D);       //enables Textures
+    glEnable (GL_BLEND);
 
+    //Enables transparency
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    private void render(){
-        glClear(GL_COLOR_BUFFER_BIT);   //clears the matrix with black
-        glLoadIdentity();
+    glClearColor(0,0,0,1);         //sets the clearing color to black
 
-        gamehandler.render();
+    glDisable(GL_DEPTH_TEST);      //kills off the third dimension
+  }
 
-        Display.update();   //updates the display with the changes
-        Display.sync(60);   //makes up for lost time
+  /**
+   *  Destroys the display and keyboard, closing the window
+   */
+  private void cleanUp(){
+    Display.destroy();
+    AL.destroy();
+    System.exit(0);
+  }
 
-    }
+  public int getScale(){
+    return scale;
+  }
 
-
-    /**
-     *  Goes through the game loop, starting the music once
-     */
-    private void gameLoop(){
-
-        while(!Display.isCloseRequested()){
-            getInput();
-            update();
-            render();
-            SoundStore.get().poll(0);
-
-            if(Keyboard.isKeyDown(Keyboard.KEY_F4)){
-                break;
-            }
-
-        }
-    }
-
-    /**
-     *  Currently Enabled:<br>
-     *  -Textures<br>
-     *  -Transparency
-     *  <p>
-     *  Size: 256 x 224
-     */
-    private void initGL(){
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();              //resets the Matrix
-        glOrtho(0,256,0,224,-1,1);     //creates a 3D space
-        glMatrixMode(GL_MODELVIEW);
-        glEnable(GL_TEXTURE_2D);       //enables Textures
-        glEnable (GL_BLEND);
-
-        //Enables transparency
-        glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glClearColor(0,0,0,1);         //sets the clearing color to black
-
-        glDisable(GL_DEPTH_TEST);      //kills off the third dimension
-    }
-
-    /**
-     *  Destroys the display and keyboard, closing the window
-     */
-    private void cleanUp(){
-        Display.destroy();
-        AL.destroy();
-        System.exit(0);
-    }
-    
-    public int getScale(){
-        return scale;
-    }
-    
-    public static Game getGame()
-    {
-        return GameHandler.game;
-    }
+  public static Game getGame(){
+    return GameHandler.game;
+  }
 
 
 }

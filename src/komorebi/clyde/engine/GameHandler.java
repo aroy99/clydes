@@ -23,42 +23,51 @@ public class GameHandler implements Playable{
 
   public static Game game;
 
+  /**
+   * Creates the GameHandler
+   */
   public GameHandler(){
     state = States.GAME;
     game = new Game();
     editor = new Editor();
   }
 
+  /**
+   * @see komorebi.clyde.engine.Playable#getInput()
+   */
   public void getInput() {
-    // TODO Auto-generated method stub
     switch(state){
-    case EDITOR:
-      editor.getInput();
-      break;
-    case GAME:
-      game.getInput();
-      break;
-    default:
-      break;
+      case EDITOR:
+        editor.getInput();
+        break;
+      case GAME:
+        game.getInput();
+        break;
+      default:
+        break;
     }
   }
 
+  /**
+   * @see komorebi.clyde.engine.Playable#update()
+   */
   public void update() {
-    // TODO Auto-generated method stub
     switch(state){
-    case EDITOR:
-      editor.update();
-      break;
-    case GAME:
-      game.update();
-      break;
-    default:
-      break;
+      case EDITOR:
+        editor.update();
+        break;
+      case GAME:
+        game.update();
+        break;
+      default:
+        break;
     }
   }
 
+  /**
+   * @see komorebi.clyde.engine.Playable#render()
+   */
   public void render() {
-    // TODO Auto-generated method stub
     switch (state) {
       case EDITOR:
         editor.render();
@@ -71,6 +80,11 @@ public class GameHandler implements Playable{
     }
   }
 
+  /**
+   * Switches to a new state
+   * 
+   * @param nstate The state to switch to
+   */
   public static void switchState(States nstate){
     state = nstate;
   }

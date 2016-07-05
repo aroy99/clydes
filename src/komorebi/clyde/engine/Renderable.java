@@ -1,15 +1,22 @@
 /**
- * Renderable.java		May 30, 2016, 11:34:10 AM
+ * Renderable.java    May 30, 2016, 11:34:10 AM
  */
+
 package komorebi.clyde.engine;
 
 /**
  * Represents an object that can update itself and display
  * 
  * @author Aaron Roy
- * @version 0.0.1.0
  */
 public interface Renderable {
-    void update();
-    void render();
+  /**
+   * Updates this objects variables based on the input and game logic
+   */
+  void update();
+
+  /**
+   * Renders this object based on its location
+   */
+  void render();
 }

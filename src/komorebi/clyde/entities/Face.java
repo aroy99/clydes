@@ -1,6 +1,7 @@
 /**
- * Face.java		May 30, 2016, 12:06:22 PM
+ * Face.java    May 30, 2016, 12:06:22 PM
  */
+
 package komorebi.clyde.entities;
 
 /**
