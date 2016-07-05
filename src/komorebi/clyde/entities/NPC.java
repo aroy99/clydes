@@ -279,7 +279,7 @@ public class NPC extends Entity {
 
   /**
    * Moves the NPC a given number of tiles in a specified direction
-   * @param dir
+   * @param dir 
    * @param tiles
    * @param ex
    */
@@ -297,7 +297,7 @@ public class NPC extends Entity {
    * @param tiles The number of tiles the NPC should move, where one tile is equal to 16 pixels 
    */
   private void jog(Face dir, int tiles)
-  {	
+  {
     hasInstructions=true;
     framesToGo = tiles*16;
     isMoving=true;
