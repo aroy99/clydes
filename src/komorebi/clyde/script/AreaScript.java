@@ -11,36 +11,40 @@ import komorebi.clyde.entities.NPC;
  * @author Aaron Roy
  * @version 
  */
-public class Script {
+public class AreaScript {
 
 	private String script;
 	private boolean hasRun = false;
 	private boolean isRepeatable;
 	private NPC npc;
 	
-	private int x, y;
+	private boolean isOptional;
 	
-	public Script(String s, int x, int y, boolean repeat)
+	private float x, y;
+	
+	public AreaScript(String s, int x, int y, boolean repeat)
 	{
+
 		script = s;
 		isRepeatable = repeat;
-		this.x=x;
-		this.y=y;
+		this.x=x*16;
+		this.y=y*16;
 		
 	}
 	
-	public Script(String s, int x, int y, boolean repeat, NPC person)
+	public AreaScript(String s, int x, int y, boolean repeat, NPC person)
 	{
 		script = s;
 		isRepeatable = repeat;
-		this.x=x;
-		this.y=y;
+		this.x=x*16;
+		this.y=y*16;
 		this.npc = person;
 		
 	}
 	
 	public void run()
 	{
+		//System.out.println("running a script");
 		hasRun = true;
 		
 		ScriptHandler.read(script, npc);
@@ -48,7 +52,7 @@ public class Script {
 	
 	public boolean isLocationIntersected(Clyde clyde)
 	{
-		if (clyde.getTileX()==x && clyde.getTileY()==y) return true;
+		if (clyde.getTileX()==getTileX() && clyde.getTileY()==getTileY()) return true;
 		return false;
 	}
 	
@@ -58,12 +62,27 @@ public class Script {
 	}
 	
 	public int getTileX() {
-		return x;
+		return (int) x/16;
 	}
 	
 	public int getTileY() {
-		return y;
+		return (int) y/16;
 	}
 	
+	public void setAbsoluteLocation(float x, float y)
+	{
+		this.x=x;
+		this.y=y;
+	}
+	
+	public String getName()
+	{
+		return script;
+	}
+	
+	public void setOptional(boolean tf)
+	{
+		isOptional = tf;
+	}
 	
 }

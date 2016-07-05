@@ -61,7 +61,7 @@ public class MainE {
    * @param args not used
    */
   public static void main(String[] args) {
-
+	  
     try {
       read = new BufferedReader(
           new FileReader(new File("res/settings")));

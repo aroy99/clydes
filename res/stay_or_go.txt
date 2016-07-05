@@ -1,6 +1,9 @@
+
+
 lock
 ask "What should we do?" "Stay" "Go"
 branch Stay
+run surprise_attack
 unlock
 branch Go
 fadeout

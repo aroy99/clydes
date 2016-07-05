@@ -10,10 +10,12 @@ import komorebi.clyde.map.Map;
 import komorebi.clyde.map.Tile;
 import komorebi.clyde.map.TileList;
 import komorebi.clyde.states.Editor;
+import komorebi.clyde.editor.ScriptPainter;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
+
 
 /**
  * The current palette to choose from
@@ -25,6 +27,8 @@ public class Palette implements Playable{
 
     private static final int HEIGHT = 32;
     private static final int WIDTH = 4;
+    
+    private boolean scripting;
 
     //Holds current palette tiles
     private Tile[][] tiles = new Tile[HEIGHT][WIDTH]; 
@@ -69,6 +73,8 @@ public class Palette implements Playable{
             selection.add(0 , 0 , i);
             selection.add(16, 0 , i);
         }
+        
+        scripting = false;
     }
 
     /* (non-Javadoc)
@@ -83,6 +89,11 @@ public class Palette implements Playable{
                 !isDragging;
 
         isDragging = Mouse.isButtonDown(1) && controlPressed();
+        
+        if (Keyboard.isKeyDown(Keyboard.KEY_LEFT) && controlPressed())
+        {
+        	scripting=!scripting;
+        }
     }
 
 
@@ -120,6 +131,11 @@ public class Palette implements Playable{
         }
 
         selection.play(selX*16, selY*16);
+        
+        if (scripting)
+        {
+        	ScriptPainter.render();
+        }
     }
 
     public Tile getSelected(){

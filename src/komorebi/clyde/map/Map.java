@@ -18,9 +18,14 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import komorebi.clyde.editor.Palette;
+import komorebi.clyde.engine.Main;
 import komorebi.clyde.engine.MainE;
 import komorebi.clyde.engine.Playable;
+import komorebi.clyde.entities.NPC;
+import komorebi.clyde.entities.NPCType;
+import komorebi.clyde.script.AreaScript;
 import komorebi.clyde.states.Editor;
+import komorebi.clyde.states.Game;
 
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -56,6 +61,8 @@ public class Map implements Playable{
     private Tile[][] tiles;                       //The Map itself
     private Tile[][] selection;
     
+    private NPC[][] npcs;
+    private AreaScript[][] scripts;
     
 
     private float x, y;         //Current location
@@ -72,7 +79,10 @@ public class Map implements Playable{
      * @param row number of rows (y)
      */
     public Map(int col, int row){
+    	
         tiles = new Tile[row][col];
+        npcs = new NPC[row][col];
+        scripts = new AreaScript[row][col];
         pal = Editor.getPalette();
 
         for (int i = tiles.length-1; i >= 0; i--) {
@@ -88,6 +98,7 @@ public class Map implements Playable{
      * @param key The location of the map
      */
     public Map(String key){
+    	
         pal = Editor.getPalette();
         try {
             BufferedReader reader = new BufferedReader(new FileReader(
@@ -96,6 +107,8 @@ public class Map implements Playable{
             int cols = Integer.parseInt(reader.readLine());
 
             tiles = new Tile[rows][cols];
+            scripts = new AreaScript[rows][cols];
+            npcs = new NPC[rows][cols];
 
 
             for (int i = 0; i < tiles.length; i++) {
@@ -107,13 +120,30 @@ public class Map implements Playable{
                     }
                     tiles[i][j] =new Tile(j, i, 
                             TileList.getTile(Integer.parseInt(str[index])));
+                    scripts[i][j] = null;
+                    npcs[i][j]=null;
                 }
             }
             String s;
             
             while ((s=reader.readLine())!=null)
             {
-            	
+            	if (s.startsWith("npc"))
+                {
+                    s = s.replace("npc ", "");
+                    String[] split = s.split(" ");
+                    
+                    npcs[Integer.parseInt(split[1])][Integer.parseInt(split[2])] = new NPC(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), NPCType.toEnum(split[3]));
+                    
+                   // NPC.add(new NPC(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), NPCType.toEnum(split[3])));
+                }
+                else if (s.startsWith("script"))
+                {
+                    s = s.replace("script ", "");
+                    String[] split = s.split(" ");
+   
+                    scripts[Integer.parseInt(split[1])][Integer.parseInt(split[2])] = new AreaScript(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), false, findNPC(split[3]));
+                }
             }
             
 
@@ -191,6 +221,7 @@ public class Map implements Playable{
      */
     @Override
     public void update() {
+    	
         //Sets mouse tile to the one from the palette
         if(lButtonIsDown && checkBounds() && !isSelection){
             tiles[getMouseY()][getMouseX()].setType(pal.getSelected().getType());
@@ -267,9 +298,33 @@ public class Map implements Playable{
             }
 
         }
+        
+        
+        
+        
 
         dx = 0;
         dy = 0;
+        
+      
+        
+        
+    }
+    
+    
+    /**
+     * Updates the map when being used in-game
+     */
+    public void updateInGame()
+    {
+    	for (NPC[] npcR: npcs) {
+        	for (NPC npc: npcR) {
+        		if (npc!=null) 
+        		{
+        			npc.update();
+        		}
+        	}
+        }
     }
     
     /* (non-Javadoc)
@@ -290,11 +345,18 @@ public class Map implements Playable{
             }
 
         }
+        
+        for (NPC[] npcR: npcs) {
+        	for (NPC npc: npcR) {
+        		if (npc!=null) npc.render();
+        	}
+        }
+        
     }
 
 
     /**
-     * Moves the entire map by the specified amount
+     * Moves the entire map and all entities contained by it by the specified amount
      * 
      * @param dx pixels to move left/right
      * @param dy pixels to move up/down
@@ -306,6 +368,21 @@ public class Map implements Playable{
             for (int j = 0; j < tiles[0].length; j++) {
                 tiles[i][j].setLoc(x+j*16, y+i*16);
                 tiles[i][j].update();
+                
+                
+                if (npcs[i][j]!=null) 
+                {
+                	npcs[i][j].setAbsoluteLocation(x+j*16+npcs[i][j].getXTravelled(), y+i*16+npcs[i][j].getYTravelled());
+                	npcs[i][j].update();
+                }
+                
+                if (scripts[i][j]!=null)
+                {
+                	scripts[i][j].setAbsoluteLocation(x+j*16,y+i*16);
+                	if (scripts[i][j].isLocationIntersected(Main.getGame().getClyde()) &&!scripts[i][j].hasRun()) 
+                		scripts[i][j].run();
+                }
+                
             }
         }
         
@@ -408,6 +485,9 @@ public class Map implements Playable{
                     }
                     writer.println();
                 }
+                
+                
+                
                 System.out.println("Save complete");
                 writer.close();
             } catch (FileNotFoundException | UnsupportedEncodingException e) {
@@ -539,6 +619,36 @@ public class Map implements Playable{
     public void clearSelection(){
         selection = null;
         isSelection = false;
+    }
+    
+    public NPC findNPC(String s)
+    {
+    	for (NPC[] npcR: npcs) {
+        	for (NPC npc: npcR) {
+        		if (npc!=null)
+        			if (npc.getName().equals(s)) return npc;
+        	}
+        }
+    	
+    	return null;
+    }
+    
+    public AreaScript getScript(String s)
+    {
+    	for (AreaScript[] scriptR: scripts)
+    	{
+    		for (AreaScript scr: scriptR)
+    		{
+    			if (scr!=null)
+    			{
+    				System.out.println(scr.getName());
+    				if (scr.getName().equals(s)) return scr;
+    			}
+    			
+    		}
+    	}
+    	
+    	return null;
     }
 
 }

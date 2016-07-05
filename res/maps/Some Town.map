@@ -20,7 +20,8 @@
 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
-npc joe 2 2 NESS
+npc joe 2 2 NESS walk_around talk_to_me
 npc vin 5 5 POKEMON
 script surprise_attack 1 1 joe
-script stay_or_go 4 4 vin
+script stay_or_go 5 5 vin
+warp north_faith 5 5

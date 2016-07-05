@@ -7,6 +7,7 @@ import komorebi.clyde.engine.Main;
 import komorebi.clyde.entities.Face;
 import komorebi.clyde.entities.NPC;
 import komorebi.clyde.states.Fader;
+import komorebi.clyde.states.Game;
 
 /**
  * 
@@ -39,17 +40,99 @@ public class Execution implements Runnable {
 	
 	@Override
 	public void run() {
-	
-		
-		int j=0;
 		
 		if (!isBlank)
 		{
-			//System.out.println(branches.getBranch(currentBranch).getBranchName());
+						
+			String str = currentBranch;
+			
+			for (int j=0; j<branches.getBranch(str).getInstructions().size(); j++)
+			{
+				
+				switch (branches.getBranch(str).getInstructions().get(j))
+				{
+				case WALK_DOWN:
+					npc.walk(Face.DOWN, 1, this);
+					break;
+				case WALK_LEFT:
+					npc.walk(Face.LEFT, 1, this);
+					break;
+				case WALK_RIGHT:
+					npc.walk(Face.RIGHT, 1, this);
+					break;
+				case WALK_UP:
+					npc.walk(Face.UP, 1, this);
+					break;
+				case TURN_LEFT:
+					npc.turn(Face.LEFT, this);
+					break;
+				case TURN_RIGHT:
+					npc.turn(Face.RIGHT, this);
+					break;
+				case TURN_UP:
+					npc.turn(Face.UP, this);
+					break;
+				case TURN_DOWN:
+					npc.turn(Face.DOWN, this);
+					break;
+				case WAIT:
+					npc.pause(branches.getBranch(str).getWaitIndex(j), this);
+					break;
+				case JOG_LEFT:
+					npc.jog(Face.LEFT, 1, this);
+					break;
+				case JOG_RIGHT:
+					System.out.println("Jog right");
+					npc.jog(Face.RIGHT, 1, this);
+					break;
+				case JOG_UP:
+					npc.jog(Face.UP, 1, this);
+					break;
+				case JOG_DOWN:
+					npc.jog(Face.DOWN, 1, this);
+					break;
+				case CHANGE_SPRITE:
+					npc.setNPCType(branches.getBranch(str).getSprite(j));
+					break;
+				case SET_LOCATION:
+					npc.setLocation(branches.getBranch(str).getXLocation(j), branches.getBranch(str).getYLocation(j), this);
+					break;
+				case LOCK:
+					Main.getGame().getClyde().lock();
+					break;
+				case UNLOCK:
+					Main.getGame().getClyde().unlock();
+					break;
+				case SAY:
+					npc.say(branches.getBranch(str).getString(j), this);
+					break;
+				case ASK:
+					String[] s = branches.getBranch(str).getQuestionOptions(j);
+					npc.ask(s, this);
+					break;
+				case BRANCH:
+					run();
+					break;
+				case FADE_OUT:
+					Fader.fadeOut(this);
+					break;
+				case FADE_IN:
+					Fader.fadeIn(this);
+					break;
+				case RUN_SCRIPT:
+					AreaScript script = Game.getMap().getScript(branches.getBranch(str).getString(j));
+					script.run();
+					break;
+				default:
+					break;
+				}
+			}
+			
+			
+			/*
 			for (Instructions i: branches.getBranch(currentBranch).getInstructions())
 			{
 				//int j=0;
-				
 				
 				//j = branches.getBranch(currentBranch).getInstructions().indexOf(i);
 				
@@ -134,6 +217,7 @@ public class Execution implements Runnable {
 				j++;
 
 			}
+			*/
 		}
 		
 	}

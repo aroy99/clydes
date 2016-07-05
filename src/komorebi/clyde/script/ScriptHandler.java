@@ -12,6 +12,7 @@ import java.io.IOException;
 import komorebi.clyde.engine.Main;
 import komorebi.clyde.entities.NPC;
 import komorebi.clyde.entities.NPCType;
+import komorebi.clyde.states.Game;
 
 /**
  * 
@@ -189,12 +190,12 @@ public class ScriptHandler {
 				} else if (s.startsWith("run"))
 				{
 					s = s.replace("run ","");
-					currentBranch.add(Instructions.RUN_SCRIPT, s, Main.getGame().getNpc(s));
+					currentBranch.add(Instructions.RUN_SCRIPT, s);
 				} else if (s.startsWith("npc"))
 				{
 					s = s.replace("npc ", "");
 					
-					npc = NPC.get(s);
+					npc = Game.getMap().findNPC(s);
 				} else if (s.startsWith("sprite"))
 				{
 					s = s.replace("sprite ", "");
@@ -208,7 +209,7 @@ public class ScriptHandler {
 					
 					npc.setLocation(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
 					npc.setVisible(true);
-				}
+				} 
 				
 			}
 		} catch (IOException e) {

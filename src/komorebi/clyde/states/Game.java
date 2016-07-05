@@ -18,7 +18,7 @@ import komorebi.clyde.map.Map;
 
 import komorebi.clyde.entities.NPC;
 import komorebi.clyde.entities.NPCType;
-import komorebi.clyde.script.Script;
+import komorebi.clyde.script.AreaScript;
 
 
 /**
@@ -30,7 +30,7 @@ import komorebi.clyde.script.Script;
 public class Game extends State{
 
     public ArrayList<NPC> npcs;
-    public ArrayList<Script> scripts;
+    public ArrayList<AreaScript> scripts;
     
     private boolean hasText, hasChoice, choosesLeft;
     private int pickIndex;
@@ -42,15 +42,19 @@ public class Game extends State{
     
     private BufferedReader read;
 
+    private boolean[] isKeyDown = new boolean[Keyboard.KEYBOARD_SIZE];
+    private boolean[] wasKeyDown = new boolean[Keyboard.KEYBOARD_SIZE];
+    
 
     public Game(){
         play = new Clyde(120,100);
         map = new Map("res/maps/Some Town.map");
         
         npcs = new ArrayList<NPC>();
-        scripts = new ArrayList<Script>();
+        scripts = new ArrayList<AreaScript>();
         
-        loadMap("Map1");
+        
+        //loadMap("Map1");
         
         //NPC joe = new NPC("joe",-1,6, NPCType.POKEMON);
         //NPC vin = new NPC("vin",0,0, NPCType.NESS);
@@ -64,6 +68,7 @@ public class Game extends State{
         */
 
 
+
     }
     
     /* (non-Javadoc)
@@ -74,28 +79,35 @@ public class Game extends State{
         // TODO Auto-generated method stub
         play.getInput();
         
-                if (Keyboard.isKeyDown(Keyboard.KEY_SPACE) && !wasSpaceDown)
+        for (int i=0; i<isKeyDown.length; i++)
         {
-            wasSpaceDown = true;
-            if (hasText&&Keyboard.isKeyDown(Keyboard.KEY_SPACE))
+        	wasKeyDown[i]=isKeyDown[i];
+        	isKeyDown[i]=Keyboard.isKeyDown(i);
+        	
+        }
+        
+        
+        
+        
+        if (keyClick(Keyboard.KEY_SPACE))
+        {
+            //wasSpaceDown = true;
+            if (hasText&&isKeyDown[Keyboard.KEY_SPACE])
             {
                 speaker.clearText();
                 
                 if (hasChoice) {
                     speaker.branch(pickIndex);
                 }
+                
                 hasChoice=false;
                 hasText=false;
             }
-        } else if (!Keyboard.isKeyDown(Keyboard.KEY_SPACE))
-        {
-            wasSpaceDown = false;
-        }
+        } 
         
-        if (Keyboard.isKeyDown(Keyboard.KEY_LEFT) && !wasLeftDown)
+        if (keyClick(Keyboard.KEY_LEFT))
         {
-            wasLeftDown = true;
-            if (hasChoice&&Keyboard.isKeyDown(Keyboard.KEY_LEFT))
+            if (hasChoice&&isKeyDown[Keyboard.KEY_LEFT])
             {
                 pickIndex--;
                 if (pickIndex<1) pickIndex = maxOpt;
@@ -103,24 +115,22 @@ public class Game extends State{
                 //choosesLeft=!choosesLeft;
                 
             }  
-        } else if (!Keyboard.isKeyDown(Keyboard.KEY_LEFT))
-        {
-            wasLeftDown = false;
         }
         
-        if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT) && !wasRightDown)
+        if (keyClick(Keyboard.KEY_RIGHT))
         {
-            wasRightDown = true;
-            if (hasChoice&&Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
+            if (hasChoice&&isKeyDown[Keyboard.KEY_RIGHT])
             {
                 pickIndex++;
                 if (pickIndex>maxOpt) pickIndex = 1;
                 speaker.setPickerIndex(pickIndex);
             }
-        } else if (!Keyboard.isKeyDown(Keyboard.KEY_RIGHT))
-        {
-            wasRightDown = false;
-        }
+        } 
+        
+
+        
+        
+        
     }
 
     /* (non-Javadoc)
@@ -130,19 +140,8 @@ public class Game extends State{
     public void update() {
         // TODO Auto-generated method stub
         play.update();
-        
-        for (NPC person: NPC.getNPCs())
-        {
-            person.update();
-        }
-        
-        for (Script s: scripts)
-        {
-            if (!s.hasRun() && s.isLocationIntersected(play))
-            {
-                s.run();
-            }
-        }
+        map.updateInGame();
+
         
         Fader.update();
         
@@ -235,7 +234,7 @@ public class Game extends State{
                     s = s.replace("script ", "");
                     String[] split = s.split(" ");
                     
-                    scripts.add(new Script(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), false, NPC.get(split[3])));
+                    scripts.add(new AreaScript(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), false, NPC.get(split[3])));
                 }
                 
             }
@@ -246,6 +245,9 @@ public class Game extends State{
         
         
     }
-
-
+    
+    public boolean keyClick(int key)
+    {
+    	return isKeyDown[key] && !wasKeyDown[key];
+    }
 }
