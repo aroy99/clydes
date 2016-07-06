@@ -49,6 +49,9 @@ public class Map implements Playable{
   private boolean isDragging;                   //Is making a group selection
   private boolean isSelection;                  //A selection is active
   private boolean isClearSel, wasClearSel;      //Clears the selection
+  
+  private boolean saved = true;
+
 
   private Palette pal;
   private Tile[][] tiles;                       //The Map itself
@@ -193,6 +196,7 @@ public class Map implements Playable{
     //Sets mouse tile to the one from the palette
     if(lButtonIsDown && checkBounds() && !isSelection){
       tiles[getMouseY()][getMouseX()].setType(pal.getSelected().getType());
+      saved = false;
     }
 
     //Sets palette's selected to mouse tile
@@ -205,6 +209,7 @@ public class Map implements Playable{
     if(mButtonIsDown && !mButtonWasDown && checkBounds()){
       flood(getMouseX(), getMouseY(), 
           tiles[getMouseY()][getMouseX()].getType());
+      saved = false;
     }
 
     if(startDragging){
@@ -224,6 +229,7 @@ public class Map implements Playable{
           }
         }
       }
+      saved = false;
     }
 
     if(isClearSel && isSelection && !wasClearSel){
@@ -237,7 +243,7 @@ public class Map implements Playable{
           tiles[i][j].setType(TileList.BLANK);
         }
       }
-
+      saved = false;
     }
 
     if(isSave && !wasSave){
@@ -325,20 +331,65 @@ public class Map implements Playable{
       }
     }
   }
-
+  
   /**
-   * @return x
+   * Saves the Map file
+   * 
+   * @return true if the save completed successfully, false if not
    */
-  public float getX() {
-    return x;
+  public boolean save() {
+
+    JFileChooser chooser = new JFileChooser("res/maps/");
+    FileNameExtensionFilter filter = new FileNameExtensionFilter(
+        "Map Files", "map");
+    chooser.setFileFilter(filter);
+    chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+    chooser.setDialogTitle("Enter the name of the map to save");
+    int returnee = chooser.showSaveDialog(null);
+
+    Keyboard.destroy();
+    try {
+      Keyboard.create();
+    } catch (LWJGLException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+
+    
+    if(returnee == JFileChooser.APPROVE_OPTION){
+
+      String path = chooser.getSelectedFile().getAbsolutePath();
+
+      PrintWriter writer;
+
+      try {
+        if(path.substring(path.length()-4).equals(".map")){
+          writer = new PrintWriter(path, "UTF-8");
+        }else{
+          writer = new PrintWriter(path+".map", "UTF-8");
+        }
+        writer.println(tiles.length);
+        writer.println(tiles[0].length);
+
+        for (Tile[] tile : tiles) {
+          for (Tile t : tile) {
+            writer.print(t.getType().getID() + " ");
+          }
+          writer.println();
+        }
+        System.out.println("Save complete");
+        saved = true;
+        writer.close();
+        return true;
+      } catch (FileNotFoundException | UnsupportedEncodingException e) {
+        e.printStackTrace();
+        return false;
+      }
+    }
+    
+    return false;
   }
 
-  /**
-   * @return y
-   */
-  public float getY() {
-    return y;
-  }
 
   /**
    * @return if the up key was pressed
@@ -378,50 +429,6 @@ public class Map implements Playable{
   private boolean controlPressed() {
     return (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) ||
         Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
-  }
-
-
-  /**
-   * Saves the Map file
-   */
-  private void save() {
-
-    JFileChooser chooser = new JFileChooser("res/maps/");
-    FileNameExtensionFilter filter = new FileNameExtensionFilter(
-        "Map Files", "map");
-    chooser.setFileFilter(filter);
-    chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-    chooser.setDialogTitle("Enter the name of the map to save");
-    int returnee = chooser.showSaveDialog(null);
-
-    if(returnee == JFileChooser.APPROVE_OPTION){
-
-      String path = chooser.getSelectedFile().getAbsolutePath();
-
-      PrintWriter writer;
-
-      try {
-        if(path.substring(path.length()-4).equals(".map")){
-          writer = new PrintWriter(path, "UTF-8");
-        }else{
-          writer = new PrintWriter(path+".map", "UTF-8");
-        }
-        writer.println(tiles.length);
-        writer.println(tiles[0].length);
-
-        for (Tile[] tile : tiles) {
-          for (Tile t : tile) {
-            writer.print(t.getType().getID() + " ");
-          }
-          writer.println();
-        }
-        System.out.println("Save complete");
-        writer.close();
-      } catch (FileNotFoundException | UnsupportedEncodingException e) {
-        e.printStackTrace();
-      }
-
-    }
   }
 
   /**
@@ -544,10 +551,26 @@ public class Map implements Playable{
     isSelection = selec;        
   }
 
+  /**
+   * Clears the selection, making it disappear
+   */
   public void clearSelection(){
     selection = null;
     isSelection = false;
   }
+  
+  public float getX() {
+    return x;
+  }
+
+  public float getY() {
+    return y;
+  }
+  
+  public boolean wasSaved(){
+    return saved;
+  }
+
 
 }
 

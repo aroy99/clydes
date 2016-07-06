@@ -55,6 +55,8 @@ public class MainE {
   private static BufferedReader read;
 
   private static JDialog frame;
+  
+  private static boolean running = true;
 
   /**
    * Starts the program, reading an int from settings and using it for the scale.
@@ -146,14 +148,17 @@ public class MainE {
    */
   private static void gameLoop() {
 
-    while (!Display.isCloseRequested()) {
+    while (running) {
       getInput();
       update();
       render();
       SoundStore.get().poll(0);
 
-      if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
-        break;
+      if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE) || 
+          Display.isCloseRequested()) {
+        if(Editor.requestSave()){
+          running = false;
+        }
       }
 
     }

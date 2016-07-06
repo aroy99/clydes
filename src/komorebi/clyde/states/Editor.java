@@ -12,9 +12,13 @@ import static org.lwjgl.opengl.GL11.glViewport;
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.map.Map;
 
+import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 
+import jdk.nashorn.internal.ir.RuntimeNode.Request;
+
+import java.awt.Frame;
 import java.io.IOException;
 
 import javax.swing.JFileChooser;
@@ -30,11 +34,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  */
 public class Editor extends State{
 
-  private static Map currMap;
-
   private boolean isLoad;
   private boolean wasLoad;
-
+  
   private static Palette pal;
   public static float aspect;
   public static float xSpan = 1;
@@ -46,12 +48,12 @@ public class Editor extends State{
    */
   public Editor(){
     pal = new Palette();
-    currMap = new Map(20, 20);
-    pal.setMap(currMap);
+    map = new Map(20, 20);
+    pal.setMap(map);
   }
 
 
-  /* (non-Javadoc)
+  /**
    * @see komorebi.clyde.states.State#getInput()
    */
   @Override
@@ -71,7 +73,7 @@ public class Editor extends State{
 
 
     pal.getInput();
-    currMap.getInput();
+    map.getInput();
   }
 
   /* (non-Javadoc)
@@ -80,30 +82,76 @@ public class Editor extends State{
   @Override
   public void update() {
     if(isLoad && !wasLoad){
-      JFileChooser chooser = new JFileChooser("res/maps/");
-      FileNameExtensionFilter filter = new FileNameExtensionFilter(
-          "Map Files", "map");
-      chooser.setFileFilter(filter);
-      chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-      chooser.setDialogTitle("Enter the name of the map to load");
-      int returnee = chooser.showOpenDialog(null);
+      if(requestSave()){
+        JFileChooser chooser = new JFileChooser("res/maps/");
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+            "Map Files", "map");
+        chooser.setFileFilter(filter);
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setDialogTitle("Enter the name of the map to load");
+        int returnee = chooser.showOpenDialog(null);
 
-      if(returnee == JFileChooser.APPROVE_OPTION){
-        currMap = new Map(chooser.getSelectedFile().getAbsolutePath());
-        pal.setMap(currMap);
+        
+        if(returnee == JFileChooser.APPROVE_OPTION){
+          map = new Map(chooser.getSelectedFile().getAbsolutePath());
+          pal.setMap(map);
+        }else{
+          Keyboard.destroy();
+          try {
+            Keyboard.create();
+          } catch (LWJGLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+          }
+
+        }
       }
+
     }
 
     pal.update();
-    currMap.update();
+    map.update();
   }
+
+  /**
+   * Asks the player if they want to save the map
+   */
+  public static boolean requestSave() {
+    boolean continyu = true;
+    if(!map.wasSaved()){
+      
+      int returnee = JOptionPane.showConfirmDialog(null, "Would you like to save?");
+      
+      Keyboard.destroy();
+      try {
+        Keyboard.create();
+      } catch (LWJGLException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+      
+      switch(returnee){
+        case JFileChooser.APPROVE_OPTION:
+          continyu = map.save();
+          break;
+        case JFileChooser.CANCEL_OPTION:
+          continyu = true;
+          break;
+        default:
+          continyu = false;
+          break;
+      }
+    }
+    return continyu;    
+  }
+
 
   /* (non-Javadoc)
    * @see komorebi.clyde.states.State#render()
    */
   @Override
   public void render() {
-    currMap.render();
+    map.render();
     pal.render();
   }
 
@@ -116,6 +164,11 @@ public class Editor extends State{
   public static Palette getPalette() {
     return pal;
   }
+  
+  public static boolean wasSaved(){
+    return map.wasSaved();
+  }
+
 
 
   /**
