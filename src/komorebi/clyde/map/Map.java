@@ -1,6 +1,7 @@
 /**
  * Map.java    May 30, 2016, 11:32:19 AM
  */
+
 package komorebi.clyde.map;
 
 import komorebi.clyde.editor.Palette;
@@ -11,6 +12,7 @@ import komorebi.clyde.states.Editor;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.Display;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,9 +43,9 @@ public class Map implements Playable{
   private boolean up, down, left, right;        //Directions for movement
 
   //Special commands
-  private boolean isReset, wasReset;            //Reset the map
   private boolean isSave, wasSave;              //Save the map
-  private boolean isResetTile, wasResetTile;    //Resets tiles
+  private boolean isNewSave, wasNewSave;        //Saves a new map file
+  private boolean isReset, wasReset;            //Resets tiles position
   private boolean isGrid, wasGrid;              //Turn on/off Grid
   private boolean startDragging;                //Starting a group selection
   private boolean isDragging;                   //Is making a group selection
@@ -64,7 +66,8 @@ public class Map implements Playable{
   private float dx, dy;
   private float speed = 10;
 
-  private int fileNum = 0;
+  private String savePath;  //Path to save the map by default
+  private String saveName;  //Name to save the map by default
 
 
   /**
@@ -82,13 +85,14 @@ public class Map implements Playable{
       }
     }
   }
-
+  
   /**
-   * Creates a map from a map file, used for the game
+   * Creates a map from a map file, used for the Editor
    * 
    * @param key The location of the map
+   * @param name The name of the file
    */
-  public Map(String key){
+  public Map(String key, String name){
     pal = Editor.getPalette();
     try {
       BufferedReader reader = new BufferedReader(new FileReader(
@@ -104,20 +108,18 @@ public class Map implements Playable{
         int index = 0;
         for (int j = 0; j < cols; j++, index++) {
           if(str[index].equals("")){
-            index++;
+            index++;  //pass this token, it's blank
           }
           tiles[i][j] =new Tile(j, i, 
               TileList.getTile(Integer.parseInt(str[index])));
         }
       }
-      String s;
 
-      while ((s=reader.readLine()) != null)
-      {
+      savePath = key;
+      saveName = name;
 
-      }
-
-
+      Display.setTitle("Clyde\'s Editor - "+name);
+      
       reader.close();
     } catch (IOException | NumberFormatException e) {
       e.printStackTrace();
@@ -131,14 +133,45 @@ public class Map implements Playable{
           tiles[i][j] = new Tile(j, i, TileList.BLANK);
         }
       }
+      
+      Editor.reloadKeyboard();
     }         
-    Keyboard.destroy();
+
+
+  }
+
+
+  /**
+   * Creates a map from a map file, used for the game
+   * 
+   * @param key The location of the map
+   */
+  public Map(String key){
     try {
-      Keyboard.create();
-    } catch (LWJGLException e) {
-      // TODO Auto-generated catch block
+      BufferedReader reader = new BufferedReader(new FileReader(
+          new File(key)));
+      int rows = Integer.parseInt(reader.readLine());
+      int cols = Integer.parseInt(reader.readLine());
+
+      tiles = new Tile[rows][cols];
+
+
+      for (int i = 0; i < tiles.length; i++) {
+        String[] str = reader.readLine().split(" ");
+        int index = 0;
+        for (int j = 0; j < cols; j++, index++) {
+          if(str[index].equals("")){
+            index++;  //pass this token, it's blank
+          }
+          tiles[i][j] =new Tile(j, i, 
+              TileList.getTile(Integer.parseInt(str[index])));
+        }
+      }
+      
+      reader.close();
+    } catch (IOException | NumberFormatException e) {
       e.printStackTrace();
-    }
+    }         
 
 
   }
@@ -172,13 +205,13 @@ public class Map implements Playable{
     right =rightPressed() && !leftPressed();
 
     wasReset = isReset;
-    isReset=Keyboard.isKeyDown(Keyboard.KEY_R) && !controlPressed();
-
-    wasResetTile = isResetTile;
-    isResetTile = Keyboard.isKeyDown(Keyboard.KEY_R) && controlPressed();
+    isReset = Keyboard.isKeyDown(Keyboard.KEY_R) && !controlPressed();
 
     wasSave = isSave;
-    isSave = Keyboard.isKeyDown(Keyboard.KEY_S) && controlPressed();
+    isSave = Keyboard.isKeyDown(Keyboard.KEY_S) && controlPressed() && !shiftPressed();
+    
+    wasNewSave = isNewSave;
+    isNewSave = Keyboard.isKeyDown(Keyboard.KEY_S) && controlPressed() && shiftPressed();
 
     wasGrid = isGrid;
     isGrid = Keyboard.isKeyDown(Keyboard.KEY_G) && controlPressed();
@@ -187,6 +220,7 @@ public class Map implements Playable{
     isClearSel = Keyboard.isKeyDown(Keyboard.KEY_C) && controlPressed();
 
   }
+
 
   /* (non-Javadoc)
    * @see komorebi.clyde.engine.Renderable#update()
@@ -197,6 +231,9 @@ public class Map implements Playable{
     if(lButtonIsDown && checkBounds() && !isSelection){
       tiles[getMouseY()][getMouseX()].setType(pal.getSelected().getType());
       saved = false;
+      if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
+        Display.setTitle(Display.getTitle()+"*");
+      }
     }
 
     //Sets palette's selected to mouse tile
@@ -210,8 +247,12 @@ public class Map implements Playable{
       flood(getMouseX(), getMouseY(), 
           tiles[getMouseY()][getMouseX()].getType());
       saved = false;
+      if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
+        Display.setTitle(Display.getTitle()+"*");
+      }
     }
 
+    //Creates a selection
     if(startDragging){
       initX = getMouseX();
       initY = getMouseY();
@@ -230,24 +271,38 @@ public class Map implements Playable{
         }
       }
       saved = false;
+      if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
+        Display.setTitle(Display.getTitle()+"*");
+      }
     }
 
     if(isClearSel && isSelection && !wasClearSel){
       clearSelection();
     }
 
-    //Resets tiles to default
-    if(isResetTile && !wasResetTile){
+    //Resets tiles to default position
+    if(isReset && !wasReset){
+      x = 0;
+      y = 0;
+      
       for (int i = 0; i < tiles.length; i++) {
         for (int j = 0; j < tiles[0].length; j++) {
-          tiles[i][j].setType(TileList.BLANK);
+          tiles[i][j].setLoc(i*16, j*16);
+          System.out.println(tiles[i][j]);
         }
       }
-      saved = false;
     }
 
     if(isSave && !wasSave){
-      save();
+      if(savePath == null){
+        newSave();
+      }else{
+        save(savePath, saveName);
+      }
+    }
+    
+    if(isNewSave && !wasNewSave){
+      newSave();
     }
 
     if(isGrid && !wasGrid){
@@ -269,17 +324,6 @@ public class Map implements Playable{
     }
 
     move(dx, dy);
-
-    if(isReset && !wasReset){
-      x = 0;
-      y = 0;
-      for (int i = 0; i < tiles.length; i++) {
-        for (int j = 0; j < tiles[0].length; j++) {
-          tiles[i][j].setLoc(j*16, i*16);
-        }
-      }
-
-    }
 
     dx = 0;
     dy = 0;
@@ -337,9 +381,39 @@ public class Map implements Playable{
    * 
    * @return true if the save completed successfully, false if not
    */
-  public boolean save() {
+  public boolean newSave() {
 
-    JFileChooser chooser = new JFileChooser("res/maps/");
+    JFileChooser chooser = new JFileChooser("res/maps/"){
+      /**
+       * I don't know what this does, but it does something...
+       */
+      private static final long serialVersionUID = 3881189161552826430L;
+
+      @Override
+      public void approveSelection(){
+        File f = getSelectedFile();
+        if(f.exists() && getDialogType() == SAVE_DIALOG){
+          int result = JOptionPane.showConfirmDialog(this,
+              "The file exists, overwrite?","Existing file",JOptionPane.YES_NO_CANCEL_OPTION);
+          switch(result){
+            case JOptionPane.YES_OPTION:
+              super.approveSelection();
+              return;
+            case JOptionPane.NO_OPTION:
+              return;
+            case JOptionPane.CLOSED_OPTION:
+              return;
+            case JOptionPane.CANCEL_OPTION:
+              cancelSelection();
+              return;
+            default:
+              return;
+          }
+        }
+        super.approveSelection();
+      }
+    };
+    
     FileNameExtensionFilter filter = new FileNameExtensionFilter(
         "Map Files", "map");
     chooser.setFileFilter(filter);
@@ -347,49 +421,59 @@ public class Map implements Playable{
     chooser.setDialogTitle("Enter the name of the map to save");
     int returnee = chooser.showSaveDialog(null);
 
-    Keyboard.destroy();
-    try {
-      Keyboard.create();
-    } catch (LWJGLException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-
+    Editor.reloadKeyboard();
     
     if(returnee == JFileChooser.APPROVE_OPTION){
 
-      String path = chooser.getSelectedFile().getAbsolutePath();
-
-      PrintWriter writer;
-
-      try {
-        if(path.substring(path.length()-4).equals(".map")){
-          writer = new PrintWriter(path, "UTF-8");
-        }else{
-          writer = new PrintWriter(path+".map", "UTF-8");
-        }
-        writer.println(tiles.length);
-        writer.println(tiles[0].length);
-
-        for (Tile[] tile : tiles) {
-          for (Tile t : tile) {
-            writer.print(t.getType().getID() + " ");
-          }
-          writer.println();
-        }
-        System.out.println("Save complete");
-        saved = true;
-        writer.close();
-        return true;
-      } catch (FileNotFoundException | UnsupportedEncodingException e) {
-        e.printStackTrace();
-        return false;
-      }
+      savePath = chooser.getSelectedFile().getAbsolutePath();
+      saveName = chooser.getSelectedFile().getName();
+      
+      return save(savePath, saveName);
     }
     
     return false;
   }
 
+
+  /**
+   * @param path The file location of the path being saved
+   * @param name The name of the file that is being saved
+   */
+  public boolean save(String path,String name) {
+    PrintWriter writer;
+
+    try {
+      if(path.substring(path.length()-4).equals(".map")){
+        writer = new PrintWriter(path, "UTF-8");
+      }else{
+        writer = new PrintWriter(path+".map", "UTF-8");
+      }
+      writer.println(tiles.length);
+      writer.println(tiles[0].length);
+
+      for (Tile[] tile : tiles) {
+        for (Tile t : tile) {
+          writer.print(t.getType().getID() + " ");
+        }
+        writer.println();
+      }
+      System.out.println("Save complete");
+      saved = true;
+      writer.close();
+      if(name.substring(name.length()-4).equals(".map")){
+        Display.setTitle("Clyde\'s Editor - " + name);
+      }else{
+        Display.setTitle("Clyde\'s Editor - " + name + ".map");
+      }
+
+      
+      return true;
+    } catch (FileNotFoundException | UnsupportedEncodingException e) {
+      e.printStackTrace();
+      return false;
+    }
+    
+  }
 
   /**
    * @return if the up key was pressed
@@ -430,6 +514,15 @@ public class Map implements Playable{
     return (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) ||
         Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
   }
+  
+  /**
+   * @return if the shift key was pressed
+   */
+  private boolean shiftPressed() {
+    return (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) ||
+        Keyboard.isKeyDown(Keyboard.KEY_RSHIFT));
+  }
+
 
   /**
    * Creates a new selection
@@ -561,6 +654,14 @@ public class Map implements Playable{
   
   public float getX() {
     return x;
+  }
+
+  public String getPath() {
+    return savePath;
+  }
+
+  public String getName() {
+    return saveName;
   }
 
   public float getY() {
