@@ -5,6 +5,7 @@
 package komorebi.clyde.editor;
 
 import komorebi.clyde.engine.Animation;
+import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.MainE;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.map.Map;
@@ -32,8 +33,10 @@ public class Palette implements Playable{
   private static final int WIDTH = 4;
 
 
+  public static final int SIZE = 16;  //Width and height of a tile
+
   //Holds current palette tiles
-  private Tile[][] tiles = new Tile[HEIGHT][WIDTH]; 
+  private TileList[][] tiles = new TileList[HEIGHT][WIDTH]; 
 
   //Offset of palette in tiles
   public static int xOffset = Display.getWidth() / (MainE.scale * 16) - WIDTH;
@@ -66,7 +69,7 @@ public class Palette implements Playable{
 
     for (int i = tiles.length-1, k = 0; i >= 0; i--){
       for (int j = 0; j < tiles[0].length; j++, k++){
-        tiles[i][j] = new Tile(j+xOffset, i + yOffset, TileList.getTile(k));
+        tiles[i][j] = TileList.getTile(k);
       }
     }
 
@@ -84,12 +87,7 @@ public class Palette implements Playable{
   public void getInput(){
     
     isDragging = Mouse.isButtonDown(1) && controlPressed();
-    
-    if (Keyboard.isKeyDown(Keyboard.KEY_LEFT) && controlPressed())
-    {
-      scripting=!scripting;
-    }
-    
+        
     lButtonWasDown = lButtonIsDown;
     lButtonIsDown = Mouse.isButtonDown(0);
 
@@ -127,16 +125,21 @@ public class Palette implements Playable{
    */
   @Override
   public void render(){
-    for(Tile[] t : tiles){
-      for (Tile tile : t) {
-        tile.render();
-      }
-    }
+    for (int i = 0; i < tiles.length; i++) {
+      for (int j = 0; j < tiles[0].length; j++) {
+        Draw.rect((j+xOffset)*SIZE, (i+yOffset)*SIZE, SIZE, SIZE, 
+            tiles[i][j].getX(), tiles[i][j].getY(), 1);
+        if(Map.grid){
+          Draw.rect((j+xOffset)*SIZE, (i+yOffset)*SIZE, SIZE, SIZE, 0, 16, SIZE,
+              16+SIZE, 2);
+        }
 
     selection.play(selX*16, selY*16);
+      }
+    }
   }
 
-  public Tile getSelected(){
+  public TileList getSelected(){
     return tiles[selY-yOffset][selX-xOffset];
   }
 
@@ -148,7 +151,7 @@ public class Palette implements Playable{
   public void setLoc(TileList tl){
     for (int i = 0; i < tiles.length; i++) {
       for (int j = 0; j < tiles[0].length; j++) {
-        if (tl == tiles[i][j].getType()) {
+        if (tl == tiles[i][j]) {
           selX = j+xOffset;
           selY = i+yOffset;
           return;
@@ -158,6 +161,18 @@ public class Palette implements Playable{
   }
 
 
+  /**
+   * Reloads the Palette
+   */
+   @Deprecated
+  public void reload(){
+    xOffset = Display.getWidth()/(MainE.scale*16) - 4;    
+    yOffset = Display.getHeight()/(MainE.scale*16) - 14;  
+    selX = (int)(xOffset*Editor.xSpan);
+    selY = (int)(yOffset*Editor.ySpan);
+
+    System.out.println("SelX: "+selX + ", SelY: "+selY);
+  }
 
 
 
@@ -174,7 +189,7 @@ public class Palette implements Playable{
    * Creates a new selection
    */
   private void createSelection() {
-    Tile[][] sel = new Tile[Math.abs(getMouseY()-initY)+1]
+    TileList[][] sel = new TileList[Math.abs(getMouseY()-initY)+1]
         [Math.abs(getMouseX()-initX)+1];
     int firstX, lastX;
     int firstY, lastY;
@@ -188,9 +203,7 @@ public class Palette implements Playable{
 
     for(int i = 0; i <= lastY - firstY; i++){
       for(int j = 0; j <= lastX - firstX; j++){
-        sel[i][j] = new Tile(map.getX() + map.getWidth()*16 + j*16, 
-            map.getY() + i*16, tiles[firstY+i][firstX+j].getType(), 
-            true);
+        sel[i][j] = tiles[firstY+i][firstX+j];
       }
 
     }

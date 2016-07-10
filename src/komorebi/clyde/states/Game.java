@@ -58,7 +58,7 @@ public class Game extends State{
    */
   public Game(){
     play = new Clyde(120,100);
-    map = new Map("res/maps/Some Town.map");
+    map = new Map("res/maps/Some Town.map","B");
 
     npcs = new ArrayList<NPC>();
     scripts = new ArrayList<AreaScript>();
@@ -103,6 +103,10 @@ public class Game extends State{
         hasText=false;
       }
     } 
+    
+    //Debug
+    
+  
 
     if (KeyHandler.keyClick(Key.LEFT))
     {
@@ -173,7 +177,6 @@ public class Game extends State{
    */
   @Override
   public void render() {
-    // TODO Auto-generated method stub
     map.render();
     play.render();
 

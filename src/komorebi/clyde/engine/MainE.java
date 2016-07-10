@@ -21,18 +21,6 @@ import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glMatrixMode;
 import static org.lwjgl.opengl.GL11.glOrtho;
 
-import java.awt.BorderLayout;
-import java.awt.Frame;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JTextField;
-
-import komorebi.clyde.editor.Palette;
 import komorebi.clyde.states.Editor;
 
 import org.lwjgl.LWJGLException;
@@ -41,6 +29,13 @@ import org.lwjgl.openal.AL;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.newdawn.slick.openal.SoundStore;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+
+import javax.swing.JDialog;
 
 /**
  * Use this if you want to run the editor
@@ -55,6 +50,8 @@ public class MainE {
   private static BufferedReader read;
 
   private static JDialog frame;
+  
+  private static boolean running = true;
 
   /**
    * Starts the program, reading an int from settings and using it for the scale.
@@ -100,7 +97,7 @@ public class MainE {
     //create display
     try {
       Display.setDisplayMode(new DisplayMode(800 * scale, 608 * scale));
-      Display.setTitle("Clyde\'s");
+      Display.setTitle("Clyde\'s Editor");
 //    Display.setResizable(true);
       Display.create();
       Display.setVSyncEnabled(true);
@@ -146,14 +143,17 @@ public class MainE {
    */
   private static void gameLoop() {
 
-    while (!Display.isCloseRequested()) {
+    while (running) {
       getInput();
       update();
       render();
       SoundStore.get().poll(0);
 
-      if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
-        break;
+      if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE) || 
+          Display.isCloseRequested()) {
+        if(Editor.requestSave()){
+          running = false;
+        }
       }
 
     }

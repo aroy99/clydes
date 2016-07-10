@@ -13,6 +13,8 @@ import komorebi.clyde.script.TalkingScript;
 import komorebi.clyde.script.TextHandler;
 import komorebi.clyde.script.WalkingScript;
 
+import org.lwjgl.Sys;
+
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.ArrayList;
@@ -68,6 +70,8 @@ public class NPC extends Entity {
     tx = (int) x;
     ty = (int) y;
 
+    System.out.println("Hi");
+    
     this.name = name;
     ent=Entities.NPC;
 
@@ -93,6 +97,8 @@ public class NPC extends Entity {
     ent=Entities.NPC;
 
     isVisible = false;
+    System.out.println("Hi");
+
 
     isMoving=false;
     hasInstructions=false;

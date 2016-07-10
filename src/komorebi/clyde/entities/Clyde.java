@@ -92,7 +92,7 @@ public class Clyde extends Entity implements Playable{
     int speed = 8;
 
     if (canMove) {
-
+      
       if(left){
         dx = -1;
         dir = Face.LEFT;
@@ -109,16 +109,17 @@ public class Clyde extends Entity implements Playable{
         rightAni.hStop();
       }
 
-      if(up){
-        dy = 1;
-        dir = Face.UP;
-        upAni.resume();
-      }
       if(down){
         dy = -1;
         dir = Face.DOWN;
         downAni.resume();
       }
+      if(up){
+        dy = 1;
+        dir = Face.UP;
+        upAni.resume();
+      }
+      
       if(!(up || down)){
         dy = 0;
         downAni.hStop();
@@ -131,13 +132,13 @@ public class Clyde extends Entity implements Playable{
         speed /=2;
       }
 
-
+      /*
       if((up && (left || right)) || (down && (left || right))){
         dx *= Math.sqrt(2)/2;
         dy *= Math.sqrt(2)/2;
         speed = (int)Math.round(speed / (Math.sqrt(2)/2));
       }
-
+      */
 
       upAni.setSpeed(speed);
       downAni.setSpeed(speed);

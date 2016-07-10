@@ -1,12 +1,14 @@
 /**
  * Map.java    May 30, 2016, 11:32:19 AM
  */
+
 package komorebi.clyde.map;
 
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
 import komorebi.clyde.engine.Main;
+import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.MainE;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.entities.Face;
@@ -21,6 +23,7 @@ import komorebi.clyde.states.Editor;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.Display;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -33,10 +36,6 @@ import java.io.UnsupportedEncodingException;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
-
-
-
-
 
 /**
  * Represents a map of tiles
@@ -55,24 +54,30 @@ public class Map implements Playable{
   private boolean up, down, left, right;        //Directions for movement
 
   //Special commands
-  private boolean isReset, wasReset;            //Reset the map
   private boolean isSave, wasSave;              //Save the map
-  private boolean isResetTile, wasResetTile;    //Resets tiles
+  private boolean isNewSave, wasNewSave;        //Saves a new map file
+  private boolean isReset, wasReset;            //Resets tiles position
   private boolean isGrid, wasGrid;              //Turn on/off Grid
   private boolean startDragging;                //Starting a group selection
   private boolean isDragging;                   //Is making a group selection
   private boolean isSelection;                  //A selection is active
   private boolean isClearSel, wasClearSel;      //Clears the selection
 
+  public static boolean grid;                  //Whether the grid is on or not
+  private boolean saved = true;
+
+
   private Palette pal;
-  private Tile[][] tiles;                       //The Map itself
-  private Tile[][] selection;
+  private TileList[][] tiles;                //The Map itself
+
+  private TileList[][] selection;            //The selection
+
+  public static final int SIZE = 16;  //Width and height of a tile
 
   private NPC[][] npcs;
   private AreaScript[][] scripts;
 
-
-  private float x, y;         //Current location
+  private float x, y;       //Current location
   private int initX, initY; //Location at the beginning of a drag
   private float dx, dy;
   private float speed = 10;
@@ -80,6 +85,11 @@ public class Map implements Playable{
   private float clydeX, clydeY;
   private Face clydeDirection;
 
+  private String savePath;  //Path to save the map by default
+  private String saveName;  //Name to save the map by default
+
+  private static final int WIDTH = Display.getWidth();
+  private static final int HEIGHT = Display.getHeight();
 
 
 
@@ -90,28 +100,29 @@ public class Map implements Playable{
    * @param row number of rows (y)
    */
   public Map(int col, int row){
-    tiles = new Tile[row][col];
+    tiles = new TileList[row][col];
     npcs = new NPC[row][col];
     scripts = new AreaScript[row][col];
     pal = Editor.getPalette();
 
     for (int i = tiles.length-1; i >= 0; i--) {
       for (int j = 0; j < tiles[0].length; j++) {
-        tiles[i][j] = new Tile(j, i, TileList.BLANK);
+        tiles[i][j] = TileList.BLANK;
       }
     }
-    
+
   }
 
 
   /**
-   * Creates a map from a map file, used for the game
+   * Creates a map from a map file, used for the Editor
    * 
    * @param key The location of the map
+   * @param name The name of the file
    */
-  public Map(String key){
+  public Map(String key, String name){
 
-    
+
     pal = Editor.getPalette();
     try {
       BufferedReader reader = new BufferedReader(new FileReader(
@@ -119,25 +130,30 @@ public class Map implements Playable{
       int rows = Integer.parseInt(reader.readLine());
       int cols = Integer.parseInt(reader.readLine());
 
-      tiles = new Tile[rows][cols];
+      tiles = new TileList[rows][cols];
       npcs = new NPC[rows][cols];
       scripts = new AreaScript[rows][cols];
       pal = Editor.getPalette();
-      
+
 
       for (int i = 0; i < tiles.length; i++) {
         String[] str = reader.readLine().split(" ");
         int index = 0;
         for (int j = 0; j < cols; j++, index++) {
           if(str[index].equals("")){
-            index++;
+            index++;  //pass this token, it's blank
           }
-          tiles[i][j] =new Tile(j, i, 
-              TileList.getTile(Integer.parseInt(str[index])));
+          tiles[i][j] = TileList.getTile(Integer.parseInt(str[index]));
           scripts[i][j] = null;
           npcs[i][j]=null;
         }
       }
+
+      savePath = key;
+      saveName = name;
+
+      Display.setTitle("Clyde\'s Editor - "+name);
+
       String s;
 
       while ((s=reader.readLine()) != null)
@@ -146,18 +162,18 @@ public class Map implements Playable{
         {
           s = s.replace("npc ", "");
           String[] split = s.split(" ");
-          
+
           int arg0 = Integer.parseInt(split[2]);
           int arg1 = Integer.parseInt(split[1]);
 
           npcs[arg0][arg1] = new NPC(split[0], arg0, arg1,  NPCType.toEnum(split[3]));
-          
+
           npcs[arg0][arg1].setWalkingScript(
               new WalkingScript(split[4], npcs[arg0][arg1]));
           npcs[arg0][arg1].setTalkingScript(
               new TalkingScript(split[5], npcs[arg0][arg1]));
 
-         
+
         } else if (s.startsWith("script"))
         {
           s = s.replace("script ", "");
@@ -165,7 +181,7 @@ public class Map implements Playable{
 
           int arg0 = Integer.parseInt(split[2]);
           int arg1 = Integer.parseInt(split[1]);
-          
+
           scripts[arg0][arg1] = 
               new AreaScript(split[0], arg0, 
                   arg1, false, findNPC(split[3]));
@@ -173,10 +189,10 @@ public class Map implements Playable{
         {
           s = s.replace("warp ", "");
           String[] split = s.split(" ");
-          
+
           int arg0 = Integer.parseInt(split[2]);
           int arg1 = Integer.parseInt(split[1]);
-          
+
           scripts[arg0][arg1] =
               new WarpScript(split[0], arg0,
                   arg1, false);
@@ -189,23 +205,55 @@ public class Map implements Playable{
       e.printStackTrace();
       JOptionPane.showMessageDialog(null, 
           "The file was not found / was corrupt, therefore, the default settings were used");
-      tiles = new Tile[10][10];
+      tiles = new TileList[10][10];
       pal = Editor.getPalette();
 
 
       for (int i = tiles.length-1; i >= 0; i--) {
         for (int j = 0; j < tiles[0].length; j++) {
-          tiles[i][j] = new Tile(j, i, TileList.BLANK);
+          tiles[i][j] = TileList.BLANK;
         }
       }
+
+      Editor.reloadKeyboard();
     }         
-    Keyboard.destroy();
+
+
+  }
+
+
+  /**
+   * Creates a map from a map file, used for the game
+   * 
+   * @param key The location of the map
+   */
+  public Map(String key){
     try {
-      Keyboard.create();
-    } catch (LWJGLException e) {
-      // TODO Auto-generated catch block
+      BufferedReader reader = new BufferedReader(new FileReader(
+          new File(key)));
+      int rows = Integer.parseInt(reader.readLine());
+      int cols = Integer.parseInt(reader.readLine());
+
+      tiles = new TileList[rows][cols];
+      npcs = new NPC[rows][cols];
+      scripts = new AreaScript[rows][cols];
+
+
+      for (int i = 0; i < tiles.length; i++) {
+        String[] str = reader.readLine().split(" ");
+        int index = 0;
+        for (int j = 0; j < cols; j++, index++) {
+          if(str[index].equals("")){
+            index++;  //pass this token, it's blank
+          }
+          tiles[i][j] = TileList.getTile(Integer.parseInt(str[index]));
+        }
+      }
+
+      reader.close();
+    } catch (IOException | NumberFormatException e) {
       e.printStackTrace();
-    }
+    }         
 
 
   }
@@ -239,13 +287,13 @@ public class Map implements Playable{
     right =rightPressed() && !leftPressed();
 
     wasReset = isReset;
-    isReset=Keyboard.isKeyDown(Keyboard.KEY_R) && !controlPressed();
-
-    wasResetTile = isResetTile;
-    isResetTile = Keyboard.isKeyDown(Keyboard.KEY_R) && controlPressed();
+    isReset = Keyboard.isKeyDown(Keyboard.KEY_R) && !controlPressed();
 
     wasSave = isSave;
-    isSave = Keyboard.isKeyDown(Keyboard.KEY_S) && controlPressed();
+    isSave = Keyboard.isKeyDown(Keyboard.KEY_S) && controlPressed() && !shiftPressed();
+
+    wasNewSave = isNewSave;
+    isNewSave = Keyboard.isKeyDown(Keyboard.KEY_S) && controlPressed() && shiftPressed();
 
     wasGrid = isGrid;
     isGrid = Keyboard.isKeyDown(Keyboard.KEY_G) && controlPressed();
@@ -256,30 +304,48 @@ public class Map implements Playable{
   }
 
 
-
   /* (non-Javadoc)
    * @see komorebi.clyde.engine.Renderable#update()
    */
   @Override
   public void update() {
-    
+
+    move(dx, dy);
+
+    dx = 0;
+    dy = 0;
+  }
+
+  /**
+   * Used for the editor to help with performance
+   */
+  public void eUpdate(){
     //Sets mouse tile to the one from the palette
     if(lButtonIsDown && checkBounds() && !isSelection){
-      tiles[getMouseY()][getMouseX()].setType(pal.getSelected().getType());
+      tiles[getMouseY()][getMouseX()] = pal.getSelected();
+      saved = false;
+      if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
+        Display.setTitle(Display.getTitle()+"*");
+      }
 
 
       //Sets palette's selected to mouse tile
       if(rButtonIsDown && !rButtonWasDown && checkBounds()){
-        pal.setLoc(tiles[getMouseY()][getMouseX()].getType());
+        pal.setLoc(tiles[getMouseY()][getMouseX()]);
         clearSelection();
       }
 
       //Flood Fills tiles
       if(mButtonIsDown && !mButtonWasDown && checkBounds()){
         flood(getMouseX(), getMouseY(), 
-            tiles[getMouseY()][getMouseX()].getType());
+            tiles[getMouseY()][getMouseX()]);
+        saved = false;
+        if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
+          Display.setTitle(Display.getTitle()+"*");
+        }
       }
 
+      //Creates a selection
       if(startDragging){
         initX = getMouseX();
         initY = getMouseY();
@@ -292,67 +358,67 @@ public class Map implements Playable{
         for(int i = 0; i < selection.length; i++){
           for (int j = 0; j < selection[0].length; j++) {
             if(checkTileBounds(getMouseY()+i, getMouseX()+j)){
-              tiles[getMouseY()+i][getMouseX()+j].setType(
-                  selection[i][j].getType());
+              tiles[getMouseY()+i][getMouseX()+j] = 
+                  selection[i][j];
             }
-
           }
         }
-      }
-
-      if(isClearSel && isSelection && !wasClearSel){
-        clearSelection();
-      }
-
-      //Resets tiles to default
-      if(isResetTile && !wasResetTile){
-        for (int i = 0; i < tiles.length; i++) {
-          for (int j = 0; j < tiles[0].length; j++) {
-            tiles[i][j].setType(TileList.BLANK);
-          }
+        saved = false;
+        if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
+          Display.setTitle(Display.getTitle()+"*");
         }
 
-      }
-
-      if(isSave && !wasSave){
-        save();
-      }
-
-      if(isGrid && !wasGrid){
-        Tile.changeGrid();
-      }
-
-
-      if(up){
-        dy =  speed;
-      }
-      if(down){
-        dy = -speed;
-      }
-      if(right){
-        dx =  speed;
-      }
-      if(left){
-        dx = -speed;
-      }
-
-      move(dx, dy);
-
-      if(isReset && !wasReset){
-        x = 0;
-        y = 0;
-        for (int i = 0; i < tiles.length; i++) {
-          for (int j = 0; j < tiles[0].length; j++) {
-            tiles[i][j].setLoc(j*16, i*16);
-          }
+        if(isClearSel && isSelection && !wasClearSel){
+          clearSelection();
         }
 
-      }
-      
-      
+        //Resets tiles to default position
+        if(isReset && !wasReset){
+          x = 0;
+          y = 0;
 
-      dx = 0;
-      dy = 0;
+          if(isSave && !wasSave){
+            if(savePath == null){
+              newSave();
+            }else{
+              save(savePath, saveName);
+            }
+          }
+
+          if(isNewSave && !wasNewSave){
+            newSave();
+          }
+
+
+          if(isGrid && !wasGrid){
+            changeGrid();
+          }
+
+          if(up){
+            dy =  speed;
+          }
+          if(down){
+            dy = -speed;
+          }
+          if(right){
+            dx =  speed;
+          }
+          if(left){
+            dx = -speed;
+          }
+
+          move(dx, dy);
+
+          if(isReset && !wasReset){
+            x = 0;
+            y = 0;
+          }
+
+        }
+
+        dx = 0;
+        dy = 0;
+      }
     }
   }
 
@@ -360,20 +426,6 @@ public class Map implements Playable{
 
 
 
-
-  /**
-   * @return x
-   */
-  public float getX() {
-    return x;
-  }
-
-  /**
-   * @return y
-   */
-  public float getY() {
-    return y;
-  }
 
   /**
    * @return if the up key was pressed
@@ -415,49 +467,55 @@ public class Map implements Playable{
         Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
   }
 
-
   /**
-   * Saves the Map file
+   * @return if the shift key was pressed
    */
-  private void save() {
-
-    JFileChooser chooser = new JFileChooser("res/maps/");
-    FileNameExtensionFilter filter = new FileNameExtensionFilter(
-        "Map Files", "map");
-    chooser.setFileFilter(filter);
-    chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-    chooser.setDialogTitle("Enter the name of the map to save");
-    int returnee = chooser.showSaveDialog(null);
-
-    if(returnee == JFileChooser.APPROVE_OPTION){
-
-      String path = chooser.getSelectedFile().getAbsolutePath();
-
-      PrintWriter writer;
-
-      try {
-        if(path.substring(path.length()-4).equals(".map")){
-          writer = new PrintWriter(path, "UTF-8");
-        }else{
-          writer = new PrintWriter(path+".map", "UTF-8");
-        }
-        writer.println(tiles.length);
-        writer.println(tiles[0].length);
-
-        for (Tile[] tile : tiles) {
-          for (Tile t : tile) {
-            writer.print(t.getType().getID() + " ");
-          }
-          writer.println();
-        }
-
-      }  catch (FileNotFoundException | UnsupportedEncodingException e) {
-        e.printStackTrace();
-      }
-
-    }
+  private boolean shiftPressed() {
+    return (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) ||
+        Keyboard.isKeyDown(Keyboard.KEY_RSHIFT));
   }
 
+
+
+  /**
+   * @param path The file location of the path being saved
+   * @param name The name of the file that is being saved
+   */
+  public boolean save(String path,String name) {
+    PrintWriter writer;
+
+    try {
+      if(path.substring(path.length()-4).equals(".map")){
+        writer = new PrintWriter(path, "UTF-8");
+      }else{
+        writer = new PrintWriter(path+".map", "UTF-8");
+      }
+      writer.println(tiles.length);
+      writer.println(tiles[0].length);
+
+      for (TileList[] tile : tiles) {
+        for (TileList t : tile) {
+          writer.print(t.getID() + " ");
+        }
+        writer.println();
+      }
+      System.out.println("Save complete");
+      saved = true;
+      writer.close();
+      if(name.substring(name.length()-4).equals(".map")){
+        Display.setTitle("Clyde\'s Editor - " + name);
+      }else{
+        Display.setTitle("Clyde\'s Editor - " + name + ".map");
+      }
+
+
+      return true;
+    } catch (FileNotFoundException | UnsupportedEncodingException e) {
+      e.printStackTrace();
+      return false;
+    }
+
+  }
 
   /**
    * Updates the map when being used in-game
@@ -469,19 +527,19 @@ public class Map implements Playable{
         if (npc != null) 
         {
           npc.update();
-                    
+
           if (npc.isTalking() && KeyHandler.keyDown(Key.CTRL) && KeyHandler.keyClick(Key.A))
           {
             npc.abortTalkingScript();
           }
-          
+
           if (!npc.isTalking() && !npc.getWalkingScript().isRunning())
           {
             npc.getWalkingScript().run();
           }
-          
-          
-          
+
+
+
         }
       }
     }
@@ -492,18 +550,30 @@ public class Map implements Playable{
    */
   @Override
   public void render() {
-    for (Tile[] tileL : tiles) {
-      for (Tile t : tileL) {
-        t.render();
-      }
-    }
-    if(selection != null){
-      for (Tile[] tileL : selection) {
-        for (Tile t : tileL) {
-          t.render();
+    for (int i = 0; i < tiles.length; i++) {
+      for (int j = 0; j < tiles[0].length; j++) {
+        if(checkTileInBounds(x+j*SIZE, y+i*SIZE)){
+          Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, tiles[i][j].getX(), 
+              tiles[i][j].getY(), 1);
+          if(grid){
+            Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, 0, 16, SIZE, 16+SIZE, 2);
+          }
+
         }
       }
+    }
 
+    if(selection != null){
+      for (int i = 0; i < selection.length; i++) {
+        for (int j = 0; j < selection[0].length; j++) {
+          Draw.rect(x+tiles[0].length*SIZE+j*SIZE, y+i*SIZE, SIZE, SIZE, 
+              selection[i][j].getX(), selection[i][j].getY(), 1);
+          if(grid){
+            Draw.rect(x+selection[0].length*SIZE+j*SIZE, y+i*SIZE, SIZE, SIZE, 
+                0, 16, SIZE, 16+SIZE, 2);
+          }
+        }
+      }
     }
 
     for (NPC[] npcR: npcs) {
@@ -525,29 +595,25 @@ public class Map implements Playable{
    * @param dy pixels to move up/down
    */
   public void move(float dx, float dy) {
-    
+
     x+=dx;
     y+=dy;
     for (int i = 0; i < tiles.length; i++) {
       for (int j = 0; j < tiles[0].length; j++) {
-        tiles[i][j].setLoc(x+j*16, y+i*16);
-        tiles[i][j].update();
-
-
         if (npcs[i][j] != null) 
         {
           npcs[i][j].setPixLocation((int) x+j*16+npcs[i][j].getXTravelled(), 
               (int) y+i*16+npcs[i][j].getYTravelled());
           npcs[i][j].update();
-          
+
           if (npcs[i][j].isApproached(clydeX, clydeY, clydeDirection) && 
               KeyHandler.keyClick(Key.SPACE))
           {
             npcs[i][j].turn(clydeDirection.opposite());
             npcs[i][j].approach();
           } 
-          
-          
+
+
         }
 
         if (scripts[i][j] != null)
@@ -555,7 +621,7 @@ public class Map implements Playable{
           scripts[i][j].setAbsoluteLocation(x+j*16,y+i*16);
           if (scripts[i][j].isLocationIntersected(Main.getGame().getClyde()) && 
               !scripts[i][j].hasRun()) {
-            
+
             if (scripts[i][j] instanceof WarpScript)
             {
               WarpScript scr = (WarpScript) scripts[i][j];
@@ -563,25 +629,74 @@ public class Map implements Playable{
             } else {
               scripts[i][j].run();
             }
-            
+
           }
-           
+
         }
 
       }
     }
 
-    if(selection != null){
-      for (int i = 0; i < selection.length; i++) {
-        for (int j = 0; j < selection[0].length; j++) {
-          selection[i][j].move(dx, dy);
-          selection[i][j].update();
-        }
-      }
-    }
   }
 
 
+  /**
+   * Saves the Map file
+   * 
+   * @return true if the save completed successfully, false if not
+   */
+  public boolean newSave() {
+
+    JFileChooser chooser = new JFileChooser("res/maps/"){
+      /**
+       * I don't know what this does, but it does something...
+       */
+      private static final long serialVersionUID = 3881189161552826430L;
+
+      @Override
+      public void approveSelection(){
+        File f = getSelectedFile();
+        if(f.exists() && getDialogType() == SAVE_DIALOG){
+          int result = JOptionPane.showConfirmDialog(this,
+              "The file exists, overwrite?","Existing file",JOptionPane.YES_NO_CANCEL_OPTION);
+          switch(result){
+            case JOptionPane.YES_OPTION:
+              super.approveSelection();
+              return;
+            case JOptionPane.NO_OPTION:
+              return;
+            case JOptionPane.CLOSED_OPTION:
+              return;
+            case JOptionPane.CANCEL_OPTION:
+              cancelSelection();
+              return;
+            default:
+              return;
+          }
+        }
+        super.approveSelection();
+      }
+    };
+
+    FileNameExtensionFilter filter = new FileNameExtensionFilter(
+        "Map Files", "map");
+    chooser.setFileFilter(filter);
+    chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+    chooser.setDialogTitle("Enter the name of the map to save");
+    int returnee = chooser.showSaveDialog(null);
+
+    Editor.reloadKeyboard();
+
+    if(returnee == JFileChooser.APPROVE_OPTION){
+
+      savePath = chooser.getSelectedFile().getAbsolutePath();
+      saveName = chooser.getSelectedFile().getName();
+
+      return save(savePath, saveName);
+    }
+
+    return false;
+  }
 
 
 
@@ -589,7 +704,7 @@ public class Map implements Playable{
    * Creates a new selection
    */
   private void createSelection() {
-    selection = new Tile[Math.abs(getMouseY()-initY)+1]
+    selection = new TileList[Math.abs(getMouseY()-initY)+1]
         [Math.abs(getMouseX()-initX)+1];
     int firstX, lastX;
     int firstY, lastY;
@@ -603,8 +718,7 @@ public class Map implements Playable{
 
     for(int i = 0; i <= lastY - firstY; i++){
       for(int j = 0; j <= lastX - firstX; j++){
-        selection[i][j] = new Tile(x + tiles[0].length*16 + j*16, 
-            y + i*16, tiles[firstY+i][firstX+j].getType(), true);
+        selection[i][j] =  tiles[firstY+i][firstX+j];
       }
     }
 
@@ -624,12 +738,12 @@ public class Map implements Playable{
         mouseY < 0 || mouseY >= tiles.length){
       return;
     }
-    if(tiles[mouseY][mouseX].getType() != type ||
-        tiles[mouseY][mouseX].getType() == pal.getSelected().getType()){
+    if(tiles[mouseY][mouseX] != type ||
+        tiles[mouseY][mouseX] == pal.getSelected()){
       return;
     }
 
-    tiles[mouseY][mouseX].setType(pal.getSelected().getType());
+    tiles[mouseY][mouseX] = pal.getSelected();
     flood(mouseX-1, mouseY,   type);
     flood(mouseX+1, mouseY,   type);
     flood(mouseX,   mouseY+1, type);
@@ -719,11 +833,25 @@ public class Map implements Playable{
     return ((Mouse.getY()/MainE.getScale())-(int)y)/(16);
   }
 
-  public Tile[][] getSelection(){
+  /**
+   * @return Whether the tile is on the map
+   */
+  private boolean checkTileInBounds(float x, float y) {
+    return x+32 > 0 && x < WIDTH && y+32 > 0 && y < HEIGHT;
+  }
+
+  /**
+   * Swtiches the state of the grid of every tile
+   */
+  private static void changeGrid(){
+    grid = !grid;
+  }  
+
+  public TileList[][] getSelection(){
     return selection;
   }
 
-  public void setSelection(Tile[][] sel){
+  public void setSelection(TileList[][] sel){
     selection = sel;
   }
 
@@ -744,17 +872,44 @@ public class Map implements Playable{
     isSelection = selec;        
   }
 
+  /**
+   * Clears the selection, making it disappear
+   */
   public void clearSelection(){
     selection = null;
     isSelection = false;
   }
-  
+
   public void setClydeLocation(float x, float y, Face direction)
   {
     this.clydeX = x;
     this.clydeY = y;
     this.clydeDirection = direction;
   }
+
+
+  public float getX() {
+    return x;
+  }
+
+  public String getPath() {
+    return savePath;
+  }
+
+  public String getName() {
+    return saveName;
+  }
+
+  public float getY() {
+    return y;
+  }
+
+  public boolean wasSaved(){
+    return saved;
+  }
+
+
+
 
 }
 
