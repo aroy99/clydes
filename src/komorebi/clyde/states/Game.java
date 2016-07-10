@@ -11,8 +11,6 @@ import komorebi.clyde.entities.NPCType;
 import komorebi.clyde.map.Map;
 import komorebi.clyde.script.Script;
 
-import com.sun.org.apache.bcel.internal.generic.ReturnaddressType;
-
 import org.lwjgl.input.Keyboard;
 
 import java.io.BufferedReader;
@@ -51,7 +49,7 @@ public class Game extends State{
    */
   public Game(){
     play = new Clyde(120,100);
-    map = new Map("res/maps/Some Town.map");
+    map = new Map("res/maps/Bigger Town.map");
 
     npcs = new ArrayList<NPC>();
     scripts = new ArrayList<Script>();
@@ -88,6 +86,9 @@ public class Game extends State{
 
     wasRight = isRight;
     isRight = Keyboard.isKeyDown(Keyboard.KEY_RIGHT);
+    
+    //Debug
+    
   }
 
   /* (non-Javadoc)
@@ -144,7 +145,6 @@ public class Game extends State{
    */
   @Override
   public void render() {
-    // TODO Auto-generated method stub
     map.render();
     play.render();
 

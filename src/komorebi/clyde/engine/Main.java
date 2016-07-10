@@ -84,7 +84,7 @@ public class Main {
 
     initGame();
     gameLoop();
-    cleanUp();        
+    cleanUp();
   }
 
 

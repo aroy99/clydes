@@ -5,6 +5,7 @@
 package komorebi.clyde.map;
 
 import komorebi.clyde.editor.Palette;
+import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.MainE;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.states.Editor;
@@ -52,22 +53,28 @@ public class Map implements Playable{
   private boolean isSelection;                  //A selection is active
   private boolean isClearSel, wasClearSel;      //Clears the selection
   
+  public static boolean grid;                  //Whether the grid is on or not
   private boolean saved = true;
 
 
   private Palette pal;
-  private Tile[][] tiles;                       //The Map itself
-  private Tile[][] selection;
+  private TileList[][] tiles;                //The Map itself
+  
+  private TileList[][] selection;            //The selection
+  
+  public static final int SIZE = 16;  //Width and height of a tile
 
-
-
-  private float x, y;         //Current location
+  private float x, y;       //Current location
   private int initX, initY; //Location at the beginning of a drag
   private float dx, dy;
   private float speed = 10;
 
   private String savePath;  //Path to save the map by default
   private String saveName;  //Name to save the map by default
+  
+  private static final int WIDTH = Display.getWidth();
+  private static final int HEIGHT = Display.getHeight();
+
 
 
   /**
@@ -76,14 +83,15 @@ public class Map implements Playable{
    * @param row number of rows (y)
    */
   public Map(int col, int row){
-    tiles = new Tile[row][col];
+    tiles = new TileList[row][col];
     pal = Editor.getPalette();
-
+    
     for (int i = tiles.length-1; i >= 0; i--) {
       for (int j = 0; j < tiles[0].length; j++) {
-        tiles[i][j] = new Tile(j, i, TileList.BLANK);
+        tiles[i][j] = TileList.BLANK;
       }
     }
+
   }
   
   /**
@@ -100,7 +108,7 @@ public class Map implements Playable{
       int rows = Integer.parseInt(reader.readLine());
       int cols = Integer.parseInt(reader.readLine());
 
-      tiles = new Tile[rows][cols];
+      tiles = new TileList[rows][cols];
 
 
       for (int i = 0; i < tiles.length; i++) {
@@ -110,8 +118,7 @@ public class Map implements Playable{
           if(str[index].equals("")){
             index++;  //pass this token, it's blank
           }
-          tiles[i][j] =new Tile(j, i, 
-              TileList.getTile(Integer.parseInt(str[index])));
+          tiles[i][j] = TileList.getTile(Integer.parseInt(str[index]));
         }
       }
 
@@ -125,12 +132,12 @@ public class Map implements Playable{
       e.printStackTrace();
       JOptionPane.showMessageDialog(null, 
           "The file was not found / was corrupt, therefore, the default settings were used");
-      tiles = new Tile[10][10];
+      tiles = new TileList[10][10];
       pal = Editor.getPalette();
 
       for (int i = tiles.length-1; i >= 0; i--) {
         for (int j = 0; j < tiles[0].length; j++) {
-          tiles[i][j] = new Tile(j, i, TileList.BLANK);
+          tiles[i][j] = TileList.BLANK;
         }
       }
       
@@ -153,7 +160,7 @@ public class Map implements Playable{
       int rows = Integer.parseInt(reader.readLine());
       int cols = Integer.parseInt(reader.readLine());
 
-      tiles = new Tile[rows][cols];
+      tiles = new TileList[rows][cols];
 
 
       for (int i = 0; i < tiles.length; i++) {
@@ -163,8 +170,7 @@ public class Map implements Playable{
           if(str[index].equals("")){
             index++;  //pass this token, it's blank
           }
-          tiles[i][j] =new Tile(j, i, 
-              TileList.getTile(Integer.parseInt(str[index])));
+          tiles[i][j] = TileList.getTile(Integer.parseInt(str[index]));
         }
       }
       
@@ -227,9 +233,19 @@ public class Map implements Playable{
    */
   @Override
   public void update() {
+    move(dx, dy);
+
+    dx = 0;
+    dy = 0;
+  }
+  
+  /**
+   * Used for the editor to help with performance
+   */
+  public void eUpdate(){
     //Sets mouse tile to the one from the palette
     if(lButtonIsDown && checkBounds() && !isSelection){
-      tiles[getMouseY()][getMouseX()].setType(pal.getSelected().getType());
+      tiles[getMouseY()][getMouseX()] = pal.getSelected();
       saved = false;
       if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
         Display.setTitle(Display.getTitle()+"*");
@@ -238,14 +254,15 @@ public class Map implements Playable{
 
     //Sets palette's selected to mouse tile
     if(rButtonIsDown && !rButtonWasDown && checkBounds()){
-      pal.setLoc(tiles[getMouseY()][getMouseX()].getType());
+      pal.setLoc(tiles[getMouseY()][getMouseX()]);
+      pal.setLoc(tiles[getMouseY()][getMouseX()]);
       clearSelection();
     }
 
     //Flood Fills tiles
     if(mButtonIsDown && !mButtonWasDown && checkBounds()){
       flood(getMouseX(), getMouseY(), 
-          tiles[getMouseY()][getMouseX()].getType());
+          tiles[getMouseY()][getMouseX()]);
       saved = false;
       if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
         Display.setTitle(Display.getTitle()+"*");
@@ -265,8 +282,8 @@ public class Map implements Playable{
       for(int i = 0; i < selection.length; i++){
         for (int j = 0; j < selection[0].length; j++) {
           if(checkTileBounds(getMouseY()+i, getMouseX()+j)){
-            tiles[getMouseY()+i][getMouseX()+j].setType(
-                selection[i][j].getType());
+            tiles[getMouseY()+i][getMouseX()+j] = 
+                selection[i][j];
           }
         }
       }
@@ -284,13 +301,6 @@ public class Map implements Playable{
     if(isReset && !wasReset){
       x = 0;
       y = 0;
-      
-      for (int i = 0; i < tiles.length; i++) {
-        for (int j = 0; j < tiles[0].length; j++) {
-          tiles[i][j].setLoc(i*16, j*16);
-          System.out.println(tiles[i][j]);
-        }
-      }
     }
 
     if(isSave && !wasSave){
@@ -306,7 +316,7 @@ public class Map implements Playable{
     }
 
     if(isGrid && !wasGrid){
-      Tile.changeGrid();
+      changeGrid();
     }
 
 
@@ -322,7 +332,7 @@ public class Map implements Playable{
     if(left){
       dx = -speed;
     }
-
+    
     move(dx, dy);
 
     dx = 0;
@@ -334,15 +344,28 @@ public class Map implements Playable{
    */
   @Override
   public void render() {
-    for (Tile[] tileL : tiles) {
-      for (Tile t : tileL) {
-        t.render();
+    for (int i = 0; i < tiles.length; i++) {
+      for (int j = 0; j < tiles[0].length; j++) {
+        if(checkTileInBounds(x+j*SIZE, y+i*SIZE)){
+          Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, tiles[i][j].getX(), 
+              tiles[i][j].getY(), 1);
+          if(grid){
+            Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, 0, 16, SIZE, 16+SIZE, 2);
+          }
+
+        }
       }
     }
+
     if(selection != null){
-      for (Tile[] tileL : selection) {
-        for (Tile t : tileL) {
-          t.render();
+      for (int i = 0; i < selection.length; i++) {
+        for (int j = 0; j < selection[0].length; j++) {
+          Draw.rect(x+tiles[0].length*SIZE+j*SIZE, y+i*SIZE, SIZE, SIZE, 
+              selection[i][j].getX(), selection[i][j].getY(), 1);
+          if(grid){
+            Draw.rect(x+selection[0].length*SIZE+j*SIZE, y+i*SIZE, SIZE, SIZE, 
+                0, 16, SIZE, 16+SIZE, 2);
+          }
         }
       }
 
@@ -359,21 +382,6 @@ public class Map implements Playable{
   public void move(float dx, float dy) {
     x+=dx;
     y+=dy;
-    for (int i = 0; i < tiles.length; i++) {
-      for (int j = 0; j < tiles[0].length; j++) {
-        tiles[i][j].setLoc(x+j*16, y+i*16);
-        tiles[i][j].update();
-      }
-    }
-
-    if(selection != null){
-      for (int i = 0; i < selection.length; i++) {
-        for (int j = 0; j < selection[0].length; j++) {
-          selection[i][j].move(dx, dy);
-          selection[i][j].update();
-        }
-      }
-    }
   }
   
   /**
@@ -451,9 +459,9 @@ public class Map implements Playable{
       writer.println(tiles.length);
       writer.println(tiles[0].length);
 
-      for (Tile[] tile : tiles) {
-        for (Tile t : tile) {
-          writer.print(t.getType().getID() + " ");
+      for (TileList[] tile : tiles) {
+        for (TileList t : tile) {
+          writer.print(t.getID() + " ");
         }
         writer.println();
       }
@@ -528,7 +536,7 @@ public class Map implements Playable{
    * Creates a new selection
    */
   private void createSelection() {
-    selection = new Tile[Math.abs(getMouseY()-initY)+1]
+    selection = new TileList[Math.abs(getMouseY()-initY)+1]
         [Math.abs(getMouseX()-initX)+1];
     int firstX, lastX;
     int firstY, lastY;
@@ -542,8 +550,7 @@ public class Map implements Playable{
 
     for(int i = 0; i <= lastY - firstY; i++){
       for(int j = 0; j <= lastX - firstX; j++){
-        selection[i][j] = new Tile(x + tiles[0].length*16 + j*16, 
-            y + i*16, tiles[firstY+i][firstX+j].getType(), true);
+        selection[i][j] =  tiles[firstY+i][firstX+j];
       }
     }
 
@@ -563,11 +570,11 @@ public class Map implements Playable{
         mouseY < 0 || mouseY >= tiles.length){
       return;
     }
-    if(tiles[mouseY][mouseX].getType() != type ||
-        tiles[mouseY][mouseX].getType() == pal.getSelected().getType()){
+    if(tiles[mouseY][mouseX] != type ||
+        tiles[mouseY][mouseX] == pal.getSelected()){
       return;
     }
-    tiles[mouseY][mouseX].setType(pal.getSelected().getType());
+    tiles[mouseY][mouseX] = pal.getSelected();
     flood(mouseX-1, mouseY,   type);
     flood(mouseX+1, mouseY,   type);
     flood(mouseX,   mouseY+1, type);
@@ -618,12 +625,26 @@ public class Map implements Playable{
   private int getMouseY() {
     return ((Mouse.getY()/MainE.getScale())-(int)y)/(16);
   }
+  
+  /**
+   * @return Whether the tile is on the map
+   */
+  private boolean checkTileInBounds(float x, float y) {
+    return x+32 > 0 && x < WIDTH && y+32 > 0 && y < HEIGHT;
+  }
 
-  public Tile[][] getSelection(){
+  /**
+   * Swtiches the state of the grid of every tile
+   */
+  private static void changeGrid(){
+    grid = !grid;
+  }  
+  
+  public TileList[][] getSelection(){
     return selection;
   }
 
-  public void setSelection(Tile[][] sel){
+  public void setSelection(TileList[][] sel){
     selection = sel;
   }
 
@@ -671,6 +692,8 @@ public class Map implements Playable{
   public boolean wasSaved(){
     return saved;
   }
+  
+
 
 
 }

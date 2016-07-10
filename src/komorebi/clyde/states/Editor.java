@@ -141,7 +141,7 @@ public class Editor extends State{
     }
     
     pal.update();
-    map.update();
+    map.eUpdate();
   }
 
   /**

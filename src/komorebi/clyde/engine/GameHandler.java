@@ -19,8 +19,6 @@ public class GameHandler implements Playable{
 
   public static States state;
 
-  private static Editor editor;
-
   public static Game game;
 
   /**
@@ -29,7 +27,6 @@ public class GameHandler implements Playable{
   public GameHandler(){
     state = States.GAME;
     game = new Game();
-    editor = new Editor();
   }
 
   /**
@@ -37,9 +34,6 @@ public class GameHandler implements Playable{
    */
   public void getInput() {
     switch(state){
-      case EDITOR:
-        editor.getInput();
-        break;
       case GAME:
         game.getInput();
         break;
@@ -53,9 +47,6 @@ public class GameHandler implements Playable{
    */
   public void update() {
     switch(state){
-      case EDITOR:
-        editor.update();
-        break;
       case GAME:
         game.update();
         break;
@@ -69,9 +60,6 @@ public class GameHandler implements Playable{
    */
   public void render() {
     switch (state) {
-      case EDITOR:
-        editor.render();
-        break;
       case GAME:
         game.render();
         break;

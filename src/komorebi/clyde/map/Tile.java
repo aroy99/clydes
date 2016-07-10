@@ -6,9 +6,14 @@ package komorebi.clyde.map;
 import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.Renderable;
 
+import org.lwjgl.opengl.Display;
+
 /**
+ * Use a TileList[][] array instead, it's way more efficient!
+ * 
  * @author Aaron Roy
  */
+@Deprecated
 public class Tile implements Renderable{
 
   private static boolean grid;        //Whether the grid is on or not
@@ -17,6 +22,10 @@ public class Tile implements Renderable{
   private float dx,dy;                //Amount tile will move each frame
   public static final int SIZE = 16;  //Width and height of a tile
   private TileList type;              //This tile's type
+  private static final int WIDTH = Display.getWidth();
+  private static final int HEIGHT = Display.getHeight();
+
+  
 
   /**
    * Creates a tile at the current coordinates
@@ -50,13 +59,16 @@ public class Tile implements Renderable{
    * Currently has a lot of test tiles (all tests start with x)
    */
   public void render(){
-    int texx = type.getX(), texy = type.getY();
-    
-    Draw.rect(x,y, SIZE, SIZE, texx, texy, texx+SIZE, texy+SIZE, 1);
-    if(grid){
-      Draw.rect(x, y, SIZE, SIZE, 0, 16, SIZE, 16+SIZE, 2);
+    if(inBounds()){
+      int texx = type.getX(), texy = type.getY();
+      
+      Draw.rect(x,y, SIZE, SIZE, texx, texy, texx+SIZE, texy+SIZE, 1);
+      if(grid){
+        Draw.rect(x, y, SIZE, SIZE, 0, 16, SIZE, 16+SIZE, 2);
+      }
     }
   }
+
 
   public TileList getType(){
     return type;
@@ -110,5 +122,13 @@ public class Tile implements Renderable{
   public static void changeGrid(){
     grid = !grid;
   }  
+  
+  /**
+   * @return Whether the tile is on the map
+   */
+  private boolean inBounds() {
+    return x+32 > 0 && x < WIDTH && y+32 > 0 && y < HEIGHT;
+  }
+
   
 }
