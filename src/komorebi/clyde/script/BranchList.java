@@ -1,5 +1,5 @@
 /**
- * BranchList.java		Jun 18, 2016, 3:12:01 PM
+ * BranchList.java  Jun 18, 2016, 3:12:01 PM
  */
 package komorebi.clyde.script;
 
@@ -12,29 +12,29 @@ import java.util.ArrayList;
  */
 public class BranchList extends ArrayList<InstructionList> {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 1L;
 
-	public BranchList()
-	{
-		super();
-	}
-	
-	public InstructionList getBranch(String s)
-	{
-		for (InstructionList i: this)
-		{
-			if (s.equalsIgnoreCase(i.getBranchName()))
-			{
-				return i;
-			}
-		}
-		
-		return null;
-	}
-	
-	
-	
+  public BranchList()
+  {
+    super();
+  }
+
+  public InstructionList getBranch(String s)
+  {
+    for (InstructionList i: this)
+    {
+      if (s.equalsIgnoreCase(i.getBranchName()))
+      {
+        return i;
+      }
+    }
+
+    return null;
+  }
+
+
+
 }

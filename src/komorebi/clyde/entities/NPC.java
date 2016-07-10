@@ -1,19 +1,28 @@
 /**
+
  * NPC.java  Jun 9, 2016, 3:09:11 PM
- */
+**/
 package komorebi.clyde.entities;
 
-import java.util.ArrayList;
-
 import komorebi.clyde.engine.Animation;
+import komorebi.clyde.engine.Key;
+import komorebi.clyde.engine.KeyHandler;
 import komorebi.clyde.engine.Main;
 import komorebi.clyde.script.Execution;
+import komorebi.clyde.script.TalkingScript;
 import komorebi.clyde.script.TextHandler;
+import komorebi.clyde.script.WalkingScript;
+
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.util.ArrayList;
+
+
+
 
 /**
  * 
  * @author Andrew Faulkenberry
- * @version 
  */
 public class NPC extends Entity {
 
@@ -35,9 +44,19 @@ public class NPC extends Entity {
 
   private int dy, dx;
   private int framesToGo;
+  private int tx, ty;
+
   private int xTravelled;
   private int yTravelled;
-
+  
+  private Rectangle[] surround = new Rectangle[4];
+  private TalkingScript talkScript;
+  
+  private boolean isTalking;
+  
+  private WalkingScript walkScript;
+  
+  
   Animation rightAni, leftAni, downAni, upAni;
 
   /**
@@ -46,6 +65,8 @@ public class NPC extends Entity {
    */
   public NPC(String name, float x, float y, NPCType type) {
     super(x*16, y*16, 16, 24);
+    tx = (int) x;
+    ty = (int) y;
 
     this.name = name;
     ent=Entities.NPC;
@@ -58,7 +79,11 @@ public class NPC extends Entity {
 
     text = new TextHandler();
 
-
+    surround[0] = new Rectangle((int) this.x, (int) this.y+16, 16, 16);
+    surround[1] = new Rectangle((int) this.x + 16, (int) this.y, 16, 16);
+    surround[2] = new Rectangle((int) this.x, (int) this.y - 16, 16, 16);
+    surround[3] = new Rectangle((int) this.x - 16, (int) this.y, 16, 16);
+    
   }
 
   public NPC(String name)
@@ -86,7 +111,7 @@ public class NPC extends Entity {
    * Updates the behavior of the NPC, such as speed and movement
    */
   public void update() {
-
+    
     if (framesToGo <= 0 && hasInstructions)
     {
       isMoving=false;
@@ -151,9 +176,6 @@ public class NPC extends Entity {
     y+=dy;
     yTravelled+=dy;
 
-
-    //System.out.println(dx);
-
     if (dx != 0) {
       framesToGo-=Math.abs(dx);
     } else if (dy != 0){
@@ -161,6 +183,8 @@ public class NPC extends Entity {
     } else if (isWaiting){
       framesToGo--;
     }
+    
+    
 
   }
 
@@ -173,8 +197,6 @@ public class NPC extends Entity {
    * Renders the image of the NPC on-screen
    */
   public void render() {
-
-    //System.out.println(framesToGo + " frames to go");
 
     if (isVisible) {
       switch (direction)
@@ -193,10 +215,11 @@ public class NPC extends Entity {
           break;
         default:
           break;
-
       }
 
       text.render();
+      
+      
     }
 
 
@@ -240,12 +263,14 @@ public class NPC extends Entity {
 
   /**
    * Moves the NPC a given number of tiles in a specified direction
+   * 
    * @param dir The direction in which the NPC should move
-   * @param tiles The number of tiles the NPC should move, where one tile is equal to 16 pixels 
+   * @param tiles The number of tiles the NPC should move, where one tile is 
+   *         equal to 16 pixels 
    */
   private void walk(Face dir, int tiles)
   {
-
+    
     hasInstructions=true;
     framesToGo = tiles*16;
     isMoving=true;
@@ -277,24 +302,31 @@ public class NPC extends Entity {
 
   }
 
-  /**
-   * Moves the NPC a given number of tiles in a specified direction
-   * @param dir 
-   * @param tiles
-   * @param ex
+ /**
+   * Moves the NPC a given number of tiles in a specified direction, pausing the
+   * thread
+   * 
+   * @param dir The direction in which the NPC should move
+   * @param tiles The number of tiles the NPC should move, where one tile is 
+   *         equal to 16 pixels 
+   * @param ex The new thread to run the command The new thread to run the command
    */
   public void walk(Face dir, int tiles, Execution ex)
   {
     this.instructor = ex;
 
-    instructor.getLock().pauseThread();
     walk(dir,tiles);
+    instructor.getLock().pauseThread();
+    
   }
 
   /**
-   * Moves the NPC a given number of tiles in a specified direction at a brisk pace
+   * Moves the NPC a given number of tiles in a specified direction at a brisk 
+   * pace
+   * 
    * @param dir The direction in which the NPC should move
-   * @param tiles The number of tiles the NPC should move, where one tile is equal to 16 pixels 
+   * @param tiles The number of tiles the NPC should move, where one tile is 
+   *         equal to 16 pixels 
    */
   private void jog(Face dir, int tiles)
   {
@@ -328,8 +360,18 @@ public class NPC extends Entity {
     }
   }
 
+  
+  /**
+   * Moves the NPC a given number of tiles in a specified direction at a brisk 
+   * pace, pausing the thread
+   * 
+   * @param dir The direction in which the NPC should move
+   * @param tiles The number of tiles the NPC should move, where one tile is
+   *         equal to 16 pixels 
+   * @param instructor The new thread to run the command The new thread to run the command
+   */
   public void jog(Face dir, int tiles, Execution instructor)
-  {	
+  { 
 
     this.instructor = instructor;
     jog(dir,tiles);
@@ -337,16 +379,23 @@ public class NPC extends Entity {
 
   }
 
-  /**
+ /**
    * Turns the NPC to face a different direction
+   * 
    * @param dir The direction for the NPC to face
    */
-  private void turn(Face dir)
+  public void turn(Face dir)
   {
 
     direction=dir;
   }
 
+   /**
+   * Turns the NPC to face a different direction, pausing the thread
+   * 
+   * @param dir The direction for the NPC to face
+   * @param instructor The new thread to run the command The new thread to run the command
+   */
   public void turn(Face dir, Execution instructor)
   {
     this.instructor = instructor;
@@ -360,6 +409,11 @@ public class NPC extends Entity {
     setAttributes(type);
   }
 
+   /**
+   * Creates all of the required objects for the specified NPC type
+   * 
+   * @param type The NPC type to set the attributes
+   */
   public void setAttributes(NPCType type)
   {
     this.type = type;
@@ -430,34 +484,52 @@ public class NPC extends Entity {
     }
   }
 
-  public void pause(int frames, Execution instructor)
-  {
-    hasInstructions=true;
-    this.instructor=instructor;
 
-    isWaiting=true;
-    framesToGo=frames;
-
-    this.instructor.getLock().pauseThread();
+  /**
+   * Moves the NPC to a new tile
+   * 
+   * @param tx The tile x location of the bottom left corner of the NPC
+   * @param ty The tile y location of the bottom left corner of the NPC
+   */
+  public void setTileLocation(int tx, int ty){
+    this.x=tx*16;
+    this.y=ty*16;
   }
 
-  public void setLocation(int x, int y)
+  /**
+   * Moves the NPC to a new tile, pausing the thread
+   * 
+   * @param tx The tile x location of the bottom left corner of the NPC
+   * @param ty The tile y location of the bottom left corner of the NPC
+   * @param instructor The new thread to run the command
+   */
+  public void setTileLocation(int tx, int ty, Execution instructor){
+    this.instructor = instructor;
+    setTileLocation(tx,ty);
+  }
+  
+  /**
+   * Relocates the NPC to a specific spot on the screen
+   * @param x The x cooridnate of the new bottom left corner, in pixels, of the NPC
+   * @param y The y coordinate of the new bottom left corner, in pixels, of the NPC
+   */
+  public void setPixLocation(int x, int y)
   {
-    this.x=x*16;
-    this.y=y*16;
+    this.x = x;
+    surround[0].setLocation(x, y+16);
+    surround[1].setLocation(x+16, y);
+    surround[2].setLocation(x, y-16);
+    surround[3].setLocation(x-16, y);
+    
+    this.y = y;
   }
 
-  public void setAbsoluteLocation(float x, float y)
-  {
-    this.x=x;
-    this.y=y;
-  }
-  public void setLocation(int x, int y, Execution e)
-  {
-    this.instructor = e;
-    setLocation(x,y);
-  }
-
+  /**
+   * Says a string, creating a message box, and pausing movement
+   * 
+   * @param s The string to say
+   * @param ex The new thread to run the command
+   */
   public void say(String s, Execution ex)
   {
     text.write(s, 20, 58, 8);
@@ -468,7 +540,12 @@ public class NPC extends Entity {
   }
 
 
-
+  /**
+   * Asks a question, creating a message box and pausing the thread
+   * 
+   * @param args The options to write
+   * @param instructor The new thread to run the command
+   */
   public void ask(String[] args, Execution ex)
   {
     text.write(args[0], 20, 58, 8);
@@ -533,11 +610,20 @@ public class NPC extends Entity {
     npcs.add(person);
   }
 
+  /**
+   * Returns the NPC that matches the name provided
+   * 
+   * @param s The name input
+   * @return The NPC, if none found, null
+   */
   public static NPC get(String s)
   {
     for (NPC n: npcs)
     {
-      if (n.getName().equals(s)) return n;
+      if (n.getName().equals(s)) 
+      {
+        return n;
+      }
     }
 
     return null;
@@ -562,4 +648,72 @@ public class NPC extends Entity {
   {
     return yTravelled;
   }
+  
+  /**
+   * 
+   * @param clydeX
+   * @param clydeY
+   * @return
+   */
+  public boolean isApproached(float clydeX, float clydeY, Face direction)
+  {
+    return (surround[0].contains(new Point((int)clydeX, (int)clydeY)) && direction == Face.DOWN) ||
+        (surround[1].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.LEFT) ||
+        (surround[2].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.UP) ||
+        (surround[3].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.RIGHT);
+        
+  }
+  
+  /**
+   * Runs the NPC's talking script when Clyde prompts them
+   */
+  public void approach()
+  {
+    isTalking = true;
+    abortWalkingScript();
+    talkScript.run();
+  }
+  
+  public void setTalkingScript(TalkingScript nScript)
+  {
+    talkScript = nScript;
+  }
+  
+  public void setWalkingScript(WalkingScript nScript)
+  {
+    walkScript = nScript;
+  }
+  
+  public void abortTalkingScript()
+  {
+    talkScript.abort();
+    isTalking = false;
+  }
+  
+  public void abortWalkingScript()
+  {
+    walkScript.abort();
+    isTalking = true;
+  }
+  
+  public TalkingScript getTalkingScript()
+  {
+    return talkScript;
+  }
+  
+  public WalkingScript getWalkingScript()
+  {
+    return walkScript;
+  }
+  
+  public boolean isTalking()
+  {
+    return isTalking;
+  }
+  
+  public void setIsTalking(boolean b)
+  {
+    isTalking = b;
+  }
+ 
 }

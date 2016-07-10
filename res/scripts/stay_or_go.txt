@@ -1,0 +1,16 @@
+lock
+ask "What should we do?" "Stay" "Go" "Spaz"
+branch Stay
+unlock
+
+branch Go
+fadeout
+load Test_Map_2
+pause 50
+fadein
+unlock
+
+branch Spaz
+jog up up up up up up right right right right left left right right right
+jog down down down down left right left right left up down down up left right
+unlock

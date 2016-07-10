@@ -101,7 +101,7 @@ public class MainE {
     try {
       Display.setDisplayMode(new DisplayMode(800 * scale, 608 * scale));
       Display.setTitle("Clyde\'s");
-//      Display.setResizable(true);
+//    Display.setResizable(true);
       Display.create();
       Display.setVSyncEnabled(true);
 

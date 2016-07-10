@@ -1,5 +1,6 @@
 /**
- * WalkingScript.java Jul 5, 2016, 3:15:41 PM
+ * WalkingScript.java  
+ * Jul 7, 2016, 3:06:51 PM
  */
 package komorebi.clyde.script;
 
@@ -10,23 +11,35 @@ import komorebi.clyde.entities.NPC;
  * @author Aaron Roy
  * @version 
  */
-public class WalkingScript {
-  private String script; //
-  private boolean hasRun;
-  private NPC npc;
+public class WalkingScript extends Script {
 
-  private int x,y;
-
-  public WalkingScript(NPC person)
+  NPC npc;
+  
+  public WalkingScript(String s, NPC npc)
   {
-    x = person.getTileX();
-    y = person.getTileY();
+    this.script = s;
+    this.npc = npc;
   }
-
+  
   public void run()
   {
-    hasRun = true;
-    ScriptHandler.read(script, npc);
+    isRunning = true;
+    ScriptHandler.read(this, npc, abortionIndex);
   }
-
+ 
+  /* (non-Javadoc)
+   * @see komorebi.clyde.script.Script#abort()
+   */
+  @Override
+  public void abort() {
+    isInterrupted = true;
+    execution.abort();
+  }
+  
+  /**
+   * Could this be more terribly named?
+   * @param i The abortion index, or the instruction number in the walking loop
+   *        at which the execution thread was interrupted 
+   */
+  
 }
