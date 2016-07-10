@@ -8,11 +8,10 @@ import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.MainE;
 import komorebi.clyde.engine.Playable;
+import komorebi.clyde.map.EditorMap;
 import komorebi.clyde.map.Map;
-import komorebi.clyde.map.Tile;
 import komorebi.clyde.map.TileList;
 import komorebi.clyde.states.Editor;
-import komorebi.clyde.editor.ScriptPainter;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -48,7 +47,7 @@ public class Palette implements Playable{
 
   //The Selector itself
   private Animation selection;
-  private Map map;
+  private EditorMap map;
 
   //Removes repeated input
   private boolean lButtonWasDown, lButtonIsDown; //Left Click
@@ -129,7 +128,7 @@ public class Palette implements Playable{
       for (int j = 0; j < tiles[0].length; j++) {
         Draw.rect((j+xOffset)*SIZE, (i+yOffset)*SIZE, SIZE, SIZE, 
             tiles[i][j].getX(), tiles[i][j].getY(), 1);
-        if(Map.grid){
+        if(EditorMap.grid){
           Draw.rect((j+xOffset)*SIZE, (i+yOffset)*SIZE, SIZE, SIZE, 0, 16, SIZE,
               16+SIZE, 2);
         }
@@ -249,7 +248,7 @@ public class Palette implements Playable{
    * 
    * @param map The map to set the palette to
    */
-  public void setMap(Map map) {
+  public void setMap(EditorMap map) {
     this.map = map;
   }
 

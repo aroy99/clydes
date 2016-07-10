@@ -8,6 +8,8 @@ import static org.lwjgl.opengl.GL11.glOrtho;
 import static org.lwjgl.opengl.GL11.glViewport;
 
 import komorebi.clyde.editor.Palette;
+import komorebi.clyde.engine.Playable;
+import komorebi.clyde.map.EditorMap;
 import komorebi.clyde.map.Map;
 
 import org.lwjgl.LWJGLException;
@@ -39,11 +41,14 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  * @author Aaron Roy
  * @version 
  */
-public class Editor extends State{
+public class Editor implements Playable{
 
   private boolean isLoad, wasLoad;  //Whether to load a new map or not
   private boolean isNew, wasNew;    //Whether to create a new map or not
   private boolean isResetTile, wasResetTile;//Reset the map
+  
+  
+  private static EditorMap map;
   
   private static Palette pal;
   public static float aspect;
@@ -56,7 +61,7 @@ public class Editor extends State{
    */
   public Editor(){
     pal = new Palette();
-    map = new Map(20, 20);
+    map = new EditorMap(20, 20);
     pal.setMap(map);
   }
 
@@ -107,7 +112,7 @@ public class Editor extends State{
         reloadKeyboard();
         
         if(returnee == JFileChooser.APPROVE_OPTION){
-          map = new Map(chooser.getSelectedFile().getAbsolutePath(), 
+          map = new EditorMap(chooser.getSelectedFile().getAbsolutePath(), 
               chooser.getSelectedFile().getName());
           pal.setMap(map);
         }
@@ -117,9 +122,9 @@ public class Editor extends State{
 
     if(isResetTile && !wasResetTile){
       if(map.getPath() != null && requestSave()){
-        map = new Map(map.getPath(), map.getName());
+        map = new EditorMap(map.getPath(), map.getName());
       }else if(requestSave()){
-        map = new Map(map.getWidth(),map.getHeight());
+        map = new EditorMap(map.getWidth(),map.getHeight());
       }
     }
     
@@ -133,7 +138,7 @@ public class Editor extends State{
         int height = dialog.getActHeight();
 
         if(width != 0 && height != 0){
-          map = new Map(width, height);
+          map = new EditorMap(width, height);
           pal.setMap(map);
         }
         reloadKeyboard();
@@ -141,7 +146,7 @@ public class Editor extends State{
     }
     
     pal.update();
-    map.eUpdate();
+    map.update();
   }
 
   /**

@@ -58,7 +58,7 @@ public class Game extends State{
    */
   public Game(){
     play = new Clyde(120,100);
-    map = new Map("res/maps/Some Town.map","B");
+    map = new Map("res/maps/Some Town.map");
 
     npcs = new ArrayList<NPC>();
     scripts = new ArrayList<AreaScript>();
@@ -156,7 +156,7 @@ public class Game extends State{
     play.update();
     map.setClydeLocation(play.getX(), play.getY(), play.getDirection());
     
-    map.updateInGame();
+    map.update();
     Fader.update();
 
     if (isPaused)
