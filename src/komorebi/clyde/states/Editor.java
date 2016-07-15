@@ -8,6 +8,8 @@ import static org.lwjgl.opengl.GL11.glOrtho;
 import static org.lwjgl.opengl.GL11.glViewport;
 
 import komorebi.clyde.editor.Palette;
+import komorebi.clyde.engine.Key;
+import komorebi.clyde.engine.KeyHandler;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.map.EditorMap;
 import komorebi.clyde.map.Map;
@@ -43,9 +45,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  */
 public class Editor implements Playable{
 
-  private boolean isLoad, wasLoad;  //Whether to load a new map or not
-  private boolean isNew, wasNew;    //Whether to create a new map or not
-  private boolean isResetTile, wasResetTile;//Reset the map
+  private boolean isLoad;  //Whether to load a new map or not
+  private boolean isNew;    //Whether to create a new map or not
+  private boolean isResetTile;//Reset the map
   
   
   private static EditorMap map;
@@ -71,8 +73,9 @@ public class Editor implements Playable{
    */
   @Override
   public void getInput() {
+    KeyHandler.getInput();
     //        if(Display.wasResized())resize();
-    if(Keyboard.isKeyDown(Keyboard.KEY_P)){
+    if(KeyHandler.keyClick(Key.P)){
       Runtime runTime = Runtime.getRuntime();
       try {
         runTime.exec("java -jar \"RealGame v 0.1.jar\"");
@@ -81,14 +84,11 @@ public class Editor implements Playable{
       }
     }
 
-    wasLoad = isLoad;
-    isLoad = Keyboard.isKeyDown(Keyboard.KEY_L) && controlPressed();
+    isLoad = KeyHandler.keyClick(Key.L) && KeyHandler.keyDown(Key.CTRL);
     
-    wasResetTile = isResetTile;
-    isResetTile=Keyboard.isKeyDown(Keyboard.KEY_R) && controlPressed();
+    isResetTile = KeyHandler.keyClick(Key.R) && KeyHandler.keyDown(Key.CTRL);
     
-    wasNew = isNew;
-    isNew = Keyboard.isKeyDown(Keyboard.KEY_N) && controlPressed();
+    isNew = KeyHandler.keyClick(Key.N) && KeyHandler.keyDown(Key.CTRL);
 
     pal.getInput();
     map.getInput();
@@ -99,17 +99,17 @@ public class Editor implements Playable{
    */
   @Override
   public void update() {
-    if(isLoad && !wasLoad){
+    if(isLoad){
       if(requestSave()){
         JFileChooser chooser = new JFileChooser("res/maps/");
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
-            "Map Files", "map");
+            "Map Files (.map)", "map");
         chooser.setFileFilter(filter);
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         chooser.setDialogTitle("Enter the name of the map to load");
         int returnee = chooser.showOpenDialog(null);
 
-        reloadKeyboard();
+        KeyHandler.reloadKeyboard();
         
         if(returnee == JFileChooser.APPROVE_OPTION){
           map = new EditorMap(chooser.getSelectedFile().getAbsolutePath(), 
@@ -120,7 +120,7 @@ public class Editor implements Playable{
 
     }
 
-    if(isResetTile && !wasResetTile){
+    if(isResetTile){
       if(map.getPath() != null && requestSave()){
         map = new EditorMap(map.getPath(), map.getName());
       }else if(requestSave()){
@@ -128,7 +128,7 @@ public class Editor implements Playable{
       }
     }
     
-    if(isNew && !wasNew){
+    if(isNew){
       if(requestSave()){
         NewMapDialog dialog = new NewMapDialog();
         dialog.pack();
@@ -141,7 +141,7 @@ public class Editor implements Playable{
           map = new EditorMap(width, height);
           pal.setMap(map);
         }
-        reloadKeyboard();
+        KeyHandler.reloadKeyboard();
       }
     }
     
@@ -158,7 +158,7 @@ public class Editor implements Playable{
       
       int returnee = JOptionPane.showConfirmDialog(null, "Would you like to save?");
       
-      reloadKeyboard();
+      KeyHandler.reloadKeyboard();
       
       switch(returnee){
         case JFileChooser.APPROVE_OPTION:
@@ -201,22 +201,6 @@ public class Editor implements Playable{
   }
 
   /**
-   * For some stupid reason the keys stick when JDialogs are opened, so this
-   * method resets the Keyboard by destroying and creating it
-   */
-  public static void reloadKeyboard(){
-    Keyboard.destroy();
-    try {
-      Keyboard.create();
-    } catch (LWJGLException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-
-  }
-
-
-  /**
    * Resizes the window, broken, so do not use
    */
   @Deprecated
@@ -238,15 +222,6 @@ public class Editor implements Playable{
     glOrtho(0,width,0,height,-1,1);     //Updates 3D space
     //        glOrtho(-xSpan,xSpan,-ySpan,ySpan,-1,1);     //Updates 3D space
   }
-
-  /**
-   * @return if the control key was pressed
-   */
-  private boolean controlPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) ||
-        Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
-  }
-
   
   /**
    * The Dialog that is created when Ctrl-N is pressed

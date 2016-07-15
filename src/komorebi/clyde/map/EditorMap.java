@@ -4,8 +4,13 @@
 
 package komorebi.clyde.map;
 
+import static komorebi.clyde.engine.KeyHandler.button;
+
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.engine.Draw;
+import komorebi.clyde.engine.Key;
+import komorebi.clyde.engine.KeyHandler;
+import komorebi.clyde.engine.KeyHandler.Control;
 import komorebi.clyde.engine.MainE;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.entities.NPC;
@@ -49,16 +54,16 @@ public class EditorMap implements Playable{
   private boolean up, down, left, right;        //Directions for movement
 
   //Special commands
-  private boolean isSave, wasSave;              //Save the map
-  private boolean isNewSave, wasNewSave;        //Saves a new map file
-  private boolean isReset, wasReset;            //Resets tiles position
-  private boolean isGrid, wasGrid;              //Turn on/off Grid
-  private boolean startDragging;                //Starting a group selection
-  private boolean isDragging;                   //Is making a group selection
-  private boolean isSelection;                  //A selection is active
-  private boolean isClearSel, wasClearSel;      //Clears the selection
+  private boolean isSave;                    //Save the map
+  private boolean isNewSave;                 //Saves a new map file
+  private boolean isReset;                   //Resets tiles position
+  private boolean isGrid;                    //Turn on/off Grid
+  private boolean startDragging, wasDragging;//Starting a group selection
+  private boolean isDragging;                //Is making a group selection
+  private boolean isSelection;               //A selection is active
+  private boolean isClearSel;                //Clears the selection
 
-  public static boolean grid;                  //Whether the grid is on or not
+  public static boolean grid;                //Whether the grid is on or not
   private boolean saved = true;
 
 
@@ -207,7 +212,7 @@ public class EditorMap implements Playable{
         }
       }
 
-      Editor.reloadKeyboard();
+      KeyHandler.reloadKeyboard();
     }         
 
 
@@ -222,40 +227,35 @@ public class EditorMap implements Playable{
     lButtonIsDown = Mouse.isButtonDown(0);
 
     rButtonWasDown = rButtonIsDown;
-    rButtonIsDown = Mouse.isButtonDown(1) && !controlPressed();
+    rButtonIsDown = Mouse.isButtonDown(1) && !KeyHandler.keyDown(Key.CTRL);
 
     mButtonWasDown = mButtonIsDown;
     mButtonIsDown = Mouse.isButtonDown(2);
 
-    startDragging = Mouse.isButtonDown(1) && controlPressed() && 
+    startDragging = Mouse.isButtonDown(1) && KeyHandler.keyDown(Key.CTRL) && 
         !isDragging;
 
     isDragging = Mouse.isButtonDown(1) && isDragging || startDragging;
 
     //Makes sure that up and down / left and right can't be both true
-    up =   upPressed()    && !downPressed();
+    up =   button(Control.MAP_UP)    && !button(Control.MAP_DOWN);
 
-    down = downPressed()  && !(upPressed() || controlPressed());
+    down = button(Control.MAP_DOWN)  && 
+        !(button(Control.MAP_UP) || KeyHandler.keyDown(Key.CTRL));
 
-    left = leftPressed()  && !rightPressed();
+    left = button(Control.MAP_LEFT)  && !button(Control.MAP_RIGHT);
 
-    right =rightPressed() && !leftPressed();
+    right =button(Control.MAP_RIGHT) && !button(Control.MAP_LEFT);
 
-    wasReset = isReset;
-    isReset = Keyboard.isKeyDown(Keyboard.KEY_R) && !controlPressed();
+    isReset = button(Control.RESET_TILE);
 
-    wasSave = isSave;
-    isSave = Keyboard.isKeyDown(Keyboard.KEY_S) && controlPressed() && !shiftPressed();
+    isSave = button(Control.SAVE);
 
-    wasNewSave = isNewSave;
-    isNewSave = Keyboard.isKeyDown(Keyboard.KEY_S) && controlPressed() && shiftPressed();
+    isNewSave = button(Control.NEW_SAVE);
 
-    wasGrid = isGrid;
-    isGrid = Keyboard.isKeyDown(Keyboard.KEY_G) && controlPressed();
-
-    wasClearSel = isClearSel;
-    isClearSel = Keyboard.isKeyDown(Keyboard.KEY_C) && controlPressed();
-
+//    System.out.println(isSave + ", " + isNewSave);
+    
+    isGrid = button(Control.GRID);
   }
 
 
@@ -270,195 +270,95 @@ public class EditorMap implements Playable{
       if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
         Display.setTitle(Display.getTitle()+"*");
       }
-
-
-      //Sets palette's selected to mouse tile
-      if(rButtonIsDown && !rButtonWasDown && checkBounds()){
-        pal.setLoc(tiles[getMouseY()][getMouseX()]);
-        clearSelection();
-      }
-
-      //Flood Fills tiles
-      if(mButtonIsDown && !mButtonWasDown && checkBounds()){
-        flood(getMouseX(), getMouseY(), 
-            tiles[getMouseY()][getMouseX()]);
-        saved = false;
-        if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
-          Display.setTitle(Display.getTitle()+"*");
-        }
-      }
-
-      //Creates a selection
-      if(startDragging){
-        initX = getMouseX();
-        initY = getMouseY();
-      }
-      if(isDragging && checkBounds()){
-        createSelection();
-      }
-
-      if(isSelection && lButtonIsDown && checkBounds() && !lButtonWasDown){
-        for(int i = 0; i < selection.length; i++){
-          for (int j = 0; j < selection[0].length; j++) {
-            if(checkTileBounds(getMouseY()+i, getMouseX()+j)){
-              tiles[getMouseY()+i][getMouseX()+j] = 
-                  selection[i][j];
-            }
-          }
-        }
-        saved = false;
-        if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
-          Display.setTitle(Display.getTitle()+"*");
-        }
-
-        if(isClearSel && isSelection && !wasClearSel){
-          clearSelection();
-        }
-
-        //Resets tiles to default position
-        if(isReset && !wasReset){
-          x = 0;
-          y = 0;
-
-          if(isSave && !wasSave){
-            if(savePath == null){
-              newSave();
-            }else{
-              save(savePath, saveName);
-            }
-          }
-
-          if(isNewSave && !wasNewSave){
-            newSave();
-          }
-
-
-          if(isGrid && !wasGrid){
-            changeGrid();
-          }
-
-          if(up){
-            dy =  speed;
-          }
-          if(down){
-            dy = -speed;
-          }
-          if(right){
-            dx =  speed;
-          }
-          if(left){
-            dx = -speed;
-          }
-
-          move(dx, dy);
-
-          if(isReset && !wasReset){
-            x = 0;
-            y = 0;
-          }
-
-        }
-
-        dx = 0;
-        dy = 0;
-      }
-    }
-  }
-
-
-
-
-
-
-  /**
-   * @return if the up key was pressed
-   */
-  private boolean upPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_UP) ||
-        Keyboard.isKeyDown(Keyboard.KEY_W));
-  }
-
-  /**
-   * @return if the down key was pressed
-   */
-  private boolean downPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_DOWN) ||
-        Keyboard.isKeyDown(Keyboard.KEY_S));
-  }
-
-  /**
-   * @return if the left key was pressed
-   */
-  private boolean leftPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_LEFT) ||
-        Keyboard.isKeyDown(Keyboard.KEY_A));
-  }
-
-  /**
-   * @return if the right key was pressed
-   */
-  private boolean rightPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_RIGHT) ||
-        Keyboard.isKeyDown(Keyboard.KEY_D));
-  }
-
-  /**
-   * @return if the control key was pressed
-   */
-  private boolean controlPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) ||
-        Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
-  }
-
-  /**
-   * @return if the shift key was pressed
-   */
-  private boolean shiftPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) ||
-        Keyboard.isKeyDown(Keyboard.KEY_RSHIFT));
-  }
-
-
-
-  /**
-   * @param path The file location of the path being saved
-   * @param name The name of the file that is being saved
-   */
-  public boolean save(String path,String name) {
-    PrintWriter writer;
-
-    try {
-      if(path.substring(path.length()-4).equals(".map")){
-        writer = new PrintWriter(path, "UTF-8");
-      }else{
-        writer = new PrintWriter(path+".map", "UTF-8");
-      }
-      writer.println(tiles.length);
-      writer.println(tiles[0].length);
-
-      for (TileList[] tile : tiles) {
-        for (TileList t : tile) {
-          writer.print(t.getID() + " ");
-        }
-        writer.println();
-      }
-      System.out.println("Save complete");
-      saved = true;
-      writer.close();
-      if(name.substring(name.length()-4).equals(".map")){
-        Display.setTitle("Clyde\'s Editor - " + name);
-      }else{
-        Display.setTitle("Clyde\'s Editor - " + name + ".map");
-      }
-
-
-      return true;
-    } catch (FileNotFoundException | UnsupportedEncodingException e) {
-      e.printStackTrace();
-      return false;
     }
 
+    //Sets palette's selected to mouse tile
+    if(rButtonIsDown && !rButtonWasDown && checkBounds()){
+      pal.setLoc(tiles[getMouseY()][getMouseX()]);
+      clearSelection();
+    }
+
+    //Flood Fills tiles
+    if(mButtonIsDown && !mButtonWasDown && checkBounds()){
+      flood(getMouseX(), getMouseY(), tiles[getMouseY()][getMouseX()]);
+      saved = false;
+      if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
+        Display.setTitle(Display.getTitle()+"*");
+      }
+    }
+
+    //Creates a selection
+    if(startDragging){
+      initX = getMouseX();
+      initY = getMouseY();
+    }
+    if(isDragging && checkBounds()){
+      createSelection();
+    }
+
+    if(isSelection && lButtonIsDown && checkBounds() && !lButtonWasDown){
+      for(int i = 0; i < selection.length; i++){
+        for (int j = 0; j < selection[0].length; j++) {
+          if(checkTileBounds(getMouseY()+i, getMouseX()+j)){
+            tiles[getMouseY()+i][getMouseX()+j] = 
+                selection[i][j];
+          }
+        }
+      }
+      saved = false;
+      if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
+        Display.setTitle(Display.getTitle()+"*");
+      }
+    }
+
+    //Resets tiles to default position
+    if(isSave){
+      if(savePath == null){
+        newSave();
+      }else{
+        save(savePath, saveName);
+      }
+    }
+
+    if(isNewSave){
+      newSave();
+    }
+
+
+    if(isGrid){
+      changeGrid();
+    }
+
+    if(up){
+      dy =  speed;
+    }
+    if(down){
+      dy = -speed;
+    }
+    if(right){
+      dx =  speed;
+    }
+    if(left){
+      dx = -speed;
+    }
+
+    move(dx, dy);
+
+    if(isReset){
+      x = 0;
+      y = 0;
+    }
+
+
+
+    x+=dx;
+    y+=dy;
+
+    dx = 0;
+    dy = 0;
+
   }
+
 
   /* (non-Javadoc)
    * @see komorebi.clyde.engine.Renderable#render()
@@ -535,6 +435,46 @@ public class EditorMap implements Playable{
 
 
   /**
+   * @param path The file location of the path being saved
+   * @param name The name of the file that is being saved
+   */
+  public boolean save(String path,String name) {
+    PrintWriter writer;
+  
+    try {
+      if(path.substring(path.length()-4).equals(".map")){
+        writer = new PrintWriter(path, "UTF-8");
+      }else{
+        writer = new PrintWriter(path+".map", "UTF-8");
+      }
+      writer.println(tiles.length);
+      writer.println(tiles[0].length);
+  
+      for (TileList[] tile : tiles) {
+        for (TileList t : tile) {
+          writer.print(t.getID() + " ");
+        }
+        writer.println();
+      }
+      saved = true;
+      writer.close();
+      if(name.substring(name.length()-4).equals(".map")){
+        Display.setTitle("Clyde\'s Editor - " + name);
+      }else{
+        Display.setTitle("Clyde\'s Editor - " + name + ".map");
+      }
+  
+  
+      return true;
+    } catch (FileNotFoundException | UnsupportedEncodingException e) {
+      e.printStackTrace();
+      return false;
+    }
+  
+  }
+
+
+  /**
    * Saves the Map file
    * 
    * @return true if the save completed successfully, false if not
@@ -579,7 +519,7 @@ public class EditorMap implements Playable{
     chooser.setDialogTitle("Enter the name of the map to save");
     int returnee = chooser.showSaveDialog(null);
 
-    Editor.reloadKeyboard();
+    KeyHandler.reloadKeyboard();
 
     if(returnee == JFileChooser.APPROVE_OPTION){
 

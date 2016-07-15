@@ -69,8 +69,6 @@ public class NPC extends Entity {
     super(x*16, y*16, 16, 24);
     tx = (int) x;
     ty = (int) y;
-
-    System.out.println("Hi");
     
     this.name = name;
     ent=Entities.NPC;
@@ -97,8 +95,6 @@ public class NPC extends Entity {
     ent=Entities.NPC;
 
     isVisible = false;
-    System.out.println("Hi");
-
 
     isMoving=false;
     hasInstructions=false;

@@ -21,6 +21,7 @@ import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glMatrixMode;
 import static org.lwjgl.opengl.GL11.glOrtho;
 
+import komorebi.clyde.script.TextHandler;
 import komorebi.clyde.states.Editor;
 
 import org.lwjgl.LWJGLException;
@@ -52,6 +53,10 @@ public class MainE {
   private static JDialog frame;
   
   private static boolean running = true;
+  
+  private static TextHandler handler;
+  private static long lastFrame, lastFPS;
+  private static int fps;
 
   /**
    * Starts the program, reading an int from settings and using it for the scale.
@@ -114,6 +119,12 @@ public class MainE {
   private static void initGame() {
     edit = new Editor();
     AudioHandler.init();
+    
+    getDelta();          // call once before loop to initialise lastFrame
+    lastFPS = getTime(); // call before loop to initialise fps timer
+    
+    handler = new TextHandler(false);
+
   }
 
 
@@ -121,8 +132,9 @@ public class MainE {
     edit.getInput();
   }
 
-  private static void update() {
+  private static void update(int delta) {
     edit.update();
+    updateFPS(delta); // update FPS Counter
   }
 
 
@@ -131,7 +143,8 @@ public class MainE {
     glLoadIdentity();
 
     edit.render();
-
+    handler.render();
+    
     Display.update();   //updates the display with the changes
     Display.sync(60);   //makes up for lost time
 
@@ -144,8 +157,10 @@ public class MainE {
   private static void gameLoop() {
 
     while (running) {
+      int delta = getDelta();
+      
       getInput();
-      update();
+      update(delta);
       render();
       SoundStore.get().poll(0);
 
@@ -192,6 +207,32 @@ public class MainE {
 
   public static int getScale() {
     return scale;
+  }
+  
+  private static long getTime(){
+    return System.currentTimeMillis();
+  }
+  
+  private static int getDelta(){
+    long time = getTime();
+    int delta = (int)(time - lastFrame);
+    lastFrame = time;
+    
+    return delta;
+  }
+  
+  /**
+   * Calculate the FPS and set it in the title bar
+   */
+  private static void updateFPS(int delta) {
+      if (getTime() - lastFPS > 1000) {
+          handler.clear();
+          handler.write("FPS: " + fps, 0, 600, 8);
+          handler.write("Delta: " + delta, 0, 590, 8); 
+          fps = 0; //reset the FPS counter
+          lastFPS += 1000; //add one second
+      }
+      fps++;
   }
 
 }

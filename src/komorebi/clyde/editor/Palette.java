@@ -6,6 +6,8 @@ package komorebi.clyde.editor;
 
 import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Draw;
+import komorebi.clyde.engine.Key;
+import komorebi.clyde.engine.KeyHandler;
 import komorebi.clyde.engine.MainE;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.map.EditorMap;
@@ -35,7 +37,7 @@ public class Palette implements Playable{
   public static final int SIZE = 16;  //Width and height of a tile
 
   //Holds current palette tiles
-  private TileList[][] tiles = new TileList[HEIGHT][WIDTH]; 
+  private TileList[][] tiles = new TileList[HEIGHT][WIDTH];
 
   //Offset of palette in tiles
   public static int xOffset = Display.getWidth() / (MainE.scale * 16) - WIDTH;
@@ -51,6 +53,7 @@ public class Palette implements Playable{
 
   //Removes repeated input
   private boolean lButtonWasDown, lButtonIsDown; //Left Click
+  private boolean rButtonWasDown, rButtonIsDown; //Right Click
 
   //Special commands
   private boolean startDragging;                //Starting a group selection
@@ -84,16 +87,17 @@ public class Palette implements Playable{
    */
   @Override
   public void getInput(){
-    
-    isDragging = Mouse.isButtonDown(1) && controlPressed();
-        
+            
     lButtonWasDown = lButtonIsDown;
     lButtonIsDown = Mouse.isButtonDown(0);
 
+    rButtonWasDown = rButtonIsDown;
+    rButtonIsDown = Mouse.isButtonDown(1);
+    
     startDragging = Mouse.isButtonDown(1) && controlPressed() && 
         !isDragging;
-
-    isDragging = Mouse.isButtonDown(1) && controlPressed();
+    
+    isDragging = Mouse.isButtonDown(1) && controlPressed();    
   }
 
 
@@ -108,6 +112,11 @@ public class Palette implements Playable{
       map.clearSelection();
     }
 
+    if(checkBounds() && rButtonIsDown && !rButtonWasDown && 
+        !KeyHandler.keyDown(Key.CTRL)){
+      map.clearSelection();
+    }
+    
     if(startDragging){
       initX = getMouseX();
       initY = getMouseY();
@@ -132,10 +141,10 @@ public class Palette implements Playable{
           Draw.rect((j+xOffset)*SIZE, (i+yOffset)*SIZE, SIZE, SIZE, 0, 16, SIZE,
               16+SIZE, 2);
         }
-
-    selection.play(selX*16, selY*16);
       }
     }
+    
+    selection.play(selX*16, selY*16);
   }
 
   public TileList getSelected(){

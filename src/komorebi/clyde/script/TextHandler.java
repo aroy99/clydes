@@ -108,6 +108,12 @@ public class TextHandler {
     return 0;
   }
 
+  /**
+   * Not complete yet
+   * 
+   * @param c Character to check
+   * @return The width of the character
+   */
   private static int getTexSx(char c)
   {
     switch (c)

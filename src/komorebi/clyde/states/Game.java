@@ -151,7 +151,7 @@ public class Game extends State{
   @Override
   public void update() {
     // TODO Auto-generated method stub
-    KeyHandler.update();
+    KeyHandler.getInput();
     
     play.update();
     map.setClydeLocation(play.getX(), play.getY(), play.getDirection());
