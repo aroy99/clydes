@@ -5,7 +5,7 @@ unlock
 
 branch Go
 fadeout
-load Test_Map_2
+load Bigger_Town
 pause 50
 fadein
 unlock

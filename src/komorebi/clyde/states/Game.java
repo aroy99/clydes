@@ -50,6 +50,8 @@ public class Game extends State{
   private Execution pauser;
   private int pauseFrames;
   private BufferedReader read;
+  
+  public static String testLoc;
 
 
 
@@ -58,7 +60,7 @@ public class Game extends State{
    */
   public Game(){
     play = new Clyde(120,100);
-    map = new Map("res/maps/Some Town.map");
+    map = new Map("res/maps/More Stupid Tests.map");
 
     npcs = new ArrayList<NPC>();
     scripts = new ArrayList<AreaScript>();

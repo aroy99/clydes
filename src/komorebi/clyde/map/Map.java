@@ -16,6 +16,7 @@ import komorebi.clyde.script.AreaScript;
 import komorebi.clyde.script.TalkingScript;
 import komorebi.clyde.script.WalkingScript;
 import komorebi.clyde.script.WarpScript;
+import komorebi.clyde.states.Game;
 
 import org.lwjgl.opengl.Display;
 
@@ -33,15 +34,14 @@ import java.io.IOException;
 public class Map implements Playable{
 
   private TileList[][] tiles;                //The Map itself
+  private boolean[][] collision;
 
   public static final int SIZE = 16;  //Width and height of a tile
 
   private NPC[][] npcs;
   private AreaScript[][] scripts;
 
-  private float x, y;       //Current location
-  private float dx, dy;
-  private float speed = 10;
+  private float x, y=20;       //Current location
 
   private float clydeX, clydeY;
   private Face clydeDirection;
@@ -53,10 +53,12 @@ public class Map implements Playable{
 
 
   /**
-   * Creates a new Map of the dimensions col x row
+   * Creates a new Map of the dimensions col x row <br>
+   * Really shouldn't be used anymore
    * @param col number of columns (x)
    * @param row number of rows (y)
    */
+  @Deprecated
   public Map(int col, int row){
     tiles = new TileList[row][col];
     npcs = new NPC[row][col];
@@ -84,9 +86,9 @@ public class Map implements Playable{
       int cols = Integer.parseInt(reader.readLine());
 
       tiles = new TileList[rows][cols];
+      collision = new boolean[rows][cols];
       npcs = new NPC[rows][cols];
       scripts = new AreaScript[rows][cols];
-
 
       for (int i = 0; i < tiles.length; i++) {
         String[] str = reader.readLine().split(" ");
@@ -98,13 +100,34 @@ public class Map implements Playable{
           tiles[i][j] = TileList.getTile(Integer.parseInt(str[index]));
           scripts[i][j] = null;
           npcs[i][j]=null;
+          collision[i][j] = true;
+        }
+      }
+
+      String s = reader.readLine();
+
+      for (int i = 0; i < tiles.length; i++) {
+        if(s == null || s.startsWith("npc")){
+          break;
+        }
+        if(i!=0){
+          s = reader.readLine();
+        }
+        String[] str = s.split(" ");
+        int index = 0;
+        for (int j = 0; j < cols; j++, index++) {
+          if(str[index].equals("")){
+            index++;  //pass this token, it's blank
+          }
+          collision[i][j]=str[index].equals("0")?true:false;
         }
       }
       
-      String s;
-
-      while ((s=reader.readLine()) != null)
+      do
       {
+        if(s==null){
+          break;
+        }
         if (s.startsWith("npc"))
         {
           s = s.replace("npc ", "");
@@ -144,7 +167,7 @@ public class Map implements Playable{
               new WarpScript(split[0], arg0,
                   arg1, false);
         }
-      }
+      }while ((s=reader.readLine()) != null);
 
 
       reader.close();
@@ -169,11 +192,6 @@ public class Map implements Playable{
    */
   @Override
   public void update() {
-
-    move(dx, dy);
-
-    dx = 0;
-    dy = 0;
     
     for (NPC[] npcR: npcs) {
       for (NPC npc: npcR) {
@@ -233,8 +251,12 @@ public class Map implements Playable{
    * @param dx pixels to move left/right
    * @param dy pixels to move up/down
    */
-  public void move(float dx, float dy) {
+  public void move(float cx, float cy, float dx, float dy) {
 
+    if(!checkCollisions(cx,cy,dx,dy)){
+      dx=0;
+      dy=0;
+    }
     x+=dx;
     y+=dy;
     for (int i = 0; i < tiles.length; i++) {
@@ -318,6 +340,25 @@ public class Map implements Playable{
    */
   private boolean checkTileInBounds(float x, float y) {
     return x+32 > 0 && x < WIDTH && y+32 > 0 && y < HEIGHT;
+  }
+  
+  private boolean checkCollisions(float x, float y, float dx, float dy){
+    int x1 = (int)((-this.x-16+x-dx)/16)+1;  //Left
+    int y1 = (int)((-this.y-16+y-dy)/16)+1; //Bottom
+    
+    int x2 = (int)((-this.x+x-dx)/16)+1;  //Right
+    int y2 = (int)((-this.y+y-dy)/16)+1;  //Top
+ 
+    if(x2>=collision[0].length || x1-1<0 || y2>=collision.length || y1-1<0){
+      return false;
+    }
+    
+    if(KeyHandler.keyClick(Key.P)){
+      System.out.println("nx: " + dx + ", ny: " + dy + ", " + collision[y1][x1]);
+    }
+    
+    return collision[y1][x1] && collision[y2][x1] &&
+        collision[y1][x2] && collision[y2][x2];
   }
 
   public int getWidth(){

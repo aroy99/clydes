@@ -22,7 +22,7 @@ public class KeyHandler {
     UP, DOWN, LEFT, RIGHT, TALK, MENU, 
     
     MAP_UP, MAP_DOWN, MAP_LEFT, MAP_RIGHT, SAVE, NEW_SAVE, LOAD, NEW, GRID, 
-    RESET_TILE, RESET_LOC, PLAY;
+    REVERT_MAP, RESET_LOC, PLAY, MOVE_SET;
   }
 
   public static int totalKeys()
@@ -87,10 +87,11 @@ public class KeyHandler {
       case NEW_SAVE:   return keyDown(Key.SHIFT) && keyDown(Key.CTRL) && keyClick(Key.S);
       case LOAD:       return keyDown(Key.CTRL)  && keyClick(Key.L);
       case NEW:        return keyDown(Key.CTRL)  && keyClick(Key.N);
-      case RESET_TILE: return keyDown(Key.CTRL)  && keyClick(Key.R);
+      case REVERT_MAP: return keyDown(Key.CTRL)  && keyClick(Key.R);
       case GRID:       return keyDown(Key.CTRL)  && keyClick(Key.G);
       case PLAY:       return keyDown(Key.CTRL)  && keyClick(Key.P);
-      case RESET_LOC:  return keyClick(Key.R);   
+      case MOVE_SET:   return keyDown(Key.CTRL)  && keyClick(Key.M);
+      case RESET_LOC:  return keyClick(Key.R);
 
       default:         return false;
       
