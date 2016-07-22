@@ -1,5 +1,5 @@
 /**
- * Instructions.java Jun 11, 2016, 12:25:13 PM
+ * Instructions.java  Jun 11, 2016, 12:25:13 PM
  */
 package komorebi.clyde.script;
 
@@ -27,14 +27,24 @@ public enum Instructions {
   ASK,
   LOCK,
   UNLOCK,
-  BRANCH,
+  RUN_BRANCH_ASK,
+  RUN_BRANCH,
   FADE_OUT,
   FADE_IN,
   RUN_SCRIPT,
   LOAD_MAP,
-  WAIT;
-
-
-
+  RETILE,
+  CLYDE_WALK_LEFT,
+  CLYDE_WALK_RIGHT,
+  CLYDE_WALK_UP,
+  CLYDE_WALK_DOWN,
+  CLYDE_PAUSE,
+  CLYDE_TURN_LEFT,
+  CLYDE_TURN_RIGHT,
+  CLYDE_TURN_UP,
+  CLYDE_TURN_DOWN,
+  WAIT,
+  SIMUL_RUN_BRANCH,
+  END;
 }
 

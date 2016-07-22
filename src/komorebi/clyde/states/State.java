@@ -1,5 +1,5 @@
 /**
- * State.java    May 15, 2016, 11:43:10 PM
+ * State.java  May 15, 2016, 11:43:10 PM
  */
 
 package komorebi.clyde.states;

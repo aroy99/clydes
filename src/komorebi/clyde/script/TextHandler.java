@@ -1,5 +1,5 @@
 /**
- * TextHandler.java		Jun 12, 2016, 1:48:14 PM
+ * TextHandler.java  Jun 12, 2016, 1:48:14 PM
  */
 package komorebi.clyde.script;
 
@@ -26,6 +26,9 @@ public class TextHandler {
   public ArrayList<Integer> ptSize;
 
 
+  /**
+   * Creates a text handler object which will render words in a speaker-bubble style
+   */
   public TextHandler()
   {
     spoken=true;
@@ -35,9 +38,14 @@ public class TextHandler {
     ptSize = new ArrayList<Integer>();
   }
   
+  /**
+   * Creates a text handler object
+   * @param b If true, text will render in a speaker-bubble style
+   *          If false, text will render without surrounding bubble
+   */
   public TextHandler(boolean b)
   {
-    spoken=false;
+    spoken=b;
     words = new ArrayList<char[]>();
     xLocations = new ArrayList<Integer>();
     yLocations = new ArrayList<Integer>();
@@ -72,6 +80,8 @@ public class TextHandler {
         return SCALE*10;
       case'+':case'7':case'C':case'O':case'g':case's':
         return SCALE*11;
+      default:
+        break;
     }
 
     return 0;
@@ -103,12 +113,14 @@ public class TextHandler {
       case'[':case']':case'~':case't':case'u':case'v':case'w':case'x':case'y':
       case'z':
         return SCALE*7;
+      default:
+        break;
     }
 
     return 0;
   }
 
-  private static int getTexSx(char c)
+  public static int getTexSx(char c)
   {
     switch (c)
     {
@@ -136,36 +148,50 @@ public class TextHandler {
         return SCALE*10;
       case'+':case'7':case'C':case'O':case'g':case's':
         return SCALE*11;
+      default:
+        break;
     }
 
     return 0;
   }
 
-  private static int getTexSy(char c)
+  public static int getTexSy(char c)
   {
     switch(c)
     {
       case' ':case'!':case'"':case'$':case'%':case'\'':case'(':case')':case'*':case'+':
         return 0;
-      case',':case'-':case'.':case'/':case'0':case'1':case'2':case'3':case'4':case'5':case'6':case'7':
+      case',':case'-':case'.':case'/':case'0':case'1':case'2':case'3':case'4':case'5':
+        case'6':case'7':
         return SCALE;
       case'8':case'9':case':':case';':case'=':case'?':case'A':case'B':case'C':
         return SCALE*2;
-      case'D':case'E':case'F':case'G':case'H':case'I':case'J':case'K':case'L':case'M':case'N':case'O':
+      case'D':case'E':case'F':case'G':case'H':case'I':case'J':case'K':case'L':case'M':
+        case'N':case'O':
         return SCALE*3;
       case'P':case'Q':case'R':case'S':case'T':case'U':case'V':case'W':case'X':case'Y':case'Z':
         return SCALE*4;
       case'a':case'b':case'c':case'd':case'e':case'f':case'g':
         return SCALE*5;
-      case'h':case'i':case'j':case'k':case'l':case'm':case'n':case'o':case'p':case'q':case'r':case's':
+      case'h':case'i':case'j':case'k':case'l':case'm':case'n':case'o':case'p':case'q':
+        case'r':case's':
         return SCALE*6;
       case'[':case']':case'~':case't':case'u':case'v':case'w':case'x':case'y':case'z':
         return SCALE*7;
+      default:
+        break;
     }
 
     return 0;
   }
 
+  /**
+   * 
+   * @param s
+   * @param x
+   * @param y
+   * @param fontPt
+   */
   public void write(String s, int x, int y, int fontPt)
   {
     words.add(s.toCharArray());
@@ -174,6 +200,9 @@ public class TextHandler {
     ptSize.add(fontPt);
   }
 
+  /**
+   * Renders the text in a style specified by the text handler's attributess
+   */
   public void render()
   {
     if (!words.isEmpty() && spoken) {
@@ -191,8 +220,8 @@ public class TextHandler {
 
         int under = 0, texUnder = 0;
 
-        if (letters[i]=='g'||letters[i]=='j'||letters[i]=='p'||
-            letters[i]=='q'||letters[i]=='y')
+        if (letters[i]=='g' || letters[i] == 'j' || letters[i] == 'p' ||
+            letters[i] == 'q' || letters[i] == 'y')
         {   
           under = size;
           texUnder = 8;
@@ -222,6 +251,9 @@ public class TextHandler {
     }
   }
 
+  /**
+   * Clears the text handler's memory
+   */
   public void clear()
   {
     words.clear();

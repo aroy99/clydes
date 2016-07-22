@@ -4,6 +4,15 @@
 
 package komorebi.clyde.map;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+
+import org.lwjgl.opengl.Display;
+
 import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
@@ -16,13 +25,6 @@ import komorebi.clyde.script.AreaScript;
 import komorebi.clyde.script.TalkingScript;
 import komorebi.clyde.script.WalkingScript;
 import komorebi.clyde.script.WarpScript;
-
-import org.lwjgl.opengl.Display;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 
 /**
  * Represents a map of tiles
@@ -41,8 +43,7 @@ public class Map implements Playable{
 
   private float x, y;       //Current location
   private float dx, dy;
-  private float speed = 10;
-
+  
   private float clydeX, clydeY;
   private Face clydeDirection;
 
@@ -86,7 +87,6 @@ public class Map implements Playable{
       tiles = new TileList[rows][cols];
       npcs = new NPC[rows][cols];
       scripts = new AreaScript[rows][cols];
-
 
       for (int i = 0; i < tiles.length; i++) {
         String[] str = reader.readLine().split(" ");
@@ -154,13 +154,32 @@ public class Map implements Playable{
 
 
   }
+  
+  public Map(String key, boolean b)
+  {
+    try {
+      FileInputStream fileIn = new FileInputStream(key);
+      ObjectInputStream in = new ObjectInputStream(fileIn);
+      
+      EditorMap edit = (EditorMap) in.readObject();
+      tiles = edit.getTiles();
+      
+      in.close();
+      fileIn.close();
+      
+      
+    } catch (IOException | ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+    
+  }
 
   /* (non-Javadoc)
    * @see komorebi.clyde.engine.Playable#getInput()
    */
   @Override
   public void getInput() {
-    //TODO Debug stuff
+    
   }
   
   
@@ -180,18 +199,11 @@ public class Map implements Playable{
         if (npc != null) 
         {
           npc.update();
-
-          if (npc.isTalking() && KeyHandler.keyDown(Key.CTRL) && KeyHandler.keyClick(Key.A))
+          
+          if (!npc.isTalking() && !npc.isWalking())
           {
-            npc.abortTalkingScript();
+            npc.runWalkingScript();
           }
-
-          if (!npc.isTalking() && !npc.getWalkingScript().isRunning())
-          {
-            npc.getWalkingScript().run();
-          }
-
-
 
         }
       }
@@ -234,7 +246,7 @@ public class Map implements Playable{
    * @param dy pixels to move up/down
    */
   public void move(float dx, float dy) {
-
+    
     x+=dx;
     y+=dy;
     for (int i = 0; i < tiles.length; i++) {
@@ -243,7 +255,7 @@ public class Map implements Playable{
         {
           npcs[i][j].setPixLocation((int) x+j*16+npcs[i][j].getXTravelled(), 
               (int) y+i*16+npcs[i][j].getYTravelled());
-          npcs[i][j].update();
+          //npcs[i][j].update();
 
           if (npcs[i][j].isApproached(clydeX, clydeY, clydeDirection) && 
               KeyHandler.keyClick(Key.SPACE))
@@ -342,6 +354,17 @@ public class Map implements Playable{
 
   public float getY() {
     return y;
+  }
+  
+  public void setTile(TileList tile, int x, int y)
+  {
+    tiles[x][y] = tile;
+  }
+  
+  public void setDirection(float dx, float dy)
+  {
+    this.dx = dx;
+    this.dy = dy;
   }
 }
 

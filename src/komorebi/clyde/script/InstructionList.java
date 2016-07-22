@@ -1,5 +1,5 @@
 /**
- * InstructionList.java		Jun 12, 2016, 11:57:16 AM
+ * InstructionList.java  Jun 12, 2016, 11:57:16 AM
  */
 package komorebi.clyde.script;
 
@@ -29,8 +29,8 @@ public class InstructionList {
   private int instructionIndex;
 
   /**
-   * 
-   * @param s
+   * Creates an instruction list object
+   * @param s The branch name of the instruction list
    */
   public InstructionList(String s)
   {
@@ -65,9 +65,10 @@ public class InstructionList {
   }
 
   /**
-   * Only used for the WAIT instruction: specifies both instruction type and wait delay
-   * @param task The instruction for the NPC - only applicable for WAIT
-   * @param frames The number of frames to delay
+   * Adds a task to the end of the NPC's queue
+   * @param task The instruction for the NPC
+   * @param frames An integer specification of the number of frames
+   *        (for WAIT)
    */
   public void add(Instructions task, int frames)
   {
@@ -82,9 +83,9 @@ public class InstructionList {
   }
 
   /**
-   * Only used for the CHANGE_SPRITE instruction: specifies both instruction type and new sprite
-   * @param task The instruction for the NPC - only applicable for CHANGE_SPRITE
-   * @param newSprite The new sprite of the NPC
+   * Adds a task to the end of the NPC's queue
+   * @param task The instruction for the NPC
+   * @param newSprite An NPCType specification (for CHANGE_SPRITE)
    */
   public void add(Instructions task, NPCType newSprite)
   {
@@ -100,10 +101,11 @@ public class InstructionList {
   }
 
   /**
-   * Only used for the SET_LOCATION instruction: specifies both instruction type and (x,y) location
-   * @param task The instruction for the NPC - only applicable for SET_LOCATION
-   * @param x The new x location (in tiles)
-   * @param y The new y location (in tiles)
+   *
+   * Adds a task to the end of the NPC's queue
+   * @param task The instruction for the NPC
+   * @param x Any x specification for the instruction (in tiles)
+   * @param y Any y specification for the instruction (in tiles)
    */
   public void add(Instructions task, int x, int y)
   {
@@ -119,9 +121,9 @@ public class InstructionList {
   }
 
   /**
-   * Only used for the SAY instruction: specifies the string to say
-   * @param task The instruction for the NPC -  only applicable for SAY
-   * @param s The string to be spoken by the NPC
+   * Adds a task to the end of the NPC's queue
+   * @param task The instruction for the NPC
+   * @param s Any string associated with the instruction
    */
   public void add(Instructions task, String s)
   {
@@ -135,6 +137,11 @@ public class InstructionList {
     npcs.add(null);
   }
 
+  /**
+   * Adds a task to the end of the NPC's queue
+   * @param task The instruction for the NPC
+   * @param q An array list of questions and options (for ASK)
+   */
   public void add(Instructions task, String[] q)
   {
     instructions.add(task);
@@ -147,6 +154,12 @@ public class InstructionList {
     npcs.add(null);
   }
 
+  /**
+   * Adds a task to the end of the NPC's queue
+   * @param task The instruction for the NPC
+   * @param script The script to be executed (for RUN_SCRIPT)
+   * @param npc The NPC who will execute the script (for RUN_SCRIPT)
+   */
   public void add(Instructions task, String script, NPC npc)
   {
     instructions.add(task);
@@ -158,6 +171,25 @@ public class InstructionList {
     questions.add(null);
     npcs.add(npc);
   }
+  
+  /**
+   * Adds a task to the end of the NPC's queue
+   * @param task The instruction for the NPC
+   * @param tileID An integer specification of the new tile ID (for RETILE)
+   * @param tx The x value of the tile to be re-tiled
+   * @param ty The y value of the tile to be re-tiled
+   */
+  public void add(Instructions task, int tileID, int tx, int ty)
+  {
+    instructions.add(task);
+    waitIndices.add(tileID);
+    sprites.add(null);
+    xLocations.add(tx);
+    yLocations.add(ty);
+    words.add(null);
+    questions.add(null);
+    npcs.add(null);
+  }
 
   public ArrayList<Instructions> getInstructions()
   {
@@ -165,6 +197,11 @@ public class InstructionList {
   }
 
   public int getWaitIndex(int i)
+  {
+    return waitIndices.get(i);
+  }
+  
+  public int getTileID(int i)
   {
     return waitIndices.get(i);
   }

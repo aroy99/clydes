@@ -9,7 +9,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-import komorebi.clyde.engine.Main;
 import komorebi.clyde.entities.NPC;
 import komorebi.clyde.entities.NPCType;
 import komorebi.clyde.states.Game;
@@ -34,7 +33,7 @@ public class ScriptHandler {
    */
   public static void read(Script script, int abortIndex)
   {
-
+    
     InstructionList ex = new InstructionList("Main");
     branches = new BranchList();
     branches.add(ex);
@@ -76,6 +75,8 @@ public class ScriptHandler {
           }
         } else if (s.startsWith("jog"))
         {
+          //System.out.println(s);
+          
           s=s.replace("jog ", "");
 
           String[] dir = s.split(" ");
@@ -120,8 +121,6 @@ public class ScriptHandler {
             System.out.println("Error");
           }
 
-
-
         } else if (s.startsWith("lock"))
         {
           currentBranch.add(Instructions.LOCK);
@@ -161,17 +160,13 @@ public class ScriptHandler {
           }
 
           currentBranch.add(Instructions.ASK, newWords);
-          currentBranch.add(Instructions.BRANCH, newWords);
-
-          for (int i=1; i < newWords.length; i++)
-          {
-            branches.add(new InstructionList(newWords[i]));
-          }
-
+          currentBranch.add(Instructions.RUN_BRANCH_ASK);
 
         } else if (s.startsWith("branch"))
         {
+          
           s = s.replace("branch ", "");
+          branches.add(new InstructionList(s));
           currentBranch = branches.getBranch(s);
         } else if (s.startsWith("fadeout"))
         {
@@ -179,7 +174,7 @@ public class ScriptHandler {
         } else if (s.startsWith("fadein"))
         {
           currentBranch.add(Instructions.FADE_IN);
-        } else if (s.startsWith("run"))
+        } else if (s.startsWith("run "))
         {
           s = s.replace("run ","");
           currentBranch.add(Instructions.RUN_SCRIPT, s);
@@ -205,6 +200,62 @@ public class ScriptHandler {
         {
           s = s.replace("load ", "");
           currentBranch.add(Instructions.LOAD_MAP, s);
+        } else if (s.startsWith("retile"))
+        {
+          s = s.replace("retile ", "");
+          String[] split = s.split(" ");
+          currentBranch.add(Instructions.RETILE, Integer.parseInt(split[0]), 
+              Integer.parseInt(split[2]), Integer.parseInt(split[1]));
+        } else if (s.startsWith("clydewalk"))
+        {
+          s = s.replace("clydewalk ", "");
+          String[] dir = s.split(" ");
+          for (int i=0; i < dir.length; i++)
+          {
+            if (dir[i].equals("left"))
+            {
+              currentBranch.add(Instructions.CLYDE_WALK_LEFT);
+            } else if (dir[i].equals("right"))
+            {
+              currentBranch.add(Instructions.CLYDE_WALK_RIGHT);
+            }else if (dir[i].equals("down"))
+            {
+              currentBranch.add(Instructions.CLYDE_WALK_DOWN);
+            } else if (dir[i].equals("up"))
+            {
+              currentBranch.add(Instructions.CLYDE_WALK_UP);
+            }
+          }
+        } else if (s.startsWith("runbranch"))
+        {
+          s = s.replace("runbranch ", "");
+          currentBranch.add(Instructions.RUN_BRANCH, s);
+        } else if (s.startsWith("end"))
+        {
+          currentBranch.add(Instructions.END);
+        } else if (s.startsWith("simulrun branch"))
+        {
+          s = s.replace("simulrun branch ", "");
+          currentBranch.add(Instructions.SIMUL_RUN_BRANCH, s);
+        } else if (s.startsWith("clydepause"))
+        {
+          s = s.replace("clydepause ", "");
+          currentBranch.add(Instructions.CLYDE_PAUSE, Integer.parseInt(s));
+        } else if (s.startsWith("clydeturn"))
+        {
+          s = s.replace("clydeturn ", "");
+          if (s.equals("left"))
+          {
+            currentBranch.add(Instructions.CLYDE_TURN_LEFT);
+          } else if (s.equals("right")) {
+            currentBranch.add(Instructions.CLYDE_TURN_RIGHT);
+          } else if (s.equals("up"))
+          {
+            currentBranch.add(Instructions.CLYDE_TURN_UP);
+          } else if (s.equals("down"))
+          {
+            currentBranch.add(Instructions.CLYDE_TURN_DOWN);
+          }
         }
 
       }
@@ -242,5 +293,10 @@ public class ScriptHandler {
   private static void setCurrentBranch(InstructionList list)
   {
     currentBranch = list;
+  }
+  
+  public static InstructionList getCurrentBranch()
+  {
+    return currentBranch;
   }
 }

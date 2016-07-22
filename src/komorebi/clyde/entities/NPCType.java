@@ -1,5 +1,5 @@
 /**
- * NPCType.java		Jun 10, 2016, 9:33:03 PM
+ * NPCType.java  Jun 10, 2016, 9:33:03 PM
  */
 package komorebi.clyde.entities;
 

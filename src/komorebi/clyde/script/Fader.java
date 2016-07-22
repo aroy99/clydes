@@ -5,7 +5,6 @@
 package komorebi.clyde.script;
 
 import komorebi.clyde.engine.Draw;
-import komorebi.clyde.engine.Renderable;
 
 
 /**
@@ -19,7 +18,13 @@ public class Fader {
   private static boolean isFadingOut, isFadingIn;
 
   private static Execution instructor;
-
+  private static Lock lock;
+  
+  @Deprecated
+  /**
+   * Fades the screen out
+   * @param ex The thread on which the method is called
+   */
   public static void fadeOut(Execution ex)
   {
     isFadingOut = true;
@@ -27,7 +32,26 @@ public class Fader {
     instructor.getLock().pauseThread();
 
   }
+  
+  public static void fadeOut(Lock lock)
+  {
+    isFadingOut=true;
+    Fader.lock = lock;
+    Fader.lock.pauseThread();
+  }
+  
+  public static void fadeIn(Lock lock)
+  {
+    isFadingIn=true;
+    Fader.lock = lock;
+    Fader.lock.pauseThread();
+  }
 
+  @Deprecated
+  /**
+   * Fades the screen in
+   * @param ex The thread on which the method is called
+   */
   public static void fadeIn(Execution ex)
   {
 
@@ -38,26 +62,11 @@ public class Fader {
 
   }
 
+  /**
+   * Updates the static Fader class
+   */
   public static void update()
   {
-    /*
-    if (isFading)
-    {
-      inc++;
-
-      if (inc>=2)
-      {
-        inc=0;
-        faderIndex++;
-      }
-
-      if (faderIndex>=16) 
-      {
-        inc=0;
-        isFading = false;
-      }
-    }
-    */
 
     if (isFadingOut) 
     {
@@ -65,7 +74,7 @@ public class Fader {
       if (faderIndex > 16) 
       {
         isFadingOut=false;
-        instructor.getLock().resumeThread();
+        lock.resumeThread();
       }
     }
 
@@ -76,7 +85,7 @@ public class Fader {
       if (faderIndex <= 0) 
       {
         isFadingIn=false;
-        instructor.getLock().resumeThread();
+        lock.resumeThread();
       }
     }
 

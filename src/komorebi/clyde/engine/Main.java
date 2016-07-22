@@ -26,16 +26,16 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-import komorebi.clyde.engine.AudioHandler;
-import komorebi.clyde.engine.GameHandler;
-import komorebi.clyde.states.Game;
-
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.openal.AL;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.newdawn.slick.openal.SoundStore;
+
+import komorebi.clyde.states.Game;
+
+
 
 /**
  * Initializes everything and uses the game handler to start the game
@@ -151,7 +151,6 @@ public class Main {
         try {
           Keyboard.create();
         } catch (LWJGLException e) {
-          // TODO Auto-generated catch block
           e.printStackTrace();
         }
       }

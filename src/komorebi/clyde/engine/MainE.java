@@ -21,7 +21,11 @@ import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glMatrixMode;
 import static org.lwjgl.opengl.GL11.glOrtho;
 
-import komorebi.clyde.states.Editor;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+
 
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -30,12 +34,7 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.newdawn.slick.openal.SoundStore;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-
-import javax.swing.JDialog;
+import komorebi.clyde.states.Editor;
 
 /**
  * Use this if you want to run the editor
@@ -48,8 +47,6 @@ public class MainE {
   public static Editor edit;
   public static int scale = 1;
   private static BufferedReader read;
-
-  private static JDialog frame;
   
   private static boolean running = true;
 
@@ -58,7 +55,7 @@ public class MainE {
    * @param args not used
    */
   public static void main(String[] args) {
-	  
+    
     try {
       read = new BufferedReader(
           new FileReader(new File("res/settings")));
@@ -123,6 +120,7 @@ public class MainE {
 
   private static void update() {
     edit.update();
+    KeyHandler.update();
   }
 
 

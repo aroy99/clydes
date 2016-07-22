@@ -4,8 +4,30 @@
 
 package komorebi.clyde.map;
 
+import static komorebi.clyde.engine.KeyHandler.button;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.Display;
+
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.engine.Draw;
+import komorebi.clyde.engine.KeyHandler;
+import komorebi.clyde.engine.KeyHandler.Control;
 import komorebi.clyde.engine.MainE;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.entities.NPC;
@@ -16,53 +38,41 @@ import komorebi.clyde.script.WalkingScript;
 import komorebi.clyde.script.WarpScript;
 import komorebi.clyde.states.Editor;
 
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.Display;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
 /**
  * Represents a map of tiles
  * 
  * @author Aaron Roy
  * @version 
  */
-public class EditorMap implements Playable{
+public class EditorMap implements Playable, Serializable{
 
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 3907867851725270089L;
   //Mouse buttons
-  private boolean lButtonIsDown, lButtonWasDown;//Left Button Clicked
-  private boolean rButtonIsDown, rButtonWasDown;//Right Button Clicked
-  private boolean mButtonIsDown, mButtonWasDown;//Middle Button Pressed
+  private transient boolean lButtonIsDown, lButtonWasDown;//Left Button Clicked
+  private transient boolean rButtonIsDown, rButtonWasDown;//Right Button Clicked
+  private transient boolean mButtonIsDown, mButtonWasDown;//Middle Button Pressed
 
   //Arrow keys
-  private boolean up, down, left, right;        //Directions for movement
+  private transient boolean up, down, left, right;        //Directions for movement
 
   //Special commands
-  private boolean isSave, wasSave;              //Save the map
-  private boolean isNewSave, wasNewSave;        //Saves a new map file
-  private boolean isReset, wasReset;            //Resets tiles position
-  private boolean isGrid, wasGrid;              //Turn on/off Grid
+  private boolean isSave;              //Save the map
+  private boolean isNewSave;        //Saves a new map file
+  private boolean isEncSave;        //Saves an encrypted map file
+  private boolean isReset;            //Resets tiles position
+  private boolean isGrid;              //Turn on/off Grid
   private boolean startDragging;                //Starting a group selection
   private boolean isDragging;                   //Is making a group selection
   private boolean isSelection;                  //A selection is active
-  private boolean isClearSel, wasClearSel;      //Clears the selection
 
   public static boolean grid;                  //Whether the grid is on or not
   private boolean saved = true;
 
 
-  private Palette pal;
+  private transient Palette pal;
   private TileList[][] tiles;                //The Map itself
 
   private TileList[][] selection;            //The selection
@@ -209,6 +219,8 @@ public class EditorMap implements Playable{
 
       Editor.reloadKeyboard();
     }         
+    
+    
 
 
   }
@@ -222,40 +234,37 @@ public class EditorMap implements Playable{
     lButtonIsDown = Mouse.isButtonDown(0);
 
     rButtonWasDown = rButtonIsDown;
-    rButtonIsDown = Mouse.isButtonDown(1) && !controlPressed();
+    rButtonIsDown = Mouse.isButtonDown(1) && KeyHandler.controlDown();
 
     mButtonWasDown = mButtonIsDown;
     mButtonIsDown = Mouse.isButtonDown(2);
 
-    startDragging = Mouse.isButtonDown(1) && controlPressed() && 
+    startDragging = Mouse.isButtonDown(1) && KeyHandler.controlDown() && 
         !isDragging;
 
     isDragging = Mouse.isButtonDown(1) && isDragging || startDragging;
 
     //Makes sure that up and down / left and right can't be both true
-    up =   upPressed()    && !downPressed();
+    up =   button(Control.MAP_UP)    && !button(Control.MAP_DOWN);
 
-    down = downPressed()  && !(upPressed() || controlPressed());
+    down = button(Control.MAP_DOWN)  && 
+        !(button(Control.MAP_UP) || KeyHandler.controlDown());
 
-    left = leftPressed()  && !rightPressed();
+    left = button(Control.MAP_LEFT)  && !button(Control.MAP_RIGHT);
 
-    right =rightPressed() && !leftPressed();
+    right =button(Control.MAP_RIGHT) && !button(Control.MAP_LEFT);
 
-    wasReset = isReset;
-    isReset = Keyboard.isKeyDown(Keyboard.KEY_R) && !controlPressed();
+    isReset = button(Control.RESET_TILE);
 
-    wasSave = isSave;
-    isSave = Keyboard.isKeyDown(Keyboard.KEY_S) && controlPressed() && !shiftPressed();
+    isSave = button(Control.SAVE);
 
-    wasNewSave = isNewSave;
-    isNewSave = Keyboard.isKeyDown(Keyboard.KEY_S) && controlPressed() && shiftPressed();
+    isEncSave = button(Control.ENCRYPTED_SAVE);
 
-    wasGrid = isGrid;
-    isGrid = Keyboard.isKeyDown(Keyboard.KEY_G) && controlPressed();
+    isNewSave = button(Control.NEW_SAVE);
 
-    wasClearSel = isClearSel;
-    isClearSel = Keyboard.isKeyDown(Keyboard.KEY_C) && controlPressed();
-
+//    System.out.println(isSave + ", " + isNewSave);
+    
+    isGrid = button(Control.GRID);
   }
 
 
@@ -263,159 +272,107 @@ public class EditorMap implements Playable{
    * Used for the editor to help with performance
    */
   public void update(){
-    //Sets mouse tile to the one from the palette
     if(lButtonIsDown && checkBounds() && !isSelection){
       tiles[getMouseY()][getMouseX()] = pal.getSelected();
       saved = false;
       if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
         Display.setTitle(Display.getTitle()+"*");
       }
+    }
 
+    //Sets palette's selected to mouse tile
+    if(rButtonIsDown && !rButtonWasDown && checkBounds()){
+      pal.setLoc(tiles[getMouseY()][getMouseX()]);
+      clearSelection();
+    }
 
-      //Sets palette's selected to mouse tile
-      if(rButtonIsDown && !rButtonWasDown && checkBounds()){
-        pal.setLoc(tiles[getMouseY()][getMouseX()]);
-        clearSelection();
-      }
-
-      //Flood Fills tiles
-      if(mButtonIsDown && !mButtonWasDown && checkBounds()){
-        flood(getMouseX(), getMouseY(), 
-            tiles[getMouseY()][getMouseX()]);
-        saved = false;
-        if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
-          Display.setTitle(Display.getTitle()+"*");
-        }
-      }
-
-      //Creates a selection
-      if(startDragging){
-        initX = getMouseX();
-        initY = getMouseY();
-      }
-      if(isDragging && checkBounds()){
-        createSelection();
-      }
-
-      if(isSelection && lButtonIsDown && checkBounds() && !lButtonWasDown){
-        for(int i = 0; i < selection.length; i++){
-          for (int j = 0; j < selection[0].length; j++) {
-            if(checkTileBounds(getMouseY()+i, getMouseX()+j)){
-              tiles[getMouseY()+i][getMouseX()+j] = 
-                  selection[i][j];
-            }
-          }
-        }
-        saved = false;
-        if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
-          Display.setTitle(Display.getTitle()+"*");
-        }
-
-        if(isClearSel && isSelection && !wasClearSel){
-          clearSelection();
-        }
-
-        //Resets tiles to default position
-        if(isReset && !wasReset){
-          x = 0;
-          y = 0;
-
-          if(isSave && !wasSave){
-            if(savePath == null){
-              newSave();
-            }else{
-              save(savePath, saveName);
-            }
-          }
-
-          if(isNewSave && !wasNewSave){
-            newSave();
-          }
-
-
-          if(isGrid && !wasGrid){
-            changeGrid();
-          }
-
-          if(up){
-            dy =  speed;
-          }
-          if(down){
-            dy = -speed;
-          }
-          if(right){
-            dx =  speed;
-          }
-          if(left){
-            dx = -speed;
-          }
-
-          move(dx, dy);
-
-          if(isReset && !wasReset){
-            x = 0;
-            y = 0;
-          }
-
-        }
-
-        dx = 0;
-        dy = 0;
+    //Flood Fills tiles
+    if(mButtonIsDown && !mButtonWasDown && checkBounds()){
+      flood(getMouseX(), getMouseY(), tiles[getMouseY()][getMouseX()]);
+      saved = false;
+      if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
+        Display.setTitle(Display.getTitle()+"*");
       }
     }
-  }
+
+    //Creates a selection
+    if(startDragging){
+      initX = getMouseX();
+      initY = getMouseY();
+    }
+    if(isDragging && checkBounds()){
+      createSelection();
+    }
+
+    if(isSelection && lButtonIsDown && checkBounds() && !lButtonWasDown){
+      for(int i = 0; i < selection.length; i++){
+        for (int j = 0; j < selection[0].length; j++) {
+          if(checkTileBounds(getMouseY()+i, getMouseX()+j)){
+            tiles[getMouseY()+i][getMouseX()+j] = 
+                selection[i][j];
+          }
+        }
+      }
+      saved = false;
+      if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
+        Display.setTitle(Display.getTitle()+"*");
+      }
+    }
+
+    //Resets tiles to default position
+    if(isSave){
+      if(savePath == null){
+        newSave();
+      }else{
+        save(savePath, saveName);
+      }
+    }
+    
+    if (isEncSave)
+    {
+      if(savePath == null){
+        //once method exists, change to encryptedNewSave();
+        newEncryptedSave();
+      }else{
+        encryptedSave(savePath,saveName);
+      }
+    }
+
+    if(isNewSave){
+      newSave();
+    }
 
 
+    if(isGrid){
+      changeGrid();
+    }
 
+    if(up){
+      dy =  speed;
+    }
+    if(down){
+      dy = -speed;
+    }
+    if(right){
+      dx =  speed;
+    }
+    if(left){
+      dx = -speed;
+    }
 
+    move(dx, dy);
 
+    if(isReset){
+      x = 0;
+      y = 0;
+    }
+    
+    x+=dx;
+    y+=dy;
 
-  /**
-   * @return if the up key was pressed
-   */
-  private boolean upPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_UP) ||
-        Keyboard.isKeyDown(Keyboard.KEY_W));
-  }
+    dx = 0;
+    dy = 0;
 
-  /**
-   * @return if the down key was pressed
-   */
-  private boolean downPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_DOWN) ||
-        Keyboard.isKeyDown(Keyboard.KEY_S));
-  }
-
-  /**
-   * @return if the left key was pressed
-   */
-  private boolean leftPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_LEFT) ||
-        Keyboard.isKeyDown(Keyboard.KEY_A));
-  }
-
-  /**
-   * @return if the right key was pressed
-   */
-  private boolean rightPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_RIGHT) ||
-        Keyboard.isKeyDown(Keyboard.KEY_D));
-  }
-
-  /**
-   * @return if the control key was pressed
-   */
-  private boolean controlPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) ||
-        Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
-  }
-
-  /**
-   * @return if the shift key was pressed
-   */
-  private boolean shiftPressed() {
-    return (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) ||
-        Keyboard.isKeyDown(Keyboard.KEY_RSHIFT));
   }
 
 
@@ -458,6 +415,32 @@ public class EditorMap implements Playable{
       return false;
     }
 
+  }
+
+  public boolean encryptedSave(String path, String name)
+  {
+    try
+    {
+      String loc = path;
+      if (!loc.substring(loc.length()-5).equals(".mapx"))
+      {
+        loc = loc + ".mapx";
+      }
+      FileOutputStream fileOut = new FileOutputStream(loc);
+      ObjectOutputStream objOut = new ObjectOutputStream(fileOut);
+      objOut.writeObject(this);
+      
+      objOut.close();
+      fileOut.close();
+      
+      return true;
+      
+    } catch (IOException e)
+    {
+      e.printStackTrace();
+    }
+    
+    return false;
   }
 
   /* (non-Javadoc)
@@ -591,7 +574,59 @@ public class EditorMap implements Playable{
 
     return false;
   }
+  
+  public boolean newEncryptedSave() {
 
+    JFileChooser chooser = new JFileChooser("res/maps/"){
+      /**
+       * Don't feel too bad Aaron, I have no clue either
+       */
+      private static final long serialVersionUID = 3881189161552826430L;
+
+      @Override
+      public void approveSelection(){
+        File f = getSelectedFile();
+        if(f.exists() && getDialogType() == SAVE_DIALOG){
+          int result = JOptionPane.showConfirmDialog(this,
+              "The file exists, overwrite?","Existing file",JOptionPane.YES_NO_CANCEL_OPTION);
+          switch(result){
+            case JOptionPane.YES_OPTION:
+              super.approveSelection();
+              return;
+            case JOptionPane.NO_OPTION:
+              return;
+            case JOptionPane.CLOSED_OPTION:
+              return;
+            case JOptionPane.CANCEL_OPTION:
+              cancelSelection();
+              return;
+            default:
+              return;
+          }
+        }
+        super.approveSelection();
+      }
+    };
+
+    FileNameExtensionFilter filter = new FileNameExtensionFilter(
+        "Map Files", "mapx");
+    chooser.setFileFilter(filter);
+    chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+    chooser.setDialogTitle("Enter the name of the map to save");
+    int returnee = chooser.showSaveDialog(null);
+
+    Editor.reloadKeyboard();
+
+    if(returnee == JFileChooser.APPROVE_OPTION){
+
+      savePath = chooser.getSelectedFile().getAbsolutePath();
+      saveName = chooser.getSelectedFile().getName();
+
+      return encryptedSave(savePath, saveName);
+    }
+
+    return false;
+  }
 
 
   /**
@@ -792,6 +827,16 @@ public class EditorMap implements Playable{
 
   public boolean wasSaved(){
     return saved;
+  }
+  
+  public TileList[][] getTiles()
+  {
+    return tiles;
+  }
+  
+  public void setPal(Palette p)
+  {
+    pal = p;
   }
 }
 

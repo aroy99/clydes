@@ -4,6 +4,13 @@
  */
 package komorebi.clyde.states;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+
 import komorebi.clyde.engine.GameHandler;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
@@ -17,15 +24,7 @@ import komorebi.clyde.script.Execution;
 import komorebi.clyde.script.Fader;
 import komorebi.clyde.script.InstructionList;
 import komorebi.clyde.script.Instructions;
-
-import org.lwjgl.input.Keyboard;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
+import komorebi.clyde.script.Lock;
 
 
 
@@ -51,6 +50,7 @@ public class Game extends State{
   private int pauseFrames;
   private BufferedReader read;
 
+  private Lock lock;
 
 
   /**
@@ -151,6 +151,7 @@ public class Game extends State{
   @Override
   public void update() {
     // TODO Auto-generated method stub
+    
     KeyHandler.update();
     
     play.update();
@@ -165,10 +166,10 @@ public class Game extends State{
       if (pauseFrames == 0)
       {
         isPaused=false;
-        pauser.getLock().resumeThread();
+        lock.resumeThread();
       }
     }
-    //System.out.println(play.getTileX() + ", " + play.getTileY());
+    
 
   }
 
@@ -217,6 +218,14 @@ public class Game extends State{
     pauseFrames=frames;
     pauser = ex;
     pauser.getLock().pauseThread();
+  }
+  
+  public void pause(int frames, Lock lock)
+  {
+    isPaused = true;
+    pauseFrames=frames;
+    this.lock = lock;
+    this.lock.pauseThread();
   }
 
   /**

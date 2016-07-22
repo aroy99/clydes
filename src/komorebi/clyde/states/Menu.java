@@ -19,6 +19,9 @@ public class Menu extends State {
   private int pickIndex;
 
 
+  /**
+   * Creates a menu object
+   */
   public Menu()
   {
     text = new TextHandler(false);
@@ -34,7 +37,7 @@ public class Menu extends State {
   public void getInput() {
     if (KeyHandler.keyClick(Key.SPACE))
     {
-      
+      //Blah
     }
 
   }

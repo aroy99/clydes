@@ -22,6 +22,11 @@ public class BranchList extends ArrayList<InstructionList> {
     super();
   }
 
+  /**
+   * Returns the branch with a specified name
+   * @param s The string name of the branch to be retrieved
+   * @return The branch with string name, s
+   */
   public InstructionList getBranch(String s)
   {
     for (InstructionList i: this)
@@ -34,7 +39,5 @@ public class BranchList extends ArrayList<InstructionList> {
 
     return null;
   }
-
-
 
 }

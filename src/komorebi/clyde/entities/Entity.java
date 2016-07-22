@@ -18,6 +18,12 @@ public abstract class Entity implements Renderable{
 
   protected Entities ent;
 
+  /**
+   * Represents the different varieties of entities that exist within the game
+   * 
+   * @author Aaron Roy
+   * @version
+   */
   public enum Entities{
     CLYDE, FILLER, NPC;
   }

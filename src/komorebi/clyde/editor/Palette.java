@@ -4,18 +4,17 @@
 
 package komorebi.clyde.editor;
 
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.Display;
+
 import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.MainE;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.map.EditorMap;
-import komorebi.clyde.map.Map;
 import komorebi.clyde.map.TileList;
 import komorebi.clyde.states.Editor;
-
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.Display;
 
 
 /**
@@ -25,8 +24,6 @@ import org.lwjgl.opengl.Display;
  * @version 0.0.1.0
  */
 public class Palette implements Playable{
-
-  private boolean scripting;
 
   private static final int HEIGHT = 32;
   private static final int WIDTH = 4;

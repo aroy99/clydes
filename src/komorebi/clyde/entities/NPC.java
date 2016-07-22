@@ -1,23 +1,20 @@
 /**
 
  * NPC.java  Jun 9, 2016, 3:09:11 PM
-**/
+ **/
 package komorebi.clyde.entities;
-
-import komorebi.clyde.engine.Animation;
-import komorebi.clyde.engine.Key;
-import komorebi.clyde.engine.KeyHandler;
-import komorebi.clyde.engine.Main;
-import komorebi.clyde.script.Execution;
-import komorebi.clyde.script.TalkingScript;
-import komorebi.clyde.script.TextHandler;
-import komorebi.clyde.script.WalkingScript;
-
-import org.lwjgl.Sys;
 
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.ArrayList;
+
+import komorebi.clyde.engine.Animation;
+import komorebi.clyde.engine.Main;
+import komorebi.clyde.script.Execution;
+import komorebi.clyde.script.Lock;
+import komorebi.clyde.script.TalkingScript;
+import komorebi.clyde.script.TextHandler;
+import komorebi.clyde.script.WalkingScript;
 
 
 
@@ -39,6 +36,7 @@ public class NPC extends Entity {
   private String[] options;
 
   private Execution instructor;
+  private Lock lock;
 
   private NPCType type;
 
@@ -46,19 +44,18 @@ public class NPC extends Entity {
 
   private int dy, dx;
   private int framesToGo;
-  private int tx, ty;
 
   private int xTravelled;
   private int yTravelled;
-  
+
   private Rectangle[] surround = new Rectangle[4];
   private TalkingScript talkScript;
-  
-  private boolean isTalking;
-  
+
+  private boolean isTalking, isWalking;
+
   private WalkingScript walkScript;
-  
-  
+
+
   Animation rightAni, leftAni, downAni, upAni;
 
   /**
@@ -67,11 +64,7 @@ public class NPC extends Entity {
    */
   public NPC(String name, float x, float y, NPCType type) {
     super(x*16, y*16, 16, 24);
-    tx = (int) x;
-    ty = (int) y;
 
-    System.out.println("Hi");
-    
     this.name = name;
     ent=Entities.NPC;
 
@@ -87,7 +80,7 @@ public class NPC extends Entity {
     surround[1] = new Rectangle((int) this.x + 16, (int) this.y, 16, 16);
     surround[2] = new Rectangle((int) this.x, (int) this.y - 16, 16, 16);
     surround[3] = new Rectangle((int) this.x - 16, (int) this.y, 16, 16);
-    
+
   }
 
   public NPC(String name)
@@ -117,7 +110,7 @@ public class NPC extends Entity {
    * Updates the behavior of the NPC, such as speed and movement
    */
   public void update() {
-    
+
     if (framesToGo <= 0 && hasInstructions)
     {
       isMoving=false;
@@ -127,9 +120,10 @@ public class NPC extends Entity {
       dy=0;
 
       hasInstructions=false;
-      if (instructor != null) 
+
+      if (lock != null)
       {
-        instructor.getLock().resumeThread();
+        lock.resumeThread();
       }
 
     }
@@ -142,6 +136,7 @@ public class NPC extends Entity {
         leftAni.setSpeed(8);
         rightAni.setSpeed(8);
         upAni.setSpeed(8);
+
       } else
       {
         downAni.setSpeed(4);
@@ -149,6 +144,7 @@ public class NPC extends Entity {
         rightAni.setSpeed(4);
         upAni.setSpeed(4);
       }
+
       switch (direction)
       {
         case DOWN:
@@ -165,8 +161,8 @@ public class NPC extends Entity {
           break;
         default:
           break;
-
       }
+
 
     } else
     {
@@ -189,8 +185,7 @@ public class NPC extends Entity {
     } else if (isWaiting){
       framesToGo--;
     }
-    
-    
+
 
   }
 
@@ -224,8 +219,8 @@ public class NPC extends Entity {
       }
 
       text.render();
-      
-      
+
+
     }
 
 
@@ -276,7 +271,7 @@ public class NPC extends Entity {
    */
   private void walk(Face dir, int tiles)
   {
-    
+
     hasInstructions=true;
     framesToGo = tiles*16;
     isMoving=true;
@@ -308,7 +303,7 @@ public class NPC extends Entity {
 
   }
 
- /**
+  /**
    * Moves the NPC a given number of tiles in a specified direction, pausing the
    * thread
    * 
@@ -317,13 +312,23 @@ public class NPC extends Entity {
    *         equal to 16 pixels 
    * @param ex The new thread to run the command The new thread to run the command
    */
+  @Deprecated
   public void walk(Face dir, int tiles, Execution ex)
   {
     this.instructor = ex;
 
     walk(dir,tiles);
     instructor.getLock().pauseThread();
-    
+
+  }
+
+  public void walk(Face dir, int tiles, Lock lock)
+  {
+
+    this.lock = lock;
+
+    walk(dir,tiles);
+    lock.pauseThread();
   }
 
   /**
@@ -366,7 +371,7 @@ public class NPC extends Entity {
     }
   }
 
-  
+
   /**
    * Moves the NPC a given number of tiles in a specified direction at a brisk 
    * pace, pausing the thread
@@ -376,6 +381,7 @@ public class NPC extends Entity {
    *         equal to 16 pixels 
    * @param instructor The new thread to run the command The new thread to run the command
    */
+  @Deprecated
   public void jog(Face dir, int tiles, Execution instructor)
   { 
 
@@ -385,18 +391,24 @@ public class NPC extends Entity {
 
   }
 
- /**
+  public void jog(Face dir, int tiles, Lock lock)
+  {
+    this.lock = lock;
+    jog(dir,tiles);
+    lock.pauseThread();
+  }
+
+  /**
    * Turns the NPC to face a different direction
    * 
    * @param dir The direction for the NPC to face
    */
   public void turn(Face dir)
   {
-
     direction=dir;
   }
 
-   /**
+  /**
    * Turns the NPC to face a different direction, pausing the thread
    * 
    * @param dir The direction for the NPC to face
@@ -415,7 +427,7 @@ public class NPC extends Entity {
     setAttributes(type);
   }
 
-   /**
+  /**
    * Creates all of the required objects for the specified NPC type
    * 
    * @param type The NPC type to set the attributes
@@ -503,18 +515,6 @@ public class NPC extends Entity {
   }
 
   /**
-   * Moves the NPC to a new tile, pausing the thread
-   * 
-   * @param tx The tile x location of the bottom left corner of the NPC
-   * @param ty The tile y location of the bottom left corner of the NPC
-   * @param instructor The new thread to run the command
-   */
-  public void setTileLocation(int tx, int ty, Execution instructor){
-    this.instructor = instructor;
-    setTileLocation(tx,ty);
-  }
-  
-  /**
    * Relocates the NPC to a specific spot on the screen
    * @param x The x cooridnate of the new bottom left corner, in pixels, of the NPC
    * @param y The y coordinate of the new bottom left corner, in pixels, of the NPC
@@ -526,7 +526,7 @@ public class NPC extends Entity {
     surround[1].setLocation(x+16, y);
     surround[2].setLocation(x, y-16);
     surround[3].setLocation(x-16, y);
-    
+
     this.y = y;
   }
 
@@ -536,6 +536,7 @@ public class NPC extends Entity {
    * @param s The string to say
    * @param ex The new thread to run the command
    */
+  @Deprecated
   public void say(String s, Execution ex)
   {
     text.write(s, 20, 58, 8);
@@ -545,6 +546,16 @@ public class NPC extends Entity {
     instructor.getLock().pauseThread();
   }
 
+  public void say(String s, Lock lock)
+  {
+
+    text.write(s, 20, 58, 8);
+    this.lock = lock;
+    Main.getGame().setSpeaker(this);
+    lock.pauseThread();
+
+  }
+
 
   /**
    * Asks a question, creating a message box and pausing the thread
@@ -552,7 +563,7 @@ public class NPC extends Entity {
    * @param args The options to write
    * @param instructor The new thread to run the command
    */
-  public void ask(String[] args, Execution ex)
+  public void ask(String[] args, Execution ex, Lock lock)
   {
     text.write(args[0], 20, 58, 8);
     if (args.length>1) text.write(args[1], 30, 40, 8);
@@ -561,12 +572,13 @@ public class NPC extends Entity {
     if (args.length>4) text.write(args[4], 100, 22, 8);
 
     this.instructor = ex;
+    this.lock = lock;
 
     options = args;
     text.drawPicker(1);
     Main.getGame().setMaxOptions(args.length-1);
     Main.getGame().setAsker(this);
-    instructor.getLock().pauseThread();
+    this.lock.pauseThread();
 
   }
 
@@ -582,12 +594,12 @@ public class NPC extends Entity {
   public void clearText()
   {
     text.clear();
-    instructor.getLock().resumeThread();
+    lock.resumeThread();
   }
 
   public void resumeThread()
   {
-    this.instructor.getLock().resumeThread();
+    lock.resumeThread();
   }
 
 
@@ -654,7 +666,7 @@ public class NPC extends Entity {
   {
     return yTravelled;
   }
-  
+
   /**
    * 
    * @param clydeX
@@ -663,63 +675,87 @@ public class NPC extends Entity {
    */
   public boolean isApproached(float clydeX, float clydeY, Face direction)
   {
-    return (surround[0].contains(new Point((int)clydeX, (int)clydeY)) && direction == Face.DOWN) ||
+    return ((surround[0].contains(new Point((int)clydeX, (int)clydeY)) && direction == Face.DOWN) ||
         (surround[1].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.LEFT) ||
         (surround[2].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.UP) ||
-        (surround[3].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.RIGHT);
-        
+        (surround[3].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.RIGHT))
+        && !isTalking;
+
   }
-  
+
   /**
    * Runs the NPC's talking script when Clyde prompts them
    */
   public void approach()
   {
-    isTalking = true;
     abortWalkingScript();
     talkScript.run();
   }
-  
+
+  public void disengage()
+  {
+    isTalking = false;
+    isWalking = false;
+  }
+
   public void setTalkingScript(TalkingScript nScript)
   {
     talkScript = nScript;
   }
-  
+
   public void setWalkingScript(WalkingScript nScript)
   {
     walkScript = nScript;
   }
-  
+
   public void abortTalkingScript()
   {
     talkScript.abort();
     isTalking = false;
+    isWalking = true;
   }
-  
+
   public void abortWalkingScript()
   {
     walkScript.abort();
     isTalking = true;
+    isWalking = false;
   }
-  
+
   public TalkingScript getTalkingScript()
   {
     return talkScript;
   }
-  
+
   public WalkingScript getWalkingScript()
   {
     return walkScript;
   }
-  
+
   public boolean isTalking()
   {
     return isTalking;
   }
-  
+
+  public boolean isWalking()
+  {
+    return isWalking;
+  }
+
   public void setIsTalking(boolean b)
   {
     isTalking = b;
   }
- 
+
+  public void setIsWalking(boolean b)
+  {
+    isWalking = b;
+  }
+
+  public void runWalkingScript()
+  {
+    isWalking = true;
+    walkScript.run();
+  }
+
 }

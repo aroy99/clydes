@@ -1,5 +1,5 @@
 /**
- * Lock.java		Jun 11, 2016, 11:10:34 AM
+ * Lock.java  Jun 11, 2016, 11:10:34 AM
  */
 package komorebi.clyde.script;
 
@@ -9,31 +9,31 @@ package komorebi.clyde.script;
  * @version 
  */
 public class Lock {
-	
-	public Lock()
-	{
-		
-	}
+  
+  public Lock()
+  {
+    
+  }
 
-	public void pauseThread()
-	{
-		synchronized (this)
-		{
-			try
-			{
-				wait();
-			} catch (InterruptedException e)
-			{
-				
-			}
-		}
-	}
-	
-	public void resumeThread()
-	{
-		synchronized (this)
-		{
-			notifyAll();
-		}
-	}
+  public void pauseThread()
+  {
+    synchronized (this)
+    {
+      try
+      {
+        wait();
+      } catch (InterruptedException e)
+      {
+        
+      }
+    }
+  }
+  
+  public void resumeThread()
+  {
+    synchronized (this)
+    {
+      notifyAll();
+    }
+  }
 }

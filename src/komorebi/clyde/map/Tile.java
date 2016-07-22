@@ -1,5 +1,5 @@
 /**
- * Tile.java    May 18, 2016, 8:42:07 PM
+ * Tile.java  May 18, 2016, 8:42:07 PM
  */
 package komorebi.clyde.map;
 

@@ -1,16 +1,41 @@
 lock
-ask "What should we do?" "Stay" "Go" "Spaz"
+ask "What should we do?" "Stay" "Go" "Garden"
+
 branch Stay
 unlock
+end
 
 branch Go
 fadeout
-load Test_Map_2
+load ATest4
 pause 50
 fadein
 unlock
+end
 
-branch Spaz
-jog up up up up up up right right right right left left right right right
-jog down down down down left right left right left up down down up left right
+branch Garden
+say OK
+simulrun branch test2
+runbranch test1
 unlock
+end
+
+branch test1
+walk left left left left down down down down down down
+turn left
+pause 30
+retile 64 0 0
+pause 30
+walk up
+turn left
+pause 30
+retile 64 0 1
+pause 100
+
+branch test2
+clydewalk left left left left left
+clydewalk down down down down down
+clydeturn left
+clydepause 62
+clydewalk up
+clydeturn left

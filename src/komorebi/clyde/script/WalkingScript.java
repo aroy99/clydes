@@ -21,6 +21,9 @@ public class WalkingScript extends Script {
     this.npc = npc;
   }
   
+  /**
+   * Runs the walking script
+   */
   public void run()
   {
     isRunning = true;
@@ -34,12 +37,6 @@ public class WalkingScript extends Script {
   public void abort() {
     isInterrupted = true;
     execution.abort();
+    isRunning = false;
   }
-  
-  /**
-   * Could this be more terribly named?
-   * @param i The abortion index, or the instruction number in the walking loop
-   *        at which the execution thread was interrupted 
-   */
-  
 }

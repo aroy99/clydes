@@ -7,15 +7,6 @@ import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glOrtho;
 import static org.lwjgl.opengl.GL11.glViewport;
 
-import komorebi.clyde.editor.Palette;
-import komorebi.clyde.engine.Playable;
-import komorebi.clyde.map.EditorMap;
-import komorebi.clyde.map.Map;
-
-import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.opengl.Display;
-
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -23,16 +14,25 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 
 import javax.swing.Box;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
+import org.lwjgl.LWJGLException;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.opengl.Display;
+
+import komorebi.clyde.editor.Palette;
+import komorebi.clyde.engine.Playable;
+import komorebi.clyde.map.EditorMap;
 
 
 /**
@@ -102,8 +102,10 @@ public class Editor implements Playable{
     if(isLoad && !wasLoad){
       if(requestSave()){
         JFileChooser chooser = new JFileChooser("res/maps/");
+        /*FileNameExtensionFilter filter = new FileNameExtensionFilter(
+            "Map Files", "map");*/
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
-            "Map Files", "map");
+            "Map Files", "mapx");
         chooser.setFileFilter(filter);
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         chooser.setDialogTitle("Enter the name of the map to load");
@@ -112,9 +114,26 @@ public class Editor implements Playable{
         reloadKeyboard();
         
         if(returnee == JFileChooser.APPROVE_OPTION){
-          map = new EditorMap(chooser.getSelectedFile().getAbsolutePath(), 
+          /*map = new EditorMap(chooser.getSelectedFile().getAbsolutePath(), 
               chooser.getSelectedFile().getName());
-          pal.setMap(map);
+              */
+          try {
+            FileInputStream fileIn = new FileInputStream(
+                chooser.getSelectedFile().getAbsolutePath());
+            ObjectInputStream in = new ObjectInputStream(fileIn);
+            
+            map = (EditorMap) in.readObject();
+            in.close();
+            fileIn.close();
+            
+            pal.setMap(map);
+            map.setPal(pal);
+            
+          } catch (IOException | ClassNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+          }
+          
         }
       }
 
@@ -153,7 +172,7 @@ public class Editor implements Playable{
    * Asks the player if they want to save the map
    */
   public static boolean requestSave() {
-    boolean continyu = true;
+    boolean continyu = true; //clever
     if(!map.wasSaved()){
       
       int returnee = JOptionPane.showConfirmDialog(null, "Would you like to save?");
@@ -209,7 +228,6 @@ public class Editor implements Playable{
     try {
       Keyboard.create();
     } catch (LWJGLException e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     }
 
@@ -220,7 +238,7 @@ public class Editor implements Playable{
    * Resizes the window, broken, so do not use
    */
   @Deprecated
-  private static void resize() {
+  public static void resize() {
     final int height = Display.getHeight();
     final int width = Display.getWidth();
     aspect = (float)width/height;

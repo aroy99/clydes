@@ -17,8 +17,6 @@ public class AreaScript extends Script {
   private boolean isRepeatable;
   private NPC npc;
 
-  private boolean isOptional;
-
   private float x, y;
 
   /**
@@ -38,6 +36,14 @@ public class AreaScript extends Script {
 
   }
 
+  /**
+   * Creates a new area script
+   * @param s The name of the script in res/scripts/
+   * @param x The x location (in tiles) of the script
+   * @param y The y location (in tiles) of the script
+   * @param repeat Whether the script can be repeated or not
+   * @param person The NPC to whom the script will be applied
+   */
   public AreaScript(String s, int x, int y, boolean repeat, NPC person)
   {
     script = s;
@@ -48,18 +54,23 @@ public class AreaScript extends Script {
 
   }
 
+  /**
+   * Executes the script
+   */
   public void run()
   {
-    //System.out.println("running a script");
     hasRun = true;
 
     ScriptHandler.read(this, npc);
+    if (isRepeatable)
+    {
+      hasRun = false;
+    }
   }
 
   public boolean isLocationIntersected(Clyde clyde)
   {
-    if (clyde.getTileX()==getTileX() && clyde.getTileY()==getTileY()) return true;
-    return false;
+    return (clyde.getTileX()==getTileX() && clyde.getTileY()==getTileY());
   }
 
   public boolean hasRun()
@@ -86,10 +97,6 @@ public class AreaScript extends Script {
     return script;
   }
 
-  public void setOptional(boolean tf)
-  {
-    isOptional = tf;
-  }
 
   /* (non-Javadoc)
    * @see komorebi.clyde.script.Script#abort()

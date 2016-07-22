@@ -19,11 +19,11 @@ import static org.lwjgl.opengl.GL11.glTexParameteri;
 import static org.lwjgl.opengl.GL11.glTranslatef;
 import static org.lwjgl.opengl.GL11.glVertex2f;
 
-import org.newdawn.slick.opengl.Texture;
-import org.newdawn.slick.opengl.TextureLoader;
-
 import java.io.File;
 import java.io.FileInputStream;
+
+import org.newdawn.slick.opengl.Texture;
+import org.newdawn.slick.opengl.TextureLoader;
 
 /**
  * Draws stuff. :D
@@ -34,13 +34,13 @@ public class Draw {
 
   /** To ensure rotations can only happen in multiples of 90 degrees.*/
   private static final int RIGHT_ANGLE = 90;
-  
+
   /** Holds all of the textures for this class.*/
   private static Texture[] tex = new Texture[9];
-  
+
   /** Determines whether textures are loaded.*/
   private static boolean texLoaded;
-  
+
   /**
    * Loads textures
    * 
@@ -59,35 +59,35 @@ public class Draw {
     try {
       tex[0] = TextureLoader.getTexture("PNG", new FileInputStream(
           new File("res/Terra.png")));
-      
+
       tex[1] = TextureLoader.getTexture("PNG", new FileInputStream(
           new File("res/PokeTiles.png")));
-      
+
       tex[2] = TextureLoader.getTexture("PNG", new FileInputStream(
           new File("res/EditorSheet.png")));
-      
+
       tex[3] = TextureLoader.getTexture("PNG", new FileInputStream(
-              new File("res/NPCFiller.png")));
-      
+          new File("res/NPCFiller.png")));
+
       tex[4] = TextureLoader.getTexture("PNG", new FileInputStream(
-              new File("res/NPCFiller2.png")));
-      
+          new File("res/NPCFiller2.png")));
+
       tex[5] = TextureLoader.getTexture("PNG", new FileInputStream(
-              new File("res/FillerFont.png")));
-      
+          new File("res/FillerFont.png")));
+
       tex[6] = TextureLoader.getTexture("PNG", new FileInputStream(
-              new File("res/Textfield2.png")));
-      
+          new File("res/Textfield2.png")));
+
       tex[7] = TextureLoader.getTexture("PNG", new FileInputStream(
-              new File("res/Picker.png")));
+          new File("res/Picker.png")));
       tex[8] = TextureLoader.getTexture("PNG", new FileInputStream(
-              new File("res/Fader.png")));
-      
+          new File("res/Fader.png")));
+
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
-  
+
   /**
    * Draws a sprite on the screen from the specified image, assumed the texsx
    * and texsy are the same as sx and sy
@@ -101,7 +101,7 @@ public class Draw {
    * @param texID see {@link Draw#loadTextures() loadTextures}
    */
   public static void rect(float x, float y, float sx, float sy, int texx, 
-          int texy, int texID) {
+      int texy, int texID) {
     rect(x, y, sx, sy, texx, texy, texx + (int)sx, texy + (int)sy, texID);
   }
 
@@ -159,13 +159,13 @@ public class Draw {
       {
         glTexCoord2f((float) texx / imgX, (float) texsy / imgY);
         glVertex2f(0, 0);
-          
+
         glTexCoord2f((float) texx / imgX, (float) texy / imgY);
         glVertex2f(0, (int) sy);
-          
+
         glTexCoord2f((float) texsx / imgX, (float) texy / imgY);
         glVertex2f((int) sx, (int) sy);
-          
+
         glTexCoord2f((float) texsx / imgX, (float) texsy / imgY);
         glVertex2f((int) sx, 0);
       }
