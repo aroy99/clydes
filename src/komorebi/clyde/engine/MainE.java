@@ -70,7 +70,7 @@ public class MainE {
       String str;
 
       while ((str = read.readLine()) != null) {
-        if (str.charAt(0) == '#') {
+        if(str.equals("") || str.charAt(0) == '#'){
           continue;
         }
         if (scale == 0) {

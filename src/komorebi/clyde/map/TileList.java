@@ -140,8 +140,8 @@ public enum TileList {
   bD_ARC1   (190, 160, 240),    dD_ARC1   (254, 224, 240),
   bD_ARC2   (191, 176, 240),    dD_ARC2   (255, 240, 240);
   
-  private int id;
-  private int x,y;
+  private short id;
+  private short x,y;
 
   /**
    * Creates a new Tile Type
@@ -151,9 +151,9 @@ public enum TileList {
    * @param y The y value of this tile
    */
   TileList(int num, int x, int y){
-    id = num;
-    this.x = x;
-    this.y = y;
+    id = (short)num;
+    this.x = (short)x;
+    this.y = (short)y;
   }
 
   /**

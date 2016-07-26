@@ -9,6 +9,7 @@ import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
 import komorebi.clyde.engine.Main;
 import komorebi.clyde.engine.Playable;
+import komorebi.clyde.entities.Clyde;
 import komorebi.clyde.entities.Face;
 import komorebi.clyde.entities.NPC;
 import komorebi.clyde.entities.NPCType;
@@ -18,6 +19,7 @@ import komorebi.clyde.script.WalkingScript;
 import komorebi.clyde.script.WarpScript;
 import komorebi.clyde.states.Game;
 
+import org.lwjgl.Sys;
 import org.lwjgl.opengl.Display;
 
 import java.io.BufferedReader;
@@ -40,16 +42,18 @@ public class Map implements Playable{
 
   private NPC[][] npcs;
   private AreaScript[][] scripts;
+  private static Clyde play;
 
-  private float x, y=20;       //Current location
+  private float x, y;       //Current location
 
   private float clydeX, clydeY;
   private Face clydeDirection;
 
   private static final int WIDTH = Display.getWidth();
   private static final int HEIGHT = Display.getHeight();
-
-
+  
+  //Debug
+  private boolean isHitBox;
 
 
   /**
@@ -60,6 +64,7 @@ public class Map implements Playable{
    */
   @Deprecated
   public Map(int col, int row){
+
     tiles = new TileList[row][col];
     npcs = new NPC[row][col];
     scripts = new AreaScript[row][col];
@@ -79,6 +84,8 @@ public class Map implements Playable{
    * @param key The location of the map
    */
   public Map(String key){
+    play = new Clyde(120,100);
+    
     try {
       BufferedReader reader = new BufferedReader(new FileReader(
           new File(key)));
@@ -183,7 +190,12 @@ public class Map implements Playable{
    */
   @Override
   public void getInput() {
-    //TODO Debug stuff
+    play.getInput();
+    
+    // TODO Debug
+    if(KeyHandler.keyClick(Key.H)){
+      isHitBox = !isHitBox;
+    }
   }
   
   
@@ -192,6 +204,9 @@ public class Map implements Playable{
    */
   @Override
   public void update() {
+    
+    play.update();
+    setClydeLocation(play.getX(), play.getY(), play.getDirection());
     
     for (NPC[] npcR: npcs) {
       for (NPC npc: npcR) {
@@ -241,7 +256,25 @@ public class Map implements Playable{
         }
       }
     }
-
+    
+    
+    //TODO Debug
+    if (isHitBox) {
+      for (int i = 0; i < collision.length; i++) {
+        for (int j = 0; j < collision[0].length; j++) {
+          if(checkTileInBounds(x+j*SIZE, y+i*SIZE) && !collision[i][j]){
+            Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, 16, 16, 16, 16, 2);
+          }        
+        }
+      }
+    }
+    
+    play.render();
+    
+    //TODO Debug
+    if(isHitBox){
+      Draw.rect(clydeX, clydeY, 16, 16, 18, 16, 18, 16, 2);
+    }
   }
 
 
@@ -253,10 +286,17 @@ public class Map implements Playable{
    */
   public void move(float cx, float cy, float dx, float dy) {
 
-    if(!checkCollisions(cx,cy,dx,dy)){
-      dx=0;
+    boolean[] col = checkCollisions(cx,cy,dx,dy);
+
+    if(!col[0] || !col[2]){
       dy=0;
+      dx*=2/3f;
     }
+    if(!col[1] || !col[3]){
+      dx=0;
+      dy*=2/3f;
+    }
+    
     x+=dx;
     y+=dy;
     for (int i = 0; i < tiles.length; i++) {
@@ -280,7 +320,7 @@ public class Map implements Playable{
         if (scripts[i][j] != null)
         {
           scripts[i][j].setAbsoluteLocation(x+j*16,y+i*16);
-          if (scripts[i][j].isLocationIntersected(Main.getGame().getClyde()) && 
+          if (scripts[i][j].isLocationIntersected(play) && 
               !scripts[i][j].hasRun()) {
 
             if (scripts[i][j] instanceof WarpScript)
@@ -342,23 +382,60 @@ public class Map implements Playable{
     return x+32 > 0 && x < WIDTH && y+32 > 0 && y < HEIGHT;
   }
   
-  private boolean checkCollisions(float x, float y, float dx, float dy){
-    int x1 = (int)((-this.x-16+x-dx)/16)+1;  //Left
+  /**
+   * Checks the collisions between all four points of the character
+   * 
+   * @param x Current x of the map
+   * @param y Current y of the map
+   * @param dx Delta x of the map
+   * @param dy Delta y of the map
+   * @return {Never, Eat, Slimy, Worms}
+   */
+  private boolean[] checkCollisions(float x, float y, float dx, float dy){
+    //Changed
+    int x1 = (int)((-this.x-16+x-dx)/16)+1; //Left
     int y1 = (int)((-this.y-16+y-dy)/16)+1; //Bottom
     
-    int x2 = (int)((-this.x+x-dx)/16)+1;  //Right
-    int y2 = (int)((-this.y+y-dy)/16)+1;  //Top
+    int x2 = (int)((-this.x-1+x-dx)/16)+1;  //Right
+    int y2 = (int)((-this.y-1+y-dy)/16)+1;  //Top
+    
+    //Unchanged
+    int x3 = (int)((-this.x-16+x)/16)+1; //Left
+    int y3 = (int)((-this.y-16+y)/16)+1; //Bottom
+    
+    int x4 = (int)((-this.x-1+x)/16)+1;  //Right
+    int y4 = (int)((-this.y-1+y)/16)+1;  //Top
+
  
-    if(x2>=collision[0].length || x1-1<0 || y2>=collision.length || y1-1<0){
-      return false;
+    boolean[] ret = new boolean[4];
+    
+    ret[1] = x2<collision[0].length;
+    ret[3] = x1-1>=0;
+    ret[0] = y2<collision.length;
+    ret[2] = y1-1>=0;
+    
+    for(boolean r:ret){
+      if(!r){
+        return ret;
+      }
     }
+    
+    ret[0] = collision[y2][x3] && collision[y2][x4];
+    ret[2] = collision[y1][x3] && collision[y1][x4];
+                                   
+    ret[1] = collision[y3][x2] && collision[y4][x2];
+    ret[3] = collision[y3][x1] && collision[y4][x1];
     
     if(KeyHandler.keyClick(Key.P)){
-      System.out.println("nx: " + dx + ", ny: " + dy + ", " + collision[y1][x1]);
+      System.out.println(x1 + ", " + x2 + ", " + y1 + ", " + y2);
+      System.out.println("dx: " + dx + ", dy: " + dy + "\n" + 
+          collision[y2][x1]+ ", " +collision[y2][x2]+ ", \n" +
+          collision[y1][x1]+ ", " +collision[y1][x2]);
+      System.out.println("Never: " + ret[0] + ", Eat: " + ret[1] + 
+          ", Slimy: " + ret[2] + ", Worms: " + ret[3]);
     }
-    
-    return collision[y1][x1] && collision[y2][x1] &&
-        collision[y1][x2] && collision[y2][x2];
+        
+    return ret;
   }
 
   public int getWidth(){
@@ -384,5 +461,11 @@ public class Map implements Playable{
   public float getY() {
     return y;
   }
+  
+  public static Clyde getClyde()
+  {
+    return play;
+  }
+
 }
 

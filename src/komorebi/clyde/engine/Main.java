@@ -63,15 +63,19 @@ public class Main {
     try {
       read = new BufferedReader(
           new FileReader(new File("res/settings")));
-      String s;
+      String str;
 
-      while ((s = read.readLine()) != null) {
-        if(s.charAt(0) == '#'){
+      while ((str = read.readLine()) != null) {
+        if(str.equals("") || str.charAt(0) == '#'){
           continue;
         }
         if(scale == 0){
-          scale = Integer.parseInt(s);
+          scale = Integer.parseInt(str);
         }
+        else if(Game.testLoc == null){
+          Game.testLoc = str;
+        }
+        
       }
 
     } catch (IOException | NumberFormatException e) {

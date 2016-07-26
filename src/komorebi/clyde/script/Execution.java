@@ -127,10 +127,10 @@ public class Execution implements Runnable {
                 branches.getBranch(str).getYLocation(j), this);
             break;
           case LOCK:
-            Main.getGame().getClyde().lock();
+            Map.getClyde().lock();
             break;
           case UNLOCK:
-            Main.getGame().getClyde().unlock();
+            Map.getClyde().unlock();
             break;
           case SAY:
             npc.say(branches.getBranch(str).getString(j), this);

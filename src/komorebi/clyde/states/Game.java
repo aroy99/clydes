@@ -59,8 +59,7 @@ public class Game extends State{
    * Creates the player and loads the map
    */
   public Game(){
-    play = new Clyde(120,100);
-    map = new Map("res/maps/More Stupid Tests.map");
+    map = new Map("res/maps/"+testLoc);
 
     npcs = new ArrayList<NPC>();
     scripts = new ArrayList<AreaScript>();
@@ -88,9 +87,8 @@ public class Game extends State{
    */
   @Override
   public void getInput() {
-    // TODO Auto-generated method stub
-    play.getInput();
-
+    KeyHandler.getInput();
+    
     if (KeyHandler.keyClick(Key.SPACE))
     {
       if (hasText)
@@ -106,8 +104,8 @@ public class Game extends State{
       }
     } 
     
-    //Debug
-    
+    //TODO Debug
+    map.getInput();
   
 
     if (KeyHandler.keyClick(Key.LEFT))
@@ -153,10 +151,7 @@ public class Game extends State{
   @Override
   public void update() {
     // TODO Auto-generated method stub
-    KeyHandler.getInput();
     
-    play.update();
-    map.setClydeLocation(play.getX(), play.getY(), play.getDirection());
     
     map.update();
     Fader.update();
@@ -180,7 +175,6 @@ public class Game extends State{
   @Override
   public void render() {
     map.render();
-    play.render();
 
     Fader.render();
 
@@ -194,12 +188,6 @@ public class Game extends State{
   {
     map = m;
   }
-
-  public Clyde getClyde()
-  {
-    return play;
-  }
-
 
   public void setSpeaker(NPC npc)
   {

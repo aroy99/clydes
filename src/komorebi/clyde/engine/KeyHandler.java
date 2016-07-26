@@ -52,7 +52,6 @@ public class KeyHandler {
   {
     if (isKeyDown[k.getGLKey()] && !wasKeyDown[k.getGLKey()] && !buffer[k.getGLKey()])
     {
-      buffer[k.getGLKey()] = true;
       return true;
     }
     return false;

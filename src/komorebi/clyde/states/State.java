@@ -13,7 +13,6 @@ import komorebi.clyde.map.Map;
  * @author Aaron Roy
  */
 public abstract class State{
-  protected static Clyde play;
   protected static Map map;
 
   /**
