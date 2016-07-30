@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.ArrayList;
 
 import org.lwjgl.opengl.Display;
 
@@ -38,12 +39,12 @@ public class Map implements Playable{
 
   public static final int SIZE = 16;  //Width and height of a tile
 
-  private NPC[][] npcs;
-  private AreaScript[][] scripts;
+  private ArrayList<NPC> npcs;
+  private ArrayList<AreaScript> scripts;
 
   private float x, y;       //Current location
   private float dx, dy;
-  
+
   private float clydeX, clydeY;
   private Face clydeDirection;
 
@@ -60,8 +61,8 @@ public class Map implements Playable{
    */
   public Map(int col, int row){
     tiles = new TileList[row][col];
-    npcs = new NPC[row][col];
-    scripts = new AreaScript[row][col];
+    //npcs = new NPC[row][col];
+    //scripts = new AreaScript[row][col];
 
     for (int i = tiles.length-1; i >= 0; i--) {
       for (int j = 0; j < tiles[0].length; j++) {
@@ -85,8 +86,8 @@ public class Map implements Playable{
       int cols = Integer.parseInt(reader.readLine());
 
       tiles = new TileList[rows][cols];
-      npcs = new NPC[rows][cols];
-      scripts = new AreaScript[rows][cols];
+      npcs = new ArrayList<NPC>();
+      scripts = new ArrayList<AreaScript>();
 
       for (int i = 0; i < tiles.length; i++) {
         String[] str = reader.readLine().split(" ");
@@ -96,11 +97,9 @@ public class Map implements Playable{
             index++;  //pass this token, it's blank
           }
           tiles[i][j] = TileList.getTile(Integer.parseInt(str[index]));
-          scripts[i][j] = null;
-          npcs[i][j]=null;
         }
       }
-      
+
       String s;
 
       while ((s=reader.readLine()) != null)
@@ -112,13 +111,11 @@ public class Map implements Playable{
 
           int arg0 = Integer.parseInt(split[2]);
           int arg1 = Integer.parseInt(split[1]);
+          NPC n;
+          npcs.add(n=new NPC(split[0], arg0, arg1,  NPCType.toEnum(split[3])));
 
-          npcs[arg0][arg1] = new NPC(split[0], arg0, arg1,  NPCType.toEnum(split[3]));
-
-          npcs[arg0][arg1].setWalkingScript(
-              new WalkingScript(split[4], npcs[arg0][arg1]));
-          npcs[arg0][arg1].setTalkingScript(
-              new TalkingScript(split[5], npcs[arg0][arg1]));
+          n.setWalkingScript(new WalkingScript(split[4], n));
+          n.setTalkingScript(new TalkingScript(split[5], n));
 
 
         } else if (s.startsWith("script"))
@@ -129,9 +126,8 @@ public class Map implements Playable{
           int arg0 = Integer.parseInt(split[2]);
           int arg1 = Integer.parseInt(split[1]);
 
-          scripts[arg0][arg1] = 
-              new AreaScript(split[0], arg0, 
-                  arg1, false, findNPC(split[3]));
+          scripts.add(new AreaScript(split[0], arg0, arg1, false, 
+              findNPC(split[3])));
         } else if (s.startsWith("warp"))
         {
           s = s.replace("warp ", "");
@@ -140,9 +136,7 @@ public class Map implements Playable{
           int arg0 = Integer.parseInt(split[2]);
           int arg1 = Integer.parseInt(split[1]);
 
-          scripts[arg0][arg1] =
-              new WarpScript(split[0], arg0,
-                  arg1, false);
+          scripts.add(new WarpScript(split[0], arg0, arg1, false));
         }
       }
 
@@ -154,24 +148,24 @@ public class Map implements Playable{
 
 
   }
-  
+
   public Map(String key, boolean b)
   {
     try {
       FileInputStream fileIn = new FileInputStream(key);
       ObjectInputStream in = new ObjectInputStream(fileIn);
-      
+
       EditorMap edit = (EditorMap) in.readObject();
       tiles = edit.getTiles();
-      
+
       in.close();
       fileIn.close();
-      
-      
+
+
     } catch (IOException | ClassNotFoundException e) {
       e.printStackTrace();
     }
-    
+
   }
 
   /* (non-Javadoc)
@@ -179,10 +173,10 @@ public class Map implements Playable{
    */
   @Override
   public void getInput() {
-    
+
   }
-  
-  
+
+
   /* (non-Javadoc)
    * @see komorebi.clyde.engine.Renderable#update()
    */
@@ -193,22 +187,42 @@ public class Map implements Playable{
 
     dx = 0;
     dy = 0;
-    
-    for (NPC[] npcR: npcs) {
-      for (NPC npc: npcR) {
-        if (npc != null) 
-        {
-          npc.update();
-          
-          if (!npc.isTalking() && !npc.isWalking())
-          {
-            npc.runWalkingScript();
-          }
 
+    for (NPC npc: npcs) {
+      if (npc != null) 
+      {
+        npc.update();
+
+        if (npc.isApproached(clydeX, clydeY, clydeDirection) && 
+            KeyHandler.keyClick(Key.SPACE))
+        {
+          npc.turn(clydeDirection.opposite());
+          npc.approach();
+        } 
+
+        if (!npc.isTalking() && !npc.isWalking())
+        {
+          npc.runWalkingScript();
         }
+
       }
     }
 
+    for (AreaScript script: scripts)
+    {
+      if (script.isLocationIntersected(Main.getGame().getClyde()) && 
+          !script.hasRun()) {
+
+        if (script instanceof WarpScript)
+        {
+          WarpScript scr = (WarpScript) script;
+          Main.getGame().warp(scr.getMap());
+        } else {
+          script.run();
+        }
+
+      }
+    }
   }
 
 
@@ -227,14 +241,14 @@ public class Map implements Playable{
     }
 
 
-    for (NPC[] npcR: npcs) {
-      for (NPC npc: npcR) {
-        if (npc != null) 
-        {
-          npc.render();
-        }
+
+    for (NPC npc: npcs) {
+      if (npc != null) 
+      {
+        npc.render();
       }
     }
+
 
   }
 
@@ -246,50 +260,21 @@ public class Map implements Playable{
    * @param dy pixels to move up/down
    */
   public void move(float dx, float dy) {
-    
+
     x+=dx;
     y+=dy;
-    for (int i = 0; i < tiles.length; i++) {
-      for (int j = 0; j < tiles[0].length; j++) {
-        if (npcs[i][j] != null) 
-        {
-          npcs[i][j].setPixLocation((int) x+j*16+npcs[i][j].getXTravelled(), 
-              (int) y+i*16+npcs[i][j].getYTravelled());
-          //npcs[i][j].update();
-
-          if (npcs[i][j].isApproached(clydeX, clydeY, clydeDirection) && 
-              KeyHandler.keyClick(Key.SPACE))
-          {
-            npcs[i][j].turn(clydeDirection.opposite());
-            npcs[i][j].approach();
-          } 
-
-
-        }
-
-        if (scripts[i][j] != null)
-        {
-          scripts[i][j].setAbsoluteLocation(x+j*16,y+i*16);
-          if (scripts[i][j].isLocationIntersected(Main.getGame().getClyde()) && 
-              !scripts[i][j].hasRun()) {
-
-            if (scripts[i][j] instanceof WarpScript)
-            {
-              WarpScript scr = (WarpScript) scripts[i][j];
-              Main.getGame().warp(scr.getMap());
-            } else {
-              scripts[i][j].run();
-            }
-
-          }
-
-        }
-
-      }
+    
+    for (NPC npc: npcs)
+    {
+      npc.move(dx,dy);
     }
 
+    for (AreaScript script: scripts)
+    {
+      script.move(dx, dy);
+    }
   }
-  
+
   /**
    * 
    * @param s
@@ -297,28 +282,23 @@ public class Map implements Playable{
    */
   public NPC findNPC(String s)
   {
-    for (NPC[] npcR: npcs) {
-      for (NPC npc: npcR) {
-        if (npc!=null)
-          if (npc.getName().equals(s)) return npc;
-      }
+
+    for (NPC npc: npcs) {
+      if (npc != null)
+        if (npc.getName().equals(s)) return npc;
     }
+
 
     return null;
   }
 
   public AreaScript getScript(String s)
   {
-    for (AreaScript[] scriptR: scripts)
+    for (AreaScript scr: scripts)
     {
-      for (AreaScript scr: scriptR)
+      if (scr!=null)
       {
-        if (scr!=null)
-        {
-          System.out.println(scr.getName());
-          if (scr.getName().equals(s)) return scr;
-        }
-
+        if (scr.getName().equals(s)) return scr;
       }
     }
 
@@ -355,12 +335,12 @@ public class Map implements Playable{
   public float getY() {
     return y;
   }
-  
+
   public void setTile(TileList tile, int x, int y)
   {
     tiles[x][y] = tile;
   }
-  
+
   public void setDirection(float dx, float dy)
   {
     this.dx = dx;

@@ -45,6 +45,13 @@ public enum Instructions {
   CLYDE_TURN_DOWN,
   WAIT,
   SIMUL_RUN_BRANCH,
+  PLAY_SONG,
+  STOP_SONG,
+  ALIGN_LEFT,
+  ALIGN_RIGHT,
+  ALIGN_UP,
+  ALIGN_DOWN,
+  GO_TO,
   END;
 }
 

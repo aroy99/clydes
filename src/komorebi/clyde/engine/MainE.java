@@ -34,6 +34,7 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.newdawn.slick.openal.SoundStore;
 
+import komorebi.clyde.audio.AudioHandler;
 import komorebi.clyde.states.Editor;
 
 /**
@@ -110,7 +111,7 @@ public class MainE {
    */
   private static void initGame() {
     edit = new Editor();
-    AudioHandler.init();
+    //AudioHandler.init();
   }
 
 

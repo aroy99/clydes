@@ -91,18 +91,33 @@ public class Game extends State{
 
     if (KeyHandler.keyClick(Key.SPACE))
     {
-      if (hasText)
+      if (speaker!=null)
       {
-        speaker.clearText();
+        if (speaker.isWaitingOnParagraph())
+        {
+          speaker.nextParagraph();
+        } else {
+          if (hasChoice && !speaker.doneAsking())
+          {
+            speaker.skipScroll();
+          } else
+          {
+            if (hasText)
+            {
+              speaker.clearText();
 
-        if (hasChoice) {
-          speaker.branch(pickIndex);
-        }
+              if (hasChoice) {
+                speaker.branch(pickIndex);
+              }
 
-        hasChoice=false;
-        hasText=false;
-      }
-    } 
+              hasChoice=false;
+              hasText=false;
+            }
+          }
+        } 
+      } 
+     }
+      
     
     //Debug
     
@@ -139,7 +154,11 @@ public class Game extends State{
     {
       GameHandler.switchState(States.MENU);
     }
-
+    
+    if (KeyHandler.keyClick(Key.P))
+    {
+      GameHandler.switchState(States.PAUSE);
+    }
 
 
 

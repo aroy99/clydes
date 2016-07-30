@@ -18,13 +18,12 @@ public class Menu extends State {
   private TextHandler text;
   private int pickIndex;
 
-
   /**
    * Creates a menu object
    */
   public Menu()
   {
-    text = new TextHandler(false);
+    text = new TextHandler();
     text.write("Clyde's", 72, 160, 16);
     text.write("Controls", 72, 64, 12);
     pickIndex = 1;

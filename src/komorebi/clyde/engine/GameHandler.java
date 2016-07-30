@@ -6,6 +6,7 @@ package komorebi.clyde.engine;
 
 import komorebi.clyde.states.Game;
 import komorebi.clyde.states.Menu;
+import komorebi.clyde.states.Pause;
 import komorebi.clyde.states.State.States;
 
 /**
@@ -21,6 +22,7 @@ public class GameHandler implements Playable{
 
   public static Game game;
   private static Menu menu;
+  private static Pause pause;
 
   /**
    * Creates the GameHandler
@@ -29,6 +31,7 @@ public class GameHandler implements Playable{
     state = States.GAME;
     game = new Game();
     menu = new Menu();
+    pause = new Pause();
   }
 
   /**
@@ -42,6 +45,8 @@ public class GameHandler implements Playable{
       case MENU:
         menu.getInput();
         break;
+      case PAUSE:
+        pause.getInput();
       default:
         break;
     }
@@ -58,6 +63,9 @@ public class GameHandler implements Playable{
       case MENU:
         menu.update();
         break;
+      case PAUSE:
+        game.update();
+        pause.update();
       default:
         break;
     }
@@ -74,6 +82,9 @@ public class GameHandler implements Playable{
       case MENU:
         menu.render();
         break;
+      case PAUSE:
+        game.render();
+        pause.render();
       default:
         break;
     }

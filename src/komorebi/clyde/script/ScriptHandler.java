@@ -120,7 +120,8 @@ public class ScriptHandler {
           {
             System.out.println("Error");
           }
-
+        } else if (s.startsWith("stop music")) {
+          currentBranch.add(Instructions.STOP_SONG);
         } else if (s.startsWith("lock"))
         {
           currentBranch.add(Instructions.LOCK);
@@ -256,6 +257,33 @@ public class ScriptHandler {
           {
             currentBranch.add(Instructions.CLYDE_TURN_DOWN);
           }
+        } else if (s.startsWith("play"))
+        {
+          s = s.replace("play ", "");
+          currentBranch.add(Instructions.PLAY_SONG, s);
+        } else if (s.startsWith("align"))
+        {
+          s = s.replace("align ", "");
+          if (s.equals("left"))
+          {
+            currentBranch.add(Instructions.ALIGN_LEFT);
+          } else if (s.equals("right"))
+          {
+            currentBranch.add(Instructions.ALIGN_RIGHT);
+          } else if (s.equals("down"))
+          {
+            currentBranch.add(Instructions.ALIGN_DOWN);
+          } else if (s.equals("up"))
+          {
+            currentBranch.add(Instructions.ALIGN_UP);
+          }
+        } else if (s.startsWith("go to"))
+        {
+          s = s.replace("go to ", "");
+          String[] str = s.split(" ");
+          
+          currentBranch.add(Instructions.GO_TO, Integer.parseInt(str[0]), Integer.parseInt(str[1]));
+          
         }
 
       }

@@ -28,6 +28,8 @@ public class Clyde extends Entity implements Playable{
 
   private float dx;
   private float dy;
+  
+  private float rx, ry;
 
   private int framesToGo;
   private boolean hasInstructions;
@@ -48,6 +50,8 @@ public class Clyde extends Entity implements Playable{
    */
   public Clyde(float x, float y) {
     super(x, y, 16, 24);
+    rx = x;
+    ry = y;
     ent = Entities.CLYDE;
 
     upAni =    new Animation(4, 8, 16, 24, 0);
@@ -162,7 +166,8 @@ public class Clyde extends Entity implements Playable{
     rightAni.setSpeed(speed);
 
     Game.getMap().move(-dx, -dy);
-
+    rx += dx;
+    ry += dy;
 
     if (hasInstructions)
     {
@@ -266,6 +271,38 @@ public class Clyde extends Entity implements Playable{
     this.lock.pauseThread();
   }
   
+  public void align(Face dir, Lock lock)
+  {
+    this.lock = lock;
+    hasInstructions=true;
+    
+    this.dir = dir;
+    
+    switch (dir)
+    {
+      case DOWN:
+        framesToGo = (int) this.ry - 16*getTileY();
+        down = true;
+        break;
+      case LEFT:
+        framesToGo = (int) this.rx - 16*getTileX();
+        left = true;
+        break;
+      case RIGHT:
+        framesToGo = (int) (16*getTileX() + 16 - this.rx);
+        right = true;
+        break;
+      case UP:
+        framesToGo = (int) (16*getTileY() + 16 - this.ry);
+        up = true;
+        break;
+      default:
+        break;
+    }
+    
+    this.lock.pauseThread();
+  }
+  
   public void turn(Face dir)
   {
     this.dir = dir;
@@ -280,15 +317,44 @@ public class Clyde extends Entity implements Playable{
   }
 
   public int getTileX(){
-    return  (int)x/16;
+    return  (int)rx/16;
   }
 
   public int getTileY(){
-    return  (int)y/16;
+    return  (int)ry/16;
   }
 
   public Face getDirection(){
     return dir;
   }
+  
+  public void goTo(boolean horizontal, int tx, Lock lock)
+  {
+    if (horizontal)
+    {
+      if (rx>tx*16)
+      {
+        align(Face.LEFT, lock);
+        walk(Face.LEFT, getTileX()-tx);
+      } else if (rx<tx*16)
+      {
+        align(Face.RIGHT, lock);
+        walk(Face.RIGHT, tx-getTileX(), lock);
+      }
+    } else
+    {
+      if (ry>tx*16)
+      {
+        align(Face.DOWN, lock);
+        walk(Face.DOWN, getTileY()-tx, lock);
+      } else if (ry<tx*16)
+      {
+        align(Face.UP, lock);
+        walk(Face.UP, tx-getTileY(), lock);
+      }
+    }
+    
+  }
+  
 
 }

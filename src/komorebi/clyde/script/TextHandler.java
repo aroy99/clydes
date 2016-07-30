@@ -16,14 +16,11 @@ public class TextHandler {
 
   public static final int SCALE = 16;
 
-  private boolean spoken;
-  private boolean hasChoice;
-  private int pickerIndex;
-
   public ArrayList<char[]> words;
   public ArrayList<Integer> xLocations;
   public ArrayList<Integer> yLocations;
   public ArrayList<Integer> ptSize;
+  
 
 
   /**
@@ -31,28 +28,14 @@ public class TextHandler {
    */
   public TextHandler()
   {
-    spoken=true;
     words = new ArrayList<char[]>();
     xLocations = new ArrayList<Integer>();
     yLocations = new ArrayList<Integer>();
     ptSize = new ArrayList<Integer>();
   }
   
-  /**
-   * Creates a text handler object
-   * @param b If true, text will render in a speaker-bubble style
-   *          If false, text will render without surrounding bubble
-   */
-  public TextHandler(boolean b)
-  {
-    spoken=b;
-    words = new ArrayList<char[]>();
-    xLocations = new ArrayList<Integer>();
-    yLocations = new ArrayList<Integer>();
-    ptSize = new ArrayList<Integer>();
-  }
 
-  private static int getTexX(char c)
+  public static int getTexX(char c)
   {
     switch (c)
     {
@@ -87,7 +70,7 @@ public class TextHandler {
     return 0;
   }
 
-  private static int getTexY(char c)
+  public static int getTexY(char c)
   {
     switch(c)
     {
@@ -184,6 +167,37 @@ public class TextHandler {
 
     return 0;
   }
+  
+  public static int getLength(char c)
+  {
+    switch (c)
+    {
+      case'!':case'.':case':':case'I':case'i':case'l':
+        return 1;
+      case'\'':case',':case'-':case'1':case';':case'j':case'[':case']':
+      case' ':
+        return 2;
+      case'\"':case'(':case')':case'*':case'f':case'r':case't':
+        return 3;
+      case'/':case'0':case'2':case'3':case'5':case'6':case'7':case'8':
+      case'9':case'?':case'E':case'F':case'J':case'L':case'Z':case'b':
+      case'c':case'd':case'e':case'g':case'h':case'k':case'n':case'o':
+      case'p':case'q':case's':case'u':case'x':case'y':case'z':
+        return 4;
+      case'$':case'+':case'4':case'=':case'B':case'C':case'D':case'G':
+      case'H':case'K':case'N':case'O':case'P':case'Q':case'R':case'S':
+      case'T':case'U':case'X':case'Y':case'a':case'v':
+        return 5;
+      case'A':case'V':case'~':
+        return 6;
+      case'M':case'W':case'm':case'w':
+        return 7;
+      case'%':
+        return 9;
+      default:
+        return 0;
+    }
+  }
 
   /**
    * 
@@ -205,51 +219,43 @@ public class TextHandler {
    */
   public void render()
   {
-    if (!words.isEmpty() && spoken) {
-      Draw.rect(15, 15, 220, 59, 0, 0, 220, 59, 6);
-    }
     
     for (char[] letters: words)
     {
-      int horiz = xLocations.get(words.indexOf(letters));
-      int vert = yLocations.get(words.indexOf(letters));
-      int size = ptSize.get(words.indexOf(letters));
-
-      for (int i=0; i < letters.length; i++)
-      {
-
-        int under = 0, texUnder = 0;
-
-        if (letters[i]=='g' || letters[i] == 'j' || letters[i] == 'p' ||
-            letters[i] == 'q' || letters[i] == 'y')
-        {   
-          under = size;
-          texUnder = 8;
-        }
-
-
-        Draw.rect(horiz, vert-under, size, size+under, 
-            getTexX(letters[i]), getTexY(letters[i]), 
-            getTexX(letters[i])+8, getTexY(letters[i]) + 8+texUnder, 5);
-        horiz+=size;
-      }
+      render(letters);
     }
 
-    if (hasChoice)
-    {
-      int x = 0, y= 0;
-      switch (pickerIndex)
-      {
-        case 1: x = 20; y = 40; break;
-        case 2: x = 90; y = 40; break;
-        case 3: x = 20; y = 22; break;
-        case 4: x = 90; y = 22; break;
-        default: break;
-      }
+    
+  }
+  
+  public void render(char[] letters)
+  {
+    int horiz = xLocations.get(words.indexOf(letters));
+    int vert = yLocations.get(words.indexOf(letters));
+    int size = ptSize.get(words.indexOf(letters));
 
-      Draw.rect(x, y, 8, 8, 0, 0, 8, 8, 7);
+    for (int i=0; i < letters.length; i++)
+    {
+
+      int under = 0, texUnder = 0;
+
+      if (letters[i]=='g' || letters[i] == 'j' || letters[i] == 'p' ||
+          letters[i] == 'q' || letters[i] == 'y')
+      {   
+        under = size;
+        texUnder = 8;
+      } 
+
+
+      Draw.rect(horiz, vert-under, size, size+under, 
+          getTexX(letters[i]), getTexY(letters[i]), 
+          getTexX(letters[i])+8, getTexY(letters[i]) + 8+texUnder, 5);
+      horiz+=(getLength(letters[i])+1);
     }
   }
+  
+  
+  
 
   /**
    * Clears the text handler's memory
@@ -260,30 +266,5 @@ public class TextHandler {
     xLocations.clear();
     yLocations.clear();
     ptSize.clear();
-    hasChoice = false;
-  }
-
-
-
-
-
-  /**
-   * Draws the arrow pointing to one of two text-based choices
-   * @param option Which option the arrow should correspond to, where 1 represents the left option and 2 represents the right option
-   */
-  public void drawPicker(int option)
-  {
-    pickerIndex = option;
-    hasChoice = true;
-  }
-
-  public int getPickerIndex()
-  {
-    return pickerIndex;
-  }
-
-  public void setPickerIndex(int option)
-  {
-    pickerIndex = option;
   }
 }

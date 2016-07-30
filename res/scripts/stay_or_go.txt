@@ -1,7 +1,10 @@
 lock
-ask "What should we do?" "Stay" "Go" "Garden"
+align down
+align left
+ask "What should we do?" "Go away" "Go" "Garden" "Music"
 
-branch Stay
+branch Talk
+go to 8 8
 unlock
 end
 
@@ -14,11 +17,19 @@ unlock
 end
 
 branch Garden
-say OK
+say Ok.\nLet's go!
 simulrun branch test2
 runbranch test1
 unlock
 end
+
+branch Music
+play ms_mugelworth.ogg
+pause 100
+stop music
+pause 100
+play police_station.ogg
+unlock
 
 branch test1
 walk left left left left down down down down down down

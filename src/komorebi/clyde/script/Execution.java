@@ -3,6 +3,8 @@
  */
 package komorebi.clyde.script;
 
+import komorebi.clyde.audio.AudioHandler;
+import komorebi.clyde.audio.Song;
 import komorebi.clyde.engine.Main;
 import komorebi.clyde.entities.Face;
 import komorebi.clyde.entities.NPC;
@@ -215,6 +217,30 @@ public class Execution implements Runnable {
             break;
           case CLYDE_TURN_DOWN:
             Main.getGame().getClyde().turn(Face.DOWN);
+            break;
+          case ALIGN_LEFT:
+            Main.getGame().getClyde().align(Face.LEFT, lock);
+            break;
+          case ALIGN_RIGHT:
+            Main.getGame().getClyde().align(Face.RIGHT, lock);
+            break;
+          case ALIGN_DOWN:
+            Main.getGame().getClyde().align(Face.DOWN, lock);
+            break;
+          case ALIGN_UP:
+            Main.getGame().getClyde().align(Face.UP, lock);
+            break;
+          case PLAY_SONG:
+            AudioHandler.play(Song.get(branches.getBranch(str).getString(j)));
+            break;
+          case GO_TO:
+            Main.getGame().getClyde().goTo(true, 
+                branches.getBranch(str).getXLocation(j), lock);
+            Main.getGame().getClyde().goTo(false, 
+                branches.getBranch(str).getYLocation(j), lock);
+            break;
+          case STOP_SONG:
+            AudioHandler.stop();
             break;
           case END:
             if (npc != null)

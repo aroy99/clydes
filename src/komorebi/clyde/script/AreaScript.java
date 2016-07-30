@@ -91,6 +91,12 @@ public class AreaScript extends Script {
     this.x=x;
     this.y=y;
   }
+  
+  public void move(float dx, float dy)
+  {
+    x+=dx;
+    y+=dy;
+  }
 
   public String getName()
   {

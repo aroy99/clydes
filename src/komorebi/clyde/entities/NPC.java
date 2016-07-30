@@ -12,6 +12,7 @@ import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Main;
 import komorebi.clyde.script.Execution;
 import komorebi.clyde.script.Lock;
+import komorebi.clyde.script.SpeechHandler;
 import komorebi.clyde.script.TalkingScript;
 import komorebi.clyde.script.TextHandler;
 import komorebi.clyde.script.WalkingScript;
@@ -40,7 +41,7 @@ public class NPC extends Entity {
 
   private NPCType type;
 
-  private TextHandler text;
+  private SpeechHandler text;
 
   private int dy, dx;
   private int framesToGo;
@@ -74,7 +75,8 @@ public class NPC extends Entity {
     hasInstructions=false;
     isVisible = true;
 
-    text = new TextHandler();
+    text = new SpeechHandler(true);
+    SpeechHandler.setSpeed(3);
 
     surround[0] = new Rectangle((int) this.x, (int) this.y+16, 16, 16);
     surround[1] = new Rectangle((int) this.x + 16, (int) this.y, 16, 16);
@@ -90,13 +92,13 @@ public class NPC extends Entity {
     ent=Entities.NPC;
 
     isVisible = false;
-    System.out.println("Hi");
+    SpeechHandler.setSpeed(3);
 
 
     isMoving=false;
     hasInstructions=false;
 
-    text = new TextHandler();
+    text = new SpeechHandler(true);
 
   }
 
@@ -757,5 +759,35 @@ public class NPC extends Entity {
     isWalking = true;
     walkScript.run();
   }
+  
+  public void move(float dx, float dy)
+  {
+    x+=dx;
+    y+=dy;
+    
+    surround[0].setLocation((int) x, (int) y+16);
+    surround[1].setLocation((int) x+16, (int) y);
+    surround[2].setLocation((int) x, (int) y-16);
+    surround[3].setLocation((int) x-16, (int) y);
+  }
+  
+  public boolean doneAsking()
+  {
+    return text.alreadyAsked();
+  }
+  
+  public void skipScroll()
+  {
+    text.skipScroll();
+  }
+  
+  public boolean isWaitingOnParagraph()
+  {
+    return text.isWaitingOnParagraph();
+  }
 
+  public void nextParagraph()
+  {
+    text.nextParagraph();
+  }
 }
