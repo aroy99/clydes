@@ -5,13 +5,12 @@ package komorebi.clyde.tileseteditor;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -25,14 +24,7 @@ import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
 import komorebi.clyde.engine.Playable;
-import komorebi.clyde.entities.NPC;
-import komorebi.clyde.entities.NPCType;
-import komorebi.clyde.map.EditorMap;
 import komorebi.clyde.map.TileList;
-import komorebi.clyde.script.AreaScript;
-import komorebi.clyde.script.TalkingScript;
-import komorebi.clyde.script.WalkingScript;
-import komorebi.clyde.script.WarpScript;
 import komorebi.clyde.states.Editor;
 
 /**
@@ -47,17 +39,36 @@ public class TileSetEditor implements Playable {
   private TileList[][] left;
   private TileList[][] right;
 
+  ArrayList<TileList[][]> history;
+  TileList[][] redo;
+  private int historyIndex;
+  private boolean changeMade;
+  
+  private boolean justSaved;
+  private int justSavedCount;
+
   private static final int HEIGHT = 256;
   private static final int OFFX = 8;
 
   private Animation selection;
   private int selX, selY;
+  private int swapX, swapY;
+  private int delX, delY, delSx, delSy;
+
   private TileList selTiles[][];
+  private TileList swapTiles[][];
 
-  private boolean mouseIsDown, mouseWasDown, mouseClick;
+  private boolean mouseIsDown, mouseWasDown, mouseClick, mouseRelease;
+  private boolean rightIsDown, rightWasDown, rightClick;
+  private boolean scrollIsDown, scrollWasDown, scrollClick, scrollRelease;
+
+  private boolean swapMode, swapLift;
+  private boolean eraser;
+
   int prevMx, prevMy;
-
   int anchorX, anchorY;
+  int anchorSwapX, anchorSwapY;
+  int anchorDelX, anchorDelY;
 
   private boolean save;
   private boolean newSave;
@@ -102,6 +113,11 @@ public class TileSetEditor implements Playable {
 
     selTiles = new TileList[1][1];
     selTiles[0][0]=TileList.BLANK;
+
+    history = new ArrayList<TileList[][]>();
+    updateHistory();
+
+    historyIndex = 0;
   }
 
   /* (non-Javadoc)
@@ -114,89 +130,283 @@ public class TileSetEditor implements Playable {
     mouseWasDown = mouseIsDown;
     mouseIsDown = Mouse.isButtonDown(0);
 
+    rightWasDown = rightIsDown;
+    rightIsDown = Mouse.isButtonDown(1);
+
+    scrollWasDown = scrollIsDown;
+    scrollIsDown = Mouse.isButtonDown(2);
+
     mouseClick = mouseIsDown && !mouseWasDown;
+    mouseRelease = !mouseIsDown && mouseWasDown;
 
-    if (left() && mouseClick)
-    {
-      selTiles = new TileList[1][1];
+    rightClick = rightIsDown && !rightWasDown;
 
-      selX = getMouseTx();
-      selY = getMouseTy();
+    scrollClick = scrollIsDown && !scrollWasDown;
+    scrollRelease = !scrollIsDown && scrollWasDown;
 
-      anchorX = getMouseTx();
-      anchorY = getMouseTy();
-
-      selTiles[0][0] = left[31-(getMouseTy()+(16-min))][getMouseTx()];
-    } else if (right() && mouseIsDown)
-    {
-      if (save)
+    if (!swapMode){
+      if (left() && mouseClick) //Creates a new selection on the palette
       {
-        Display.setTitle(Display.getTitle() + "*");
-        save = false;
-      }
+        selTiles = new TileList[1][1];
 
-      int horiz, vert;
+        selX = getMouseTx();
+        selY = getMouseTy();
 
-      if (15-getMouseTy()+selTiles[0].length>15)
+        anchorX = getMouseTx();
+        anchorY = getMouseTy();
+
+        selTiles[0][0] = left[31-(getMouseTy()+(16-min))][getMouseTx()];
+      } else if (right() && (mouseClick || 
+          (KeyHandler.controlDown() && mouseIsDown))) 
       {
-        vert = getMouseTy()+1;
-      } else {
-        vert = selTiles[0].length;
-      }
-
-      if (getMouseTx()-9+selTiles.length>7)
-      {
-        horiz = 16-getMouseTx()+1;
-      } else {
-        horiz = selTiles.length;
-      }
-
-      for (int i=0; i<vert; i++)
-      {
-        for (int j=0; j<horiz; j++)
+        if (save) //Signifies that a change has been made to the file
         {
-          right[15-getMouseTy()+i][getMouseTx()-9+j] = selTiles[j][i];
+          Display.setTitle(Display.getTitle() + "*");
+          save = false;
         }
-      }
 
-    } else if (left() && mouseIsDown && (prevMx!=getMouseTx() ||
-        prevMy!=getMouseTy()))
-    {
-      int lowX = Math.min(getMouseTx(), anchorX);
-      int hiX = Math.max(getMouseTx(), anchorX);
+        changeMade = true;
 
-      int lowY = Math.min(getMouseTy(), anchorY);
-      int hiY = Math.max(getMouseTy(), anchorY);
+        int horiz, vert;
 
-
-      selX = lowX;
-      selY = hiY;
-      selTiles = new TileList[hiX-lowX+1][hiY-lowY+1];
-
-      for (int i=0; i<selTiles.length; i++)
-      {
-        for (int j=0; j<selTiles[0].length; j++)
+        if (15-getMouseTy()+selTiles[0].length>15) //Avoids array index excep.
         {
-          selTiles[i][j] = left[left.length-1-(selY-j+(16-min))][selX+i];
+          vert = getMouseTy()+1;
+        } else {
+          vert = selTiles[0].length;
         }
+
+        if (getMouseTx()-9+selTiles.length>7) //Avoids array index excep.
+        {
+          horiz = 16-getMouseTx()+1;
+        } else {
+          horiz = selTiles.length;
+        }
+
+        for (int i=0; i<vert; i++)
+        {
+          for (int j=0; j<horiz; j++)
+          {
+            //Places selection onto tileset
+            right[15-getMouseTy()+i][getMouseTx()-9+j] = selTiles[j][i];
+          }
+        }
+
+      } else if (left() && mouseIsDown && (prevMx!=getMouseTx() ||
+          prevMy!=getMouseTy()))
+      {
+        //New multi-tile selection
+        int lowX = Math.min(getMouseTx(), anchorX);
+        int hiX = Math.max(getMouseTx(), anchorX);
+
+        int lowY = Math.min(getMouseTy(), anchorY);
+        int hiY = Math.max(getMouseTy(), anchorY);
+
+
+        selX = lowX;
+        selY = hiY;
+        selTiles = new TileList[hiX-lowX+1][hiY-lowY+1];
+
+        for (int i=0; i<selTiles.length; i++)
+        {
+          for (int j=0; j<selTiles[0].length; j++)
+          {
+            selTiles[i][j] = left[left.length-1-(selY-j+(16-min))][selX+i];
+          }
+        }
+
+      } 
+
+      if (mouseRelease && changeMade)
+      {
+        updateHistory();
+        changeMade = false;
       }
 
+      if (rightClick && right())
+      {
+        swapMode = true;
+        swapTiles = new TileList[1][1];
+
+        swapX = getMouseTx();
+        swapY = getMouseTy();
+
+        anchorSwapX = getMouseTx();
+        anchorSwapY = getMouseTy();
+
+        swapTiles[0][0] = right[15-getMouseTy()][getMouseTx()-9];
+
+      }
+
+      if (scrollClick)
+      {
+        delX = getMouseTx();
+        delY = getMouseTy();
+
+        anchorDelX = getMouseTx();
+        anchorDelY = getMouseTy();
+
+        delSx = 1;
+        delSy = 1;
+
+        eraser = true;
+      }
+
+      if (eraser && right() && (prevMx!=getMouseTx() || prevMy!=getMouseTy()))
+      {
+        int lowX = Math.min(getMouseTx(), anchorDelX);
+        int hiX = Math.max(getMouseTx(), anchorDelX);
+
+        int lowY = Math.min(getMouseTy(), anchorDelY);
+        int hiY = Math.max(getMouseTy(), anchorDelY);
+
+
+        delX = lowX;
+        delY = hiY;
+        delSx = hiX-lowX+1;
+        delSy = hiY-lowY+1;
+
+      }
+
+      if (scrollIsDown && (KeyHandler.keyDown(Key.SPACE)))
+      {
+        eraser = false;
+      }
+
+      if (scrollRelease && eraser)
+      {
+        for (int i=0; i<delSx; i++)
+        {
+          for (int j=0; j<delSy; j++)
+          {
+            right[15-delY+j][delX-9+i] = TileList.BLANK;
+          }
+        }
+        eraser = false;
+
+        updateHistory();
+      }
+
+    } else
+    {
+
+      if (!rightIsDown && !swapLift) 
+      {
+        swapLift = true;
+      }
+
+      if (swapLift && KeyHandler.keyClick(Key.SPACE))
+      {
+        swapLift = false;
+        swapMode = false;
+      }
+
+      if (!swapLift)
+      {
+        if (rightIsDown && right() && (prevMx!=getMouseTx() || prevMy!=getMouseTy()))
+        {
+          //New multi-tile selection
+          int lowX = Math.min(getMouseTx(), anchorSwapX);
+          int hiX = Math.max(getMouseTx(), anchorSwapX);
+
+          int lowY = Math.min(getMouseTy(), anchorSwapY);
+          int hiY = Math.max(getMouseTy(), anchorSwapY);
+
+          swapX = lowX;
+          swapY = hiY;
+          swapTiles = new TileList[hiX-lowX+1][hiY-lowY+1];
+
+          for (int i=0; i<swapTiles.length; i++)
+          {
+            for (int j=0; j<swapTiles[0].length; j++)
+            {
+              swapTiles[i][j] = right[15-swapY+j][swapX-9+i];
+            }
+          }
+        }
+      } else 
+      {
+
+        if (rightClick && right())
+        {
+          if (validSwap())
+          {
+            selTiles = new TileList[1][1];
+            selTiles[0][0] = TileList.BLANK;
+            selX=0;
+            selY=15;
+
+            TileList temp;
+            for (int i=0; i<swapTiles.length; i++)
+            {
+              for (int j=0; j<swapTiles[0].length; j++)
+              {
+                temp = right[15-getMouseTy()+j][getMouseTx()-9+i];
+                right[15-getMouseTy()+j][getMouseTx()-9+i] = right[15-swapY+j][swapX-9+i];
+                right[15-swapY+j][swapX-9+i] = temp;
+                //Performs the swap
+              }
+            }
+
+            swapMode = false;
+            swapLift = false;
+
+            updateHistory();
+
+
+          }
+        } else if (mouseClick && left())
+        {
+          swapMode = false;
+          swapLift = false;
+        } else if (mouseClick && right() && validSwap())
+        {
+          selTiles = new TileList[1][1];
+          selTiles[0][0] = TileList.BLANK;
+          selX=0;
+          selY=15;
+
+          for (int i=0; i<swapTiles.length; i++)
+          {
+            for (int j=0; j<swapTiles[0].length; j++)
+            {
+              right[15-getMouseTy()+j][getMouseTx()-9+i] = right[15-swapY+j][swapX-9+i];
+            }
+          }
+
+        }
+
+      }
     }
 
+    //Saves the file
     if (saveButton() && mouseClick)
     {
       if (!newSave)
       {
-        newSave = newSave();
+        newSave = newSave(); //New file
       } else
       {
-        save(savePath, saveName);
+        save(savePath, saveName); //Previously existing file
       }
+      
+      justSaved = true;
     }
 
     if (openButton() && mouseClick)
     {
       load();
+    }
+    
+    if (newSaveButton() && mouseClick)
+    {
+      newSave = false;
+      justSaved = newSave();
+    }
+    
+    if (newButton() && mouseClick)
+    {
+      System.out.println("New");
     }
 
     if ((KeyHandler.keyDown(Key.DOWN) ||(left() && dWheel<0))&& max<left.length && 
@@ -204,7 +414,7 @@ public class TileSetEditor implements Playable {
     {
       max++;
       min++;
-      selY++;
+      selY++; //Scroll palette down
     }
 
     if ((KeyHandler.keyDown(Key.UP) || (left() && dWheel>0))&& min>0 && 
@@ -212,11 +422,32 @@ public class TileSetEditor implements Playable {
     {
       max--;
       min--;
-      selY--;
+      selY--; //Scroll palette up
+    }
+    
+    if ((KeyHandler.controlDown() && KeyHandler.keyClick(Key.Z)) || 
+        (mouseClick && undoButton()) && historyIndex>0)
+    {
+      undo();
+    } else if (((KeyHandler.controlDown() && KeyHandler.keyClick(Key.Y)) ||
+        (mouseClick && redoButton()))&& redo!=null)
+    {
+      redo();
     }
 
     prevMx = getMouseTx();
     prevMy = getMouseTy();
+    
+    if (justSaved)
+    {
+      justSavedCount++;
+      
+      if (justSavedCount>=100)
+      {
+        justSavedCount=0;
+        justSaved = false;
+      }
+    }
   }
 
   /* (non-Javadoc)
@@ -233,6 +464,7 @@ public class TileSetEditor implements Playable {
       }
     }
 
+
     for (int i=0; i<right.length; i++)
     {
       for (int j=0; j<right[0].length; j++)
@@ -247,16 +479,107 @@ public class TileSetEditor implements Playable {
     }
 
 
-    for (int i=0; i<selTiles.length; i++)
+    if (!swapMode)
     {
-      for (int j=0; j<selTiles[0].length; j++)
+      for (int i=0; i<selTiles.length; i++)
       {
-        Draw.rect(selX*16+i*16, selY*16-j*16, 16, 16, 220, 0, 221, 1, 6);
+        for (int j=0; j<selTiles[0].length; j++)
+        {
+          Draw.rect(selX*16+i*16, selY*16-j*16, 16, 16, 220, 3, 221, 4, 6);
+        }
+      }
+    } else
+    {
+      for (int i=0; i<swapTiles.length; i++)
+      {
+        for (int j=0; j<swapTiles[0].length; j++)
+        {
+          Draw.rect(swapX*16+i*16, swapY*16-j*16, 16, 16, 220, 3, 221, 4, 6);
+        }
+      }
+
+      if (swapLift && right())
+      {
+        for (int i=0; i<swapTiles.length; i++)
+        {
+          for (int j=0; j<swapTiles[0].length; j++)
+          {
+            if (!validSwap())
+            {
+              Draw.rect(getMouseTx()*16+i*16, getMouseTy()*16-j*16, 16, 16, 
+                  220, 0, 221, 1, 6);
+            } else
+            {
+              Draw.rect(getMouseTx()*16+i*16, getMouseTy()*16-j*16, 16, 16, 
+                  220, 6, 221, 7, 6);
+            }
+
+          }
+        }
       }
     }
 
-    Draw.rect(128, 0, 16, 16, 221, 0, 237, 16, 6);
-    Draw.rect(128, 16, 16, 16, 237, 0, 253, 16, 6);
+    if (eraser)
+    {
+      for (int i=0; i<delSx; i++)
+      {
+        for (int j=0; j<delSy; j++)
+        {
+          Draw.rect(delX*16+i*16, delY*16-j*16, 16, 16, 
+              220, 9, 221, 10, 6);
+        }
+      }
+    }
+
+    Draw.rect(128, 0, 16, 16, 221, 54, 237, 70, 6);   //Draws save button
+    Draw.rect(128, 16, 16, 16, 237, 54, 253, 70, 6);  //Draws the save as button
+    Draw.rect(128, 32, 16, 16, 221, 72, 237, 88, 6);   //Draws open button
+    Draw.rect(128, 48, 16, 16, 237, 72, 253, 88, 6);  //Draws new button
+    
+
+    
+    if (redo!=null) Draw.rect(128, 224, 16, 16, 
+        221, 36, 237, 52, 6);
+    else Draw.rect(128, 224, 16, 16, 237, 36, 253, 52, 6);
+    
+    if (historyIndex>0) Draw.rect(128, 240, 16, 16, 221, 18, 237, 34, 6);
+    else Draw.rect(128, 240, 16, 16, 237, 18, 253, 34, 6);
+    
+    if (!save) 
+    {
+      Draw.rect(136, 8, 7, 7, 201, 61, 208, 68, 6);
+    } else if (justSaved)
+    {
+      Draw.rect(134, 8, 9, 7, 201, 69, 210, 76, 6);
+    }
+  }
+
+  public boolean validSwap()
+  {
+    if (getMouseTx()+swapTiles.length-9>8) return false;
+    if (15-getMouseTy()+swapTiles[0].length>16) return false;
+    //The rectangle is partially off the screen
+    if (getMouseTx()>=swapX && getMouseTx()<swapX+swapTiles.length &&
+        getMouseTy()<=swapY && getMouseTy()>swapY-swapTiles[0].length) 
+      return false;
+    //Top left corner intersects
+    if ((getMouseTx()+swapTiles.length-1)>=swapX && 
+        (getMouseTx()+swapTiles.length-1)<swapX+swapTiles.length &&
+        getMouseTy()<=swapY && getMouseTy()>swapY-swapTiles[0].length)
+      return false;
+    //Top right corner intersects
+    if (getMouseTx()>=swapX && getMouseTx()<swapX+swapTiles.length &&
+        (getMouseTy()-swapTiles[0].length+1)<=swapY &&
+        (getMouseTy()-swapTiles[0].length+1)>swapY-swapTiles[0].length) 
+      return false;
+    //Bottom left corner intersects
+    if ((getMouseTx()+swapTiles.length-1)>=swapX && 
+        (getMouseTx()+swapTiles.length-1)<swapX+swapTiles.length &&
+        (getMouseTy()-swapTiles[0].length+1)<=swapY &&
+        (getMouseTy()-swapTiles[0].length+1)>swapY-swapTiles[0].length) 
+      return false;
+    //Bottom right corner intersects
+    return true;
   }
 
   /* (non-Javadoc)
@@ -283,9 +606,29 @@ public class TileSetEditor implements Playable {
     return getMouseTx()==8 && getMouseTy()==0;
   }
 
-  public boolean openButton()
+  public boolean newSaveButton()
   {
     return getMouseTx()==8 && getMouseTy()==1;
+  }
+  
+  public boolean openButton()
+  {
+    return getMouseTx()==8 && getMouseTy()==2;
+  }
+  
+  public boolean newButton()
+  {
+    return getMouseTx()==8 && getMouseTy()==3;
+  }
+  
+  public boolean redoButton()
+  {
+    return getMouseTx()==8 && getMouseTy()==14;
+  }
+  
+  public boolean undoButton()
+  {
+    return getMouseTx()==8 && getMouseTy()==15;
   }
 
   public int getMouseTx()
@@ -437,8 +780,73 @@ public class TileSetEditor implements Playable {
         JOptionPane.showMessageDialog(null, 
             "The file was not found / was corrupt.");
 
-       
-      }         
+
+      }
     }
   }
+
+  public void undo()
+  {
+    if (historyIndex>0)
+    {
+      redo = new TileList[16][8];
+      for (int i=0; i<right.length; i++)
+      {
+        for (int j=0; j<right[0].length; j++)
+        {
+          redo[i][j]=history.get(history.size()-1)[i][j];
+        }
+      }
+      
+      history.remove(history.size()-1);
+      historyIndex--;
+      for (int i=0; i<right.length; i++)
+      {
+        for (int j=0; j<right[0].length; j++)
+        {
+          right[i][j]=history.get(historyIndex)[i][j];
+        }
+      }
+    }
+  }
+
+  public void redo()
+  {
+    for (int i=0; i<right.length; i++)
+    {
+      for (int j=0; j<right[0].length; j++)
+      {
+        right[i][j]=redo[i][j];
+      }
+    }
+    
+    updateHistory();
+  }
+
+  public void updateHistory()
+  {
+    
+    redo=null;
+    TileList[][] tiles = new TileList[right.length][right[0].length];
+
+    for (int i=0; i<tiles.length; i++)
+    {
+      for (int j=0; j<tiles[0].length; j++)
+      {
+        tiles[i][j] = right[i][j];
+      }
+    }
+//Andrew is a nerd
+    history.add(tiles);
+    historyIndex++;
+    
+    if (history.size()>10)
+    {
+      history.remove(0);
+      historyIndex--;
+    }
+   
+  }
+
+
 }
