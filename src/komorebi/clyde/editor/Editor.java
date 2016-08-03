@@ -1,21 +1,17 @@
 /**
  * Editor.java    May 16, 2016, 10:03:58 PM
  */
-package komorebi.clyde.states;
+package komorebi.clyde.editor;
 
 import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glOrtho;
 import static org.lwjgl.opengl.GL11.glViewport;
 
-import komorebi.clyde.editor.Palette;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.map.EditorMap;
-import komorebi.clyde.map.Map;
 
-import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 
 import java.awt.Frame;
@@ -32,7 +28,6 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -64,7 +59,6 @@ public class Editor implements Playable{
   public Editor(){
     pal = new Palette();
     map = new EditorMap(20, 20);
-    pal.setMap(map);
   }
 
 
@@ -100,24 +94,7 @@ public class Editor implements Playable{
   @Override
   public void update() {
     if(isLoad){
-      if(requestSave()){
-        JFileChooser chooser = new JFileChooser("res/maps/");
-        FileNameExtensionFilter filter = new FileNameExtensionFilter(
-            "Map Files (.map)", "map");
-        chooser.setFileFilter(filter);
-        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        chooser.setDialogTitle("Enter the name of the map to load");
-        int returnee = chooser.showOpenDialog(null);
-
-        KeyHandler.reloadKeyboard();
-        
-        if(returnee == JFileChooser.APPROVE_OPTION){
-          map = new EditorMap(chooser.getSelectedFile().getAbsolutePath(), 
-              chooser.getSelectedFile().getName());
-          pal.setMap(map);
-        }
-      }
-
+      loadMap();
     }
 
     if(isResetTile){
@@ -129,26 +106,56 @@ public class Editor implements Playable{
     }
     
     if(isNew){
-      if(requestSave()){
-        NewMapDialog dialog = new NewMapDialog();
-        dialog.pack();
-        dialog.setVisible(true);
-
-        int width = dialog.getActWidth();
-        int height = dialog.getActHeight();
-
-        if(width != 0 && height != 0){
-          map = new EditorMap(width, height);
-          pal.setMap(map);
-        }
-        KeyHandler.reloadKeyboard();
-      }
+      newMap();
     }
     
     pal.update();
     map.update();
   }
 
+  /**
+   * Creates a new map, asking if the user wants to save or not
+   */
+  public static void newMap(){
+    if(requestSave()){
+      NewMapDialog dialog = new NewMapDialog();
+      dialog.pack();
+      dialog.setVisible(true);
+
+      int width = dialog.getActWidth();
+      int height = dialog.getActHeight();
+
+      if(width != 0 && height != 0){
+        map = new EditorMap(width, height);
+      }
+      KeyHandler.reloadKeyboard();
+    }
+
+  }
+  
+  /**
+   * Loads a map, asking the user if they want to save first
+   */
+  public static void loadMap(){
+    if(requestSave()){
+      JFileChooser chooser = new JFileChooser("res/maps/");
+      FileNameExtensionFilter filter = new FileNameExtensionFilter(
+          "Map Files (.map)", "map");
+      chooser.setFileFilter(filter);
+      chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+      chooser.setDialogTitle("Enter the name of the map to load");
+      int returnee = chooser.showOpenDialog(null);
+
+      KeyHandler.reloadKeyboard();
+      
+      if(returnee == JFileChooser.APPROVE_OPTION){
+        map = new EditorMap(chooser.getSelectedFile().getAbsolutePath(), 
+            chooser.getSelectedFile().getName());
+      }
+    }
+
+  }
+  
   /**
    * Asks the player if they want to save the map
    */
@@ -228,7 +235,7 @@ public class Editor implements Playable{
    * 
    * @author Aaron Roy
    */
-  private class NewMapDialog extends JDialog implements ActionListener, 
+  private static class NewMapDialog extends JDialog implements ActionListener, 
                                                         PropertyChangeListener{
     /**
      * I don't know what this does, but it does something...

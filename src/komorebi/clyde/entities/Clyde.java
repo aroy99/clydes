@@ -29,6 +29,8 @@ public class Clyde extends Entity implements Playable{
   private Animation downAni;
   private Animation leftAni;
   private Animation rightAni;
+  
+  private static final float SPEED = 1;
 
   private Face dir = Face.DOWN;    
 
@@ -89,17 +91,17 @@ public class Clyde extends Entity implements Playable{
    */
   @Override
   public void update() {
-    int speed = 8;
+    int aniSpeed = 8;
 
     if (canMove) {
       
       if(left){
-        dx = -1;
+        dx = -SPEED;
         dir = Face.LEFT;
         leftAni.resume();
       }
       if(right){
-        dx = 1;
+        dx = SPEED;
         dir = Face.RIGHT;
         rightAni.resume();
       }
@@ -110,12 +112,12 @@ public class Clyde extends Entity implements Playable{
       }
 
       if(down){
-        dy = -1;
+        dy = -SPEED;
         dir = Face.DOWN;
         downAni.resume();
       }
       if(up){
-        dy = 1;
+        dy = SPEED;
         dir = Face.UP;
         upAni.resume();
       }
@@ -129,7 +131,7 @@ public class Clyde extends Entity implements Playable{
       if(run){
         dx *=2;
         dy *=2;
-        speed /=2;
+        aniSpeed /=2;
       }
 
       /*
@@ -140,10 +142,10 @@ public class Clyde extends Entity implements Playable{
       }
       */
 
-      upAni.setSpeed(speed);
-      downAni.setSpeed(speed);
-      leftAni.setSpeed(speed);
-      rightAni.setSpeed(speed);
+      upAni.setSpeed(aniSpeed);
+      downAni.setSpeed(aniSpeed);
+      leftAni.setSpeed(aniSpeed);
+      rightAni.setSpeed(aniSpeed);
 
       Game.getMap().move(x, y, -dx, -dy);
     }else {

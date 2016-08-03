@@ -6,6 +6,7 @@ package komorebi.clyde.map;
 
 import static komorebi.clyde.engine.KeyHandler.button;
 
+import komorebi.clyde.editor.Editor;
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.Key;
@@ -19,7 +20,6 @@ import komorebi.clyde.script.AreaScript;
 import komorebi.clyde.script.TalkingScript;
 import komorebi.clyde.script.WalkingScript;
 import komorebi.clyde.script.WarpScript;
-import komorebi.clyde.states.Editor;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -46,38 +46,38 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 public class EditorMap implements Playable{
 
   //Mouse buttons
-  private boolean lButtonIsDown, lButtonWasDown;//Left Button Clicked
-  private boolean rButtonIsDown, rButtonWasDown;//Right Button Clicked
-  private boolean mButtonIsDown, mButtonWasDown;//Middle Button Pressed
-  private boolean mouseSame;                    //Mouse is in same pos as last frame
-  private int mx, my;                           //To track mouse position
+  private static boolean lButtonIsDown, lButtonWasDown;//Left Button Clicked
+  private static boolean rButtonIsDown, rButtonWasDown;//Right Button Clicked
+  private static boolean mButtonIsDown, mButtonWasDown;//Middle Button Pressed
+  private static boolean mouseSame;                    //Mouse is in same pos as last frame
+  private static int mx, my;                           //To track mouse position
 
   //Arrow keys
   private boolean up, down, left, right;        //Directions for movement
 
   //Special commands
-  private boolean isSave;                    //Save the map
-  private boolean isNewSave;                 //Saves a new map file
-  private boolean isReset;                   //Resets tiles position
-  private boolean isGrid;                    //Turn on/off Grid
-  private boolean rStartDragging, rIsDragging;//Starting a group selection
-  private boolean lStartDragging, lIsDragging;                //Is making a group selection
-  private boolean isSelection;               //A selection is active
-  private boolean isClearSel;                //Clears the selection
+  private static boolean isSave;                     //Save the map
+  private static boolean isNewSave;                  //Saves a new map file
+  private static boolean isReset;                    //Resets tiles position
+  private static boolean isGrid;                     //Turn on/off Grid
+  private static boolean rStartDragging, rIsDragging;//Starting a group selection
+  private static boolean lStartDragging, lIsDragging;//Is making a group selection
+  private static boolean isSelection;                //A selection is active
+  private static boolean isClearSel;                 //Clears the selection
+  private static boolean isNewNPC;                   //Creates a new NPC
 
   //Map States
-  private static boolean isMoveSet;          //Whether to set movement permission
   public static boolean grid;                //Whether the grid is on or not
   private boolean saved = true;
 
 
-  private Palette pal;
+  private static Palette pal;
   private TileList[][] tiles;                //The Map itself
   private boolean[][] collision;
 
-  private TileList[][] selection;            //The selection
+  private static TileList[][] selection;            //The selection
 
-  public static final int SIZE = 16;  //Width and height of a tile
+  public static final int SIZE = 16;         //Width and height of a tile
 
   private NPC[][] npcs;
   private AreaScript[][] scripts;
@@ -85,7 +85,7 @@ public class EditorMap implements Playable{
   private float x, y;       //Current location
   private int initX, initY; //Location at the beginning of a drag
   private float dx, dy;
-  private float speed = 10;
+  private static final float SPEED = 10;
 
   private String savePath;  //Path to save the map by default
   private String saveName;  //Name to save the map by default
@@ -93,8 +93,17 @@ public class EditorMap implements Playable{
   private static final int WIDTH = Display.getWidth();
   private static final int HEIGHT = Display.getHeight();
 
+  /**
+   * The various modes this map can be in
+   * 
+   * @author Aaron Roy
+   * @version
+   */
+  private enum Modes{
+    TILE, MOVE, NPC;
+  }
 
-
+  private static Modes mode = Modes.TILE;
 
   /**
    * Creates a new Map of the dimensions col x row
@@ -108,6 +117,8 @@ public class EditorMap implements Playable{
     scripts = new AreaScript[row][col];
     pal = Editor.getPalette();
 
+    Display.setTitle("Clyde\'s Editor - "+ "Untitled Map");
+    
     for (int i = tiles.length-1; i >= 0; i--) {
       for (int j = 0; j < tiles[0].length; j++) {
         tiles[i][j] = TileList.BLANK;
@@ -160,7 +171,7 @@ public class EditorMap implements Playable{
         if(s == null || s.startsWith("npc")){
           break;
         }
-        if(i!=0){
+        if(i != 0){
           s = reader.readLine();
         }
         String[] str = s.split(" ");
@@ -169,7 +180,7 @@ public class EditorMap implements Playable{
           if(str[index].equals("")){
             index++;  //pass this token, it's blank
           }
-          collision[i][j]=str[index].equals("1")?true:false;
+          collision[i][j]=str[index].equals("1")?true : false;
         }
       }
 
@@ -181,7 +192,7 @@ public class EditorMap implements Playable{
 
       do
       {
-        if(s==null){
+        if(s == null){
           break;
         }
         
@@ -193,7 +204,8 @@ public class EditorMap implements Playable{
           int arg0 = Integer.parseInt(split[2]);
           int arg1 = Integer.parseInt(split[1]);
 
-          npcs[arg0][arg1] = new NPC(split[0], arg0, arg1,  NPCType.toEnum(split[3]));
+          npcs[arg0][arg1] = new NPC(split[0], arg0, arg1, 
+              NPCType.toEnum(split[3]));
 
           npcs[arg0][arg1].setWalkingScript(
               new WalkingScript(split[4], npcs[arg0][arg1]));
@@ -224,14 +236,15 @@ public class EditorMap implements Playable{
               new WarpScript(split[0], arg0,
                   arg1, false);
         }
-      }while ((s=reader.readLine()) != null);
+      } while ((s=reader.readLine()) != null);
 
 
       reader.close();
     } catch (IOException | NumberFormatException e) {
       e.printStackTrace();
       JOptionPane.showMessageDialog(null, 
-          "The file was not found / was corrupt, therefore, the default settings were used");
+          "The file was not found / was corrupt, therefore, the " + 
+          "default settings were used");
       tiles = new TileList[10][10];
       pal = Editor.getPalette();
 
@@ -305,13 +318,13 @@ public class EditorMap implements Playable{
    */
   public void update(){
     //Sets mouse tile to the one from the palette
-    if(lButtonIsDown && checkBounds() && !isSelection){
+    if(lButtonIsDown && checkMapBounds()){
       int mx = getMouseX();
       int my = getMouseY();
 
-      if(!isMoveSet){
+      if(mode == Modes.TILE  && !isSelection){
         tiles[my][mx] = pal.getSelected();
-      }else if(!mouseSame && isMoveSet){
+      }else if(!mouseSame && mode == Modes.MOVE){
         collision[my][mx] = true;
       }
       saved = false;
@@ -321,23 +334,24 @@ public class EditorMap implements Playable{
     }
 
     //Sets palette's selected to mouse tile
-    if(rButtonIsDown && checkBounds()){
-      if(!isMoveSet && !rButtonWasDown){
+    if(rButtonIsDown && checkMapBounds()){
+      if(mode == Modes.TILE && !rButtonWasDown){
         pal.setLoc(tiles[getMouseY()][getMouseX()]);
         clearSelection();
-      }else if(!mouseSame && isMoveSet){
+      }else if(!mouseSame && mode == Modes.MOVE){
         collision[my][mx] = false;
+        saved = false;
       }
     }
 
     //Flood Fills tiles
-    if(mButtonIsDown && !mButtonWasDown && checkBounds()){
+    if(mButtonIsDown && !mButtonWasDown && checkMapBounds()){
       int mx = getMouseX();
       int my = getMouseY();
 
-      if(!isMoveSet){
+      if(mode == Modes.TILE){
         flood(mx, my, tiles[my][mx]);
-      }else{
+      }else if(mode == Modes.MOVE){
         flood(mx, my, !collision[my][mx]);
       }
       saved = false;
@@ -352,19 +366,20 @@ public class EditorMap implements Playable{
       initY = getMouseY();
     }
 
-    if(rIsDragging && checkBounds()){
-      if(!isMoveSet){
+    if(rIsDragging && checkMapBounds()){
+      if(mode == Modes.TILE){
         createSelection();
-      }else{
-        createSelection(true);
+      }else if(mode == Modes.MOVE){
+        createSelection(false);
       }
     }
 
-    if(lIsDragging && checkBounds() && isMoveSet){
-      createSelection(false);
+    if(lIsDragging && checkMapBounds() && mode == Modes.MOVE){
+      createSelection(true);
     }
 
-    if(isSelection && lButtonIsDown && checkBounds() && !lButtonWasDown && !isMoveSet){
+    if(isSelection && lButtonIsDown && checkMapBounds() && !lButtonWasDown && 
+        mode == Modes.TILE){
       for(int i = 0; i < selection.length; i++){
         for (int j = 0; j < selection[0].length; j++) {
           if(checkTileBounds(getMouseY()+i, getMouseX()+j)){
@@ -398,16 +413,16 @@ public class EditorMap implements Playable{
     }
 
     if(up){
-      dy =  speed;
+      dy =  SPEED;
     }
     if(down){
-      dy = -speed;
+      dy = -SPEED;
     }
     if(right){
-      dx =  speed;
+      dx =  SPEED;
     }
     if(left){
-      dx = -speed;
+      dx = -SPEED;
     }
 
     move(dx, dy);
@@ -418,10 +433,44 @@ public class EditorMap implements Playable{
     }
 
     if(button(Control.MOVE_SET)){
-      isMoveSet = !isMoveSet;
+      mode = Modes.MOVE;
     }
 
-
+    if(lButtonIsDown && !lButtonWasDown && checkButtonBounds()){
+      switch(Mouse.getX()/(16*MainE.scale)-Palette.xOffset){
+        case 0:
+          mode = Modes.TILE;
+          break;
+        case 1:
+          mode = Modes.MOVE;
+          break;
+        case 2:
+          mode = Modes.TILE;
+          break;
+        case 3:
+          Editor.newMap();
+          break;
+        case 4:
+          if(savePath == null){
+            newSave();
+          }else{
+            save(savePath, saveName);
+          }
+          break;
+        case 5:
+          newSave();
+          break;
+        case 6:
+          Editor.loadMap();
+          break;
+        case 7:
+          mode = Modes.TILE;
+          break;
+        default:
+          //Do nothing, invalid (and impossible, I hope)
+          System.out.println("This shouldn't be happening m8");
+      }
+    }
 
     x+=dx;
     y+=dy;
@@ -462,6 +511,11 @@ public class EditorMap implements Playable{
           }
         }
       }
+      
+      if(checkMapBounds() && mode == Modes.TILE){
+        Draw.rect(x+mx*SIZE, y+my*SIZE, selection[0].length*SIZE, selection.length*SIZE, 
+            16, 16,16,16, 2);
+      }
     }
 
     for (NPC[] npcR: npcs) {
@@ -473,17 +527,44 @@ public class EditorMap implements Playable{
       }
     }
 
-    if(isMoveSet){
+    if(mode == Modes.MOVE){
+      int k = 0;
       for (int i = 0; i < tiles.length; i++) {
         for (int j = 0; j < tiles[0].length; j++) {
-          if(collision[i][j]){
-            Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, 16, 16, 16, 16, 2);
-          }else{
-            Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, 17, 16, 17, 16, 2);
+          if(checkTileInBounds(x+j*SIZE, y+i*SIZE)){
+            if(collision[i][j]){
+              Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, 16, 16, 16, 16, 2);
+            }else{
+              Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, 17, 16, 17, 16, 2);
+            }
+            k++;
           }
         }
       }
+      //TODO Debug
+//      System.out.println(k);
     }
+    
+    Draw.rect(WIDTH - SIZE*8, HEIGHT-SIZE, SIZE*8, SIZE, 0, 32, 2);
+    
+    if(checkButtonBounds()){
+      int x;
+      
+      switch(Mouse.getX()/(16*MainE.scale)-Palette.xOffset){
+        case 0: x = WIDTH - SIZE*8; break;
+        case 1: x = WIDTH - SIZE*7; break;
+        case 2: x = WIDTH - SIZE*6; break;
+        case 3: x = WIDTH - SIZE*5; break;
+        case 4: x = WIDTH - SIZE*4; break;
+        case 5: x = WIDTH - SIZE*3; break;
+        case 6: x = WIDTH - SIZE*2; break;
+        case 7: x = WIDTH - SIZE;   break;
+        default:x = 0;
+      }
+      
+      Draw.rect(x, HEIGHT-SIZE, SIZE, SIZE, 64, 0, 2);
+    }
+
   }
 
 
@@ -546,7 +627,7 @@ public class EditorMap implements Playable{
       //The collision
       for (boolean[] tile : collision) {
         for (boolean t : tile) {
-          writer.print((t?1:0) + " ");
+          writer.print((t?1 : 0) + " ");
         }
         writer.println();
       }
@@ -587,7 +668,8 @@ public class EditorMap implements Playable{
         File f = getSelectedFile();
         if(f.exists() && getDialogType() == SAVE_DIALOG){
           int result = JOptionPane.showConfirmDialog(this,
-              "The file exists, overwrite?","Existing file",JOptionPane.YES_NO_CANCEL_OPTION);
+              "The file exists, overwrite?",
+              "Existing file",JOptionPane.YES_NO_CANCEL_OPTION);
           switch(result){
             case JOptionPane.YES_OPTION:
               super.approveSelection();
@@ -687,7 +769,8 @@ public class EditorMap implements Playable{
         mouseY < 0 || mouseY >= tiles.length){
       return;
     }
-    if(tiles[mouseY][mouseX] != type || tiles[mouseY][mouseX] == pal.getSelected()){
+    if(tiles[mouseY][mouseX] != type || 
+        tiles[mouseY][mouseX] == pal.getSelected()){
       return;
     }
 
@@ -724,6 +807,7 @@ public class EditorMap implements Playable{
 
   /**
    * 
+   * 
    * @param s
    * @return
    */
@@ -731,24 +815,35 @@ public class EditorMap implements Playable{
   {
     for (NPC[] npcR: npcs) {
       for (NPC npc: npcR) {
-        if (npc!=null)
-          if (npc.getName().equals(s)) return npc;
+        if (npc != null){
+          if (npc.getName().equals(s)){
+            return npc;
+          }
+        }
       }
     }
 
     return null;
   }
 
+  /**
+   * 
+   * 
+   * @param s
+   * @return
+   */
   public AreaScript getScript(String s)
   {
     for (AreaScript[] scriptR: scripts)
     {
       for (AreaScript scr: scriptR)
       {
-        if (scr!=null)
+        if (scr != null)
         {
           System.out.println(scr.getName());
-          if (scr.getName().equals(s)) return scr;
+          if (scr.getName().equals(s)){
+            return scr;
+          }
         }
 
       }
@@ -765,7 +860,7 @@ public class EditorMap implements Playable{
    * Checks if the Mouse is in bounds of the map
    * @return Mouse is in map
    */
-  private boolean checkBounds() {
+  private boolean checkMapBounds() {
     return (Mouse.getX()/MainE.getScale() < Palette.xOffset*16 ||
         Mouse.getY()/MainE.getScale() < Palette.yOffset*16) &&
         (getMouseY() >= 0 &&
@@ -773,6 +868,16 @@ public class EditorMap implements Playable{
         getMouseX() >= 0 &&
         getMouseX() < tiles[0].length);
   }
+  
+  /**
+   * Checks if the Mouse is in bounds of the buttons
+   * @return Mouse is on a button
+   */
+  private boolean checkButtonBounds() {
+    return (Mouse.getX()/MainE.getScale() >= WIDTH-SIZE*8 &&
+        Mouse.getY()/MainE.getScale() > HEIGHT-SIZE);
+  }
+
 
   /**
    * Checks if the tile is valid
@@ -809,7 +914,7 @@ public class EditorMap implements Playable{
    * @return Whether the tile is on the map
    */
   private boolean checkTileInBounds(float x, float y) {
-    return x+32 > 0 && x < WIDTH && y+32 > 0 && y < HEIGHT;
+    return x+SIZE > 0 && x < WIDTH-SIZE*8 && y+SIZE > 0 && y < HEIGHT;
   }
 
   /**
@@ -823,7 +928,7 @@ public class EditorMap implements Playable{
     return selection;
   }
 
-  public void setSelection(TileList[][] sel){
+  public static void setSelection(TileList[][] sel){
     selection = sel;
   }
 
@@ -840,14 +945,14 @@ public class EditorMap implements Playable{
    * 
    * @param selec value to set the selection to
    */
-  public void setIsSelection(boolean selec) {
-    isSelection = selec;        
+  public static void setIsSelection(boolean selec) {
+    isSelection = selec;
   }
 
   /**
    * Clears the selection, making it disappear
    */
-  public void clearSelection(){
+  public static void clearSelection(){
     selection = null;
     isSelection = false;
   }

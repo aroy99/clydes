@@ -22,7 +22,7 @@ public class KeyHandler {
     UP, DOWN, LEFT, RIGHT, TALK, MENU, 
     
     MAP_UP, MAP_DOWN, MAP_LEFT, MAP_RIGHT, SAVE, NEW_SAVE, LOAD, NEW, GRID, 
-    REVERT_MAP, RESET_LOC, PLAY, MOVE_SET;
+    REVERT_MAP, RESET_LOC, PLAY, MOVE_SET, NPC;
   }
 
   public static int totalKeys()
@@ -69,6 +69,10 @@ public class KeyHandler {
     return (isKeyDown[k.getGLKey()]);
   }
   
+  /**
+   * @param c The control to survey
+   * @return If the requested button was pressed
+   */
   public static boolean button(Control c){
     switch(c){
       case UP:    return keyDown(Key.UP);
@@ -90,6 +94,7 @@ public class KeyHandler {
       case GRID:       return keyDown(Key.CTRL)  && keyClick(Key.G);
       case PLAY:       return keyDown(Key.CTRL)  && keyClick(Key.P);
       case MOVE_SET:   return keyDown(Key.CTRL)  && keyClick(Key.M);
+      case NPC:        return keyDown(Key.CTRL)  && keyClick(Key.C);
       case RESET_LOC:  return keyClick(Key.R);
 
       default:         return false;

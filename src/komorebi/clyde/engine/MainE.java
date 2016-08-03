@@ -21,8 +21,8 @@ import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glMatrixMode;
 import static org.lwjgl.opengl.GL11.glOrtho;
 
+import komorebi.clyde.editor.Editor;
 import komorebi.clyde.script.TextHandler;
-import komorebi.clyde.states.Editor;
 
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -63,7 +63,7 @@ public class MainE {
    * @param args not used
    */
   public static void main(String[] args) {
-	  
+  
     try {
       read = new BufferedReader(
           new FileReader(new File("res/settings")));
@@ -225,14 +225,14 @@ public class MainE {
    * Calculate the FPS and set it in the title bar
    */
   private static void updateFPS(int delta) {
-      if (getTime() - lastFPS > 1000) {
-          handler.clear();
-          handler.write("FPS: " + fps, 0, 600, 8);
-          handler.write("Delta: " + delta, 0, 590, 8); 
-          fps = 0; //reset the FPS counter
-          lastFPS += 1000; //add one second
-      }
-      fps++;
+    if (getTime() - lastFPS > 1000) {
+      handler.clear();
+      handler.write("FPS: " + fps, 0, 600, 8);
+      handler.write("Delta: " + delta, 0, 590, 8); 
+      fps = 0; //reset the FPS counter
+      lastFPS += 1000; //add one second
+    }
+    fps++;
   }
 
 }

@@ -13,7 +13,6 @@ import komorebi.clyde.engine.Playable;
 import komorebi.clyde.map.EditorMap;
 import komorebi.clyde.map.Map;
 import komorebi.clyde.map.TileList;
-import komorebi.clyde.states.Editor;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -30,8 +29,8 @@ public class Palette implements Playable{
 
   private boolean scripting;
 
-  private static final int HEIGHT = 32;
-  private static final int WIDTH = 4;
+  public static final int HEIGHT = 32;
+  public static final int WIDTH = 8;
 
 
   public static final int SIZE = 16;  //Width and height of a tile
@@ -41,7 +40,7 @@ public class Palette implements Playable{
 
   //Offset of palette in tiles
   public static int xOffset = Display.getWidth() / (MainE.scale * 16) - WIDTH;
-  public static int yOffset = Display.getHeight() / (MainE.scale * 16) - HEIGHT;
+  public static int yOffset = 0;
 
   //Selector X and Y, in tiles
   private int selX = xOffset;
@@ -49,7 +48,6 @@ public class Palette implements Playable{
 
   //The Selector itself
   private Animation selection;
-  private EditorMap map;
 
   //Removes repeated input
   private boolean lButtonWasDown, lButtonIsDown; //Left Click
@@ -69,11 +67,19 @@ public class Palette implements Playable{
    */
   public Palette(){
 
-    for (int i = tiles.length-1, k = 0; i >= 0; i--){
-      for (int j = 0; j < tiles[0].length; j++, k++){
+    int k = 0;
+    
+    for (int i = tiles.length-1; i >= 0; i--){
+      for (int j = 0; j < tiles[0].length/2; j++, k++){
         tiles[i][j] = TileList.getTile(k);
       }
     }
+    for (int i = tiles.length-1; i >= 0; i--){
+      for (int j = tiles[0].length/2; j < tiles[0].length; j++, k++){
+        tiles[i][j] = TileList.getTile(k);
+      }
+    }
+
 
     selection = new Animation(8, 8, 16, 16, 2);
     for(int i=3; i >= 0; i--){
@@ -109,12 +115,12 @@ public class Palette implements Playable{
     if (checkBounds() && lButtonIsDown && !lButtonWasDown) {
       selX = getMouseX()+xOffset;
       selY = getMouseY()+yOffset;
-      map.clearSelection();
+      EditorMap.clearSelection();
     }
 
     if(checkBounds() && rButtonIsDown && !rButtonWasDown && 
         !KeyHandler.keyDown(Key.CTRL)){
-      map.clearSelection();
+      EditorMap.clearSelection();
     }
     
     if(startDragging){
@@ -172,7 +178,7 @@ public class Palette implements Playable{
   /**
    * Reloads the Palette
    */
-   @Deprecated
+  @Deprecated
   public void reload(){
     xOffset = Display.getWidth()/(MainE.scale*16) - 4;    
     yOffset = Display.getHeight()/(MainE.scale*16) - 14;  
@@ -216,9 +222,9 @@ public class Palette implements Playable{
 
     }
 
-    map.setSelection(sel);
+    EditorMap.setSelection(sel);
 
-    map.setIsSelection(true);
+    EditorMap.setIsSelection(true);
   }
 
 
@@ -228,7 +234,8 @@ public class Palette implements Playable{
    */
   private boolean checkBounds() {
     return (Mouse.getX()/MainE.getScale() >= Palette.xOffset*16 &&
-        Mouse.getY()/MainE.getScale() >= Palette.yOffset*16);
+        Mouse.getY()/MainE.getScale() >= Palette.yOffset*16) &&
+        Mouse.getY()/MainE.getScale() < (Palette.yOffset+HEIGHT)*16;
   }
 
   /**
@@ -250,17 +257,5 @@ public class Palette implements Playable{
   private int getMouseY() {
     return (Mouse.getY()/MainE.getScale())/(16)-yOffset;
   }
-
-
-  /**
-   * Sets the palette's map to a new map
-   * 
-   * @param map The map to set the palette to
-   */
-  public void setMap(EditorMap map) {
-    this.map = map;
-  }
-
-
 
 }

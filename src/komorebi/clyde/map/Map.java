@@ -44,16 +44,17 @@ public class Map implements Playable{
   private AreaScript[][] scripts;
   private static Clyde play;
 
-  private float x, y;       //Current location
+  private float x=20, y=20;       //Current location
 
   private float clydeX, clydeY;
   private Face clydeDirection;
 
   private static final int WIDTH = Display.getWidth();
   private static final int HEIGHT = Display.getHeight();
-  
+
   //Debug
   private boolean isHitBox;
+  private boolean isGrid;
 
 
   /**
@@ -85,7 +86,7 @@ public class Map implements Playable{
    */
   public Map(String key){
     play = new Clyde(120,100);
-    
+
     try {
       BufferedReader reader = new BufferedReader(new FileReader(
           new File(key)));
@@ -117,7 +118,7 @@ public class Map implements Playable{
         if(s == null || s.startsWith("npc")){
           break;
         }
-        if(i!=0){
+        if(i != 0){
           s = reader.readLine();
         }
         String[] str = s.split(" ");
@@ -126,13 +127,13 @@ public class Map implements Playable{
           if(str[index].equals("")){
             index++;  //pass this token, it's blank
           }
-          collision[i][j]=str[index].equals("0")?true:false;
+          collision[i][j]=str[index].equals("0")?true : false;
         }
       }
-      
+
       do
       {
-        if(s==null){
+        if(s == null){
           break;
         }
         if (s.startsWith("npc"))
@@ -174,7 +175,7 @@ public class Map implements Playable{
               new WarpScript(split[0], arg0,
                   arg1, false);
         }
-      }while ((s=reader.readLine()) != null);
+      } while ((s=reader.readLine()) != null);
 
 
       reader.close();
@@ -191,23 +192,31 @@ public class Map implements Playable{
   @Override
   public void getInput() {
     play.getInput();
-    
+
     // TODO Debug
     if(KeyHandler.keyClick(Key.H)){
       isHitBox = !isHitBox;
     }
+
+    if(KeyHandler.keyClick(Key.L)){
+      System.out.println("x: "+x+", y: "+y);
+    }
+
+    if(KeyHandler.keyClick(Key.G)){
+      isGrid = !isGrid;
+    }
   }
-  
-  
+
+
   /* (non-Javadoc)
    * @see komorebi.clyde.engine.Renderable#update()
    */
   @Override
   public void update() {
-    
+
     play.update();
     setClydeLocation(play.getX(), play.getY(), play.getDirection());
-    
+
     for (NPC[] npcR: npcs) {
       for (NPC npc: npcR) {
         if (npc != null) 
@@ -241,8 +250,15 @@ public class Map implements Playable{
     for (int i = 0; i < tiles.length; i++) {
       for (int j = 0; j < tiles[0].length; j++) {
         if(checkTileInBounds(x+j*SIZE, y+i*SIZE)){
-          Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, tiles[i][j].getX(), 
-              tiles[i][j].getY(), 1);
+          Draw.rect((int)x+j*SIZE, (int)y+i*SIZE, SIZE, SIZE, 
+              tiles[i][j].getX(), tiles[i][j].getY(), 1);
+
+          //TODO Debug
+          if(isGrid){
+            Draw.rect((int)x+j*SIZE, (int)y+i*SIZE, SIZE, SIZE, 
+                0, 16, SIZE, 16+SIZE, 2);
+          }
+
         }
       }
     }
@@ -256,24 +272,25 @@ public class Map implements Playable{
         }
       }
     }
-    
-    
+
+
     //TODO Debug
     if (isHitBox) {
       for (int i = 0; i < collision.length; i++) {
         for (int j = 0; j < collision[0].length; j++) {
           if(checkTileInBounds(x+j*SIZE, y+i*SIZE) && !collision[i][j]){
-            Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, 16, 16, 16, 16, 2);
+            Draw.rect((int)x+j*SIZE, (int)y+i*SIZE, SIZE, SIZE, 
+                16, 16, 16, 16, 2);
           }        
         }
       }
     }
-    
+
     play.render();
-    
+
     //TODO Debug
     if(isHitBox){
-      Draw.rect(clydeX, clydeY, 16, 16, 18, 16, 18, 16, 2);
+      Draw.rect((int)clydeX, (int)clydeY, 16, 16, 18, 16, 18, 16, 2);
     }
   }
 
@@ -290,13 +307,13 @@ public class Map implements Playable{
 
     if(!col[0] || !col[2]){
       dy=0;
-      dx*=2/3f;
+      dx*=.75f;
     }
     if(!col[1] || !col[3]){
       dx=0;
-      dy*=2/3f;
+      dy*=.75f;
     }
-    
+
     x+=dx;
     y+=dy;
     for (int i = 0; i < tiles.length; i++) {
@@ -339,7 +356,7 @@ public class Map implements Playable{
     }
 
   }
-  
+
   /**
    * 
    * @param s
@@ -349,8 +366,11 @@ public class Map implements Playable{
   {
     for (NPC[] npcR: npcs) {
       for (NPC npc: npcR) {
-        if (npc!=null)
-          if (npc.getName().equals(s)) return npc;
+        if (npc != null){
+          if (npc.getName().equals(s)){
+            return npc;
+          }
+        }
       }
     }
 
@@ -363,10 +383,12 @@ public class Map implements Playable{
     {
       for (AreaScript scr: scriptR)
       {
-        if (scr!=null)
+        if (scr != null)
         {
           System.out.println(scr.getName());
-          if (scr.getName().equals(s)) return scr;
+          if (scr.getName().equals(s)) {
+            return scr;
+          }
         }
 
       }
@@ -381,7 +403,7 @@ public class Map implements Playable{
   private boolean checkTileInBounds(float x, float y) {
     return x+32 > 0 && x < WIDTH && y+32 > 0 && y < HEIGHT;
   }
-  
+
   /**
    * Checks the collisions between all four points of the character
    * 
@@ -392,40 +414,34 @@ public class Map implements Playable{
    * @return {Never, Eat, Slimy, Worms}
    */
   private boolean[] checkCollisions(float x, float y, float dx, float dy){
-    //Changed
+    //Speed affected
     int x1 = (int)((-this.x-16+x-dx)/16)+1; //Left
     int y1 = (int)((-this.y-16+y-dy)/16)+1; //Bottom
-    
+
     int x2 = (int)((-this.x-1+x-dx)/16)+1;  //Right
     int y2 = (int)((-this.y-1+y-dy)/16)+1;  //Top
-    
-    //Unchanged
+
+    //Speed Unaffected
     int x3 = (int)((-this.x-16+x)/16)+1; //Left
     int y3 = (int)((-this.y-16+y)/16)+1; //Bottom
-    
+
     int x4 = (int)((-this.x-1+x)/16)+1;  //Right
     int y4 = (int)((-this.y-1+y)/16)+1;  //Top
 
- 
+
     boolean[] ret = new boolean[4];
-    
-    ret[1] = x2<collision[0].length;
-    ret[3] = x1-1>=0;
-    ret[0] = y2<collision.length;
-    ret[2] = y1-1>=0;
-    
-    for(boolean r:ret){
-      if(!r){
-        return ret;
-      }
-    }
-    
-    ret[0] = collision[y2][x3] && collision[y2][x4];
-    ret[2] = collision[y1][x3] && collision[y1][x4];
-                                   
-    ret[1] = collision[y3][x2] && collision[y4][x2];
-    ret[3] = collision[y3][x1] && collision[y4][x1];
-    
+
+    ret[1] = x2 < collision[0].length;
+    ret[3] = x1-1 >= 0;
+    ret[0] = y2 < collision.length;
+    ret[2] = y1-1 >= 0;
+
+    ret[0] = ret[0] && collision[y2][x3] && collision[y2][x4];  //North
+    ret[2] = ret[2] && collision[y1][x3] && collision[y1][x4];  //South
+
+    ret[1] = ret[1] && collision[y3][x2] && collision[y4][x2];  //East
+    ret[3] = ret[3] && collision[y3][x1] && collision[y4][x1];  //West
+
     if(KeyHandler.keyClick(Key.P)){
       System.out.println(x1 + ", " + x2 + ", " + y1 + ", " + y2);
       System.out.println("dx: " + dx + ", dy: " + dy + "\n" + 
@@ -434,7 +450,7 @@ public class Map implements Playable{
       System.out.println("Never: " + ret[0] + ", Eat: " + ret[1] + 
           ", Slimy: " + ret[2] + ", Worms: " + ret[3]);
     }
-        
+
     return ret;
   }
 
@@ -461,7 +477,7 @@ public class Map implements Playable{
   public float getY() {
     return y;
   }
-  
+
   public static Clyde getClyde()
   {
     return play;
