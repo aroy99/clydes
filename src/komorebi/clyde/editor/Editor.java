@@ -3,12 +3,15 @@
  */
 package komorebi.clyde.editor;
 
+import static komorebi.clyde.engine.KeyHandler.button;
+
 import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glOrtho;
 import static org.lwjgl.opengl.GL11.glViewport;
 
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
+import komorebi.clyde.engine.KeyHandler.Control;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.map.EditorMap;
 
@@ -36,13 +39,12 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  * Represents the level editor
  * 
  * @author Aaron Roy
- * @version 
  */
 public class Editor implements Playable{
 
   private boolean isLoad;  //Whether to load a new map or not
   private boolean isNew;    //Whether to create a new map or not
-  private boolean isResetTile;//Reset the map
+  private boolean isRevert;//Reset the map
   
   
   private static EditorMap map;
@@ -70,19 +72,14 @@ public class Editor implements Playable{
     KeyHandler.getInput();
     //        if(Display.wasResized())resize();
     if(KeyHandler.keyClick(Key.P)){
-      Runtime runTime = Runtime.getRuntime();
-      try {
-        runTime.exec("java -jar \"RealGame v 0.1.jar\"");
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      testGame();
     }
 
-    isLoad = KeyHandler.keyClick(Key.L) && KeyHandler.keyDown(Key.CTRL);
+    isLoad = button(Control.LOAD);
     
-    isResetTile = KeyHandler.keyClick(Key.R) && KeyHandler.keyDown(Key.CTRL);
+    isRevert = button(Control.REVERT_MAP);
     
-    isNew = KeyHandler.keyClick(Key.N) && KeyHandler.keyDown(Key.CTRL);
+    isNew =  button(Control.NEW);
 
     pal.getInput();
     map.getInput();
@@ -97,12 +94,8 @@ public class Editor implements Playable{
       loadMap();
     }
 
-    if(isResetTile){
-      if(map.getPath() != null && requestSave()){
-        map = new EditorMap(map.getPath(), map.getName());
-      }else if(requestSave()){
-        map = new EditorMap(map.getWidth(),map.getHeight());
-      }
+    if(isRevert){
+      revertMap();
     }
     
     if(isNew){
@@ -113,6 +106,29 @@ public class Editor implements Playable{
     map.update();
   }
 
+  /* (non-Javadoc)
+   * @see komorebi.clyde.states.State#render()
+   */
+  @Override
+  public void render() {
+    map.render();
+    pal.render();
+  }
+
+
+  /**
+   * Creates the game in a new window
+   */
+  public static void testGame() {
+    Runtime runTime = Runtime.getRuntime();
+    try {
+      runTime.exec("java -jar \"RealGame v 0.2.jar\"");
+    } catch (IOException e) {
+      e.printStackTrace();
+    }    
+  }
+
+
   /**
    * Creates a new map, asking if the user wants to save or not
    */
@@ -121,18 +137,19 @@ public class Editor implements Playable{
       NewMapDialog dialog = new NewMapDialog();
       dialog.pack();
       dialog.setVisible(true);
-
+  
       int width = dialog.getActWidth();
       int height = dialog.getActHeight();
-
+  
       if(width != 0 && height != 0){
         map = new EditorMap(width, height);
       }
       KeyHandler.reloadKeyboard();
     }
-
-  }
   
+  }
+
+
   /**
    * Loads a map, asking the user if they want to save first
    */
@@ -145,7 +162,7 @@ public class Editor implements Playable{
       chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
       chooser.setDialogTitle("Enter the name of the map to load");
       int returnee = chooser.showOpenDialog(null);
-
+  
       KeyHandler.reloadKeyboard();
       
       if(returnee == JFileChooser.APPROVE_OPTION){
@@ -153,9 +170,10 @@ public class Editor implements Playable{
             chooser.getSelectedFile().getName());
       }
     }
-
-  }
   
+  }
+
+
   /**
    * Asks the player if they want to save the map
    */
@@ -183,13 +201,19 @@ public class Editor implements Playable{
   }
 
 
-  /* (non-Javadoc)
-   * @see komorebi.clyde.states.State#render()
+  /**
+   * Reverts the map back to it was before the last save
    */
-  @Override
-  public void render() {
-    map.render();
-    pal.render();
+  public static void revertMap(){
+    if(JOptionPane.showConfirmDialog(null, "Are you sure you want to go back " +
+        "to your last save? Your work will be lost!") == 
+        JOptionPane.YES_OPTION){
+      if(map.getPath() != null){
+        map = new EditorMap(map.getPath(), map.getName());
+      }else{
+        map = new EditorMap(map.getWidth(),map.getHeight());
+      }
+    }
   }
 
 

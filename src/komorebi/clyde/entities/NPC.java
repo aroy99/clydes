@@ -66,9 +66,9 @@ public class NPC extends Entity {
    * @param y The y location (in pixels) of the bottom left corner of the NPC
    */
   public NPC(String name, float x, float y, NPCType type) {
-    super(x*16, y*16, 16, 24);
-    tx = (int) x;
-    ty = (int) y;
+    super(x, y, 16, 24);
+    tx = (int)x/16;
+    ty = (int)y/16;
     
     this.name = name;
     ent=Entities.NPC;
@@ -635,7 +635,7 @@ public class NPC extends Entity {
   {
     return npcs;
   }
-
+  
   public void setVisible(boolean b)
   {
     isVisible = b;

@@ -3,15 +3,16 @@
  */
 package komorebi.clyde.script;
 
+import komorebi.clyde.engine.Draw;
+import komorebi.clyde.engine.Renderable;
 import komorebi.clyde.entities.Clyde;
 import komorebi.clyde.entities.NPC;
 
 /**
  * 
- * @author Aaron Roy
- * @version 
+ * @author Andrew Faulkenberry
  */
-public class AreaScript extends Script {
+public class AreaScript extends Script{
 
   private boolean hasRun = false;
   private boolean isRepeatable;
@@ -19,31 +20,32 @@ public class AreaScript extends Script {
 
   private boolean isOptional;
 
-  private float x, y;
+  protected float x, y;
 
   /**
    * Creates a new area script
+   * 
    * @param s The name of the script in res/scripts/
    * @param x The x location (in tiles) of the script
    * @param y The y location (in tiles) of the script
    * @param repeat Whether the script can be repeated or not
    */
-  public AreaScript(String s, int x, int y, boolean repeat)
+  public AreaScript(String s, float x, float y, boolean repeat)
   {
 
     script = s;
     isRepeatable = repeat;
-    this.x=x*16;
-    this.y=y*16;
+    this.x=x;
+    this.y=y;
 
   }
 
-  public AreaScript(String s, int x, int y, boolean repeat, NPC person)
+  public AreaScript(String s, float x, float y, boolean repeat, NPC person)
   {
     script = s;
     isRepeatable = repeat;
-    this.x=x*16;
-    this.y=y*16;
+    this.x=x;
+    this.y=y;
     this.npc = person;
 
   }
@@ -58,7 +60,9 @@ public class AreaScript extends Script {
 
   public boolean isLocationIntersected(Clyde clyde)
   {
-    if (clyde.getTileX()==getTileX() && clyde.getTileY()==getTileY()) return true;
+    if (clyde.getTileX() == getTileX() && clyde.getTileY() == getTileY()){
+      return true;
+    }
     return false;
   }
 
@@ -75,6 +79,14 @@ public class AreaScript extends Script {
     return (int) y/16;
   }
 
+  public float getX(){
+    return x;
+  }
+  
+  public float getY(){
+    return y;
+  }
+  
   public void setAbsoluteLocation(float x, float y)
   {
     this.x=x;
@@ -97,6 +109,13 @@ public class AreaScript extends Script {
   @Override
   public void abort() {
     
+  }
+
+  /**
+   * Renders the "S" tile
+   */
+  public void render() {
+    Draw.rect(x, y, 16, 16, 32, 0, 2);
   }
 
 }

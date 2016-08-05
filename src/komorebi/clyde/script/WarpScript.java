@@ -3,6 +3,8 @@
  */
 package komorebi.clyde.script;
 
+import komorebi.clyde.engine.Draw;
+
 /**
  * 
  * @author Aaron Roy
@@ -17,7 +19,7 @@ public class WarpScript extends AreaScript {
    * @param y
    * @param repeat
    */
-  public WarpScript(String map, int x, int y, boolean repeat) {
+  public WarpScript(String map, float x, float y, boolean repeat) {
     super(null, x, y, repeat);
     this.map = map;
   }
@@ -25,6 +27,13 @@ public class WarpScript extends AreaScript {
   public String getMap()
   {
     return map;
+  }
+  
+  /**
+   * Renders the "W" tile
+   */
+  public void render(){
+    Draw.rect(x, y, 16, 16, 48, 0, 2);
   }
 
 }

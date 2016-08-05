@@ -42,7 +42,6 @@ import javax.swing.JDialog;
  * Use this if you want to run the editor
  * 
  * @author Aaron Roy
- * @version 0.0.1.0
  */
 public class MainE {
 

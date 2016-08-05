@@ -8,6 +8,9 @@ import static komorebi.clyde.engine.KeyHandler.button;
 
 import komorebi.clyde.editor.Editor;
 import komorebi.clyde.editor.Palette;
+import komorebi.clyde.editor.modes.Mode;
+import komorebi.clyde.editor.modes.MoveMode;
+import komorebi.clyde.editor.modes.TileMode;
 import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
@@ -21,7 +24,6 @@ import komorebi.clyde.script.TalkingScript;
 import komorebi.clyde.script.WalkingScript;
 import komorebi.clyde.script.WarpScript;
 
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 
@@ -32,6 +34,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -41,16 +44,10 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  * Represents a map of tiles
  * 
  * @author Aaron Roy
- * @version 
  */
 public class EditorMap implements Playable{
 
   //Mouse buttons
-  private static boolean lButtonIsDown, lButtonWasDown;//Left Button Clicked
-  private static boolean rButtonIsDown, rButtonWasDown;//Right Button Clicked
-  private static boolean mButtonIsDown, mButtonWasDown;//Middle Button Pressed
-  private static boolean mouseSame;                    //Mouse is in same pos as last frame
-  private static int mx, my;                           //To track mouse position
 
   //Arrow keys
   private boolean up, down, left, right;        //Directions for movement
@@ -60,46 +57,42 @@ public class EditorMap implements Playable{
   private static boolean isNewSave;                  //Saves a new map file
   private static boolean isReset;                    //Resets tiles position
   private static boolean isGrid;                     //Turn on/off Grid
-  private static boolean rStartDragging, rIsDragging;//Starting a group selection
-  private static boolean lStartDragging, lIsDragging;//Is making a group selection
-  private static boolean isSelection;                //A selection is active
   private static boolean isClearSel;                 //Clears the selection
   private static boolean isNewNPC;                   //Creates a new NPC
 
   //Map States
   public static boolean grid;                //Whether the grid is on or not
-  private boolean saved = true;
+  private static boolean saved = true;
 
 
-  private static Palette pal;
-  private TileList[][] tiles;                //The Map itself
+  private static TileList[][] tiles;                //The Map itself
   private boolean[][] collision;
 
-  private static TileList[][] selection;            //The selection
 
   public static final int SIZE = 16;         //Width and height of a tile
 
-  private NPC[][] npcs;
-  private AreaScript[][] scripts;
+  private ArrayList<NPC> npcs;
+  private ArrayList<AreaScript> scripts;
 
-  private float x, y;       //Current location
-  private int initX, initY; //Location at the beginning of a drag
-  private float dx, dy;
-  private static final float SPEED = 10;
+  private static float x, y;       //Current location
+  private static float dx, dy;
+  private static final float SPEED = 20;
 
   private String savePath;  //Path to save the map by default
   private String saveName;  //Name to save the map by default
 
-  private static final int WIDTH = Display.getWidth();
-  private static final int HEIGHT = Display.getHeight();
+  public static final int WIDTH = Display.getWidth();
+  public static final int HEIGHT = Display.getHeight();
+  
+  private TileMode tileMode;
+  private MoveMode moveMode;
 
   /**
    * The various modes this map can be in
    * 
    * @author Aaron Roy
-   * @version
    */
-  private enum Modes{
+  public enum Modes{
     TILE, MOVE, NPC;
   }
 
@@ -113,18 +106,21 @@ public class EditorMap implements Playable{
   public EditorMap(int col, int row){
     tiles = new TileList[row][col];
     collision = new boolean[row][col];
-    npcs = new NPC[row][col];
-    scripts = new AreaScript[row][col];
-    pal = Editor.getPalette();
+    npcs = new ArrayList<NPC>();
+    scripts = new ArrayList<AreaScript>();
 
     Display.setTitle("Clyde\'s Editor - "+ "Untitled Map");
-    
+
     for (int i = tiles.length-1; i >= 0; i--) {
       for (int j = 0; j < tiles[0].length; j++) {
         tiles[i][j] = TileList.BLANK;
       }
     }
 
+    Mode.setMap(tiles);
+    
+    tileMode = new TileMode();
+    moveMode = new MoveMode(collision);
   }
 
 
@@ -137,7 +133,6 @@ public class EditorMap implements Playable{
   public EditorMap(String key, String name){
 
 
-    pal = Editor.getPalette();
     try {
       BufferedReader reader = new BufferedReader(new FileReader(
           new File(key)));
@@ -147,9 +142,8 @@ public class EditorMap implements Playable{
 
       tiles = new TileList[rows][cols];
       collision = new boolean[rows][cols];
-      npcs = new NPC[rows][cols];
-      scripts = new AreaScript[rows][cols];
-      pal = Editor.getPalette();
+      npcs = new ArrayList<NPC>();
+      scripts = new ArrayList<AreaScript>();
 
 
       for (int i = 0; i < tiles.length; i++) {
@@ -160,8 +154,6 @@ public class EditorMap implements Playable{
             index++;  //pass this token, it's blank
           }
           tiles[i][j] = TileList.getTile(Integer.parseInt(str[index]));
-          scripts[i][j] = null;
-          npcs[i][j]=null;
         }
       }
 
@@ -195,46 +187,45 @@ public class EditorMap implements Playable{
         if(s == null){
           break;
         }
-        
+
         if (s.startsWith("npc"))
         {
           s = s.replace("npc ", "");
           String[] split = s.split(" ");
 
-          int arg0 = Integer.parseInt(split[2]);
-          int arg1 = Integer.parseInt(split[1]);
+          int arg0 = Integer.parseInt(split[1]);
+          int arg1 = Integer.parseInt(split[2]);
 
-          npcs[arg0][arg1] = new NPC(split[0], arg0, arg1, 
-              NPCType.toEnum(split[3]));
+          NPC addee = new NPC(split[0], x+arg0*16, y+arg1*16, NPCType.toEnum(split[3]));
 
-          npcs[arg0][arg1].setWalkingScript(
-              new WalkingScript(split[4], npcs[arg0][arg1]));
-          npcs[arg0][arg1].setTalkingScript(
-              new TalkingScript(split[5], npcs[arg0][arg1]));
 
+          addee.setWalkingScript(
+              new WalkingScript(split[4], addee));
+          addee.setTalkingScript(
+              new TalkingScript(split[5], addee));
+
+          npcs.add(addee);
 
         } else if (s.startsWith("script"))
         {
           s = s.replace("script ", "");
           String[] split = s.split(" ");
 
-          int arg0 = Integer.parseInt(split[2]);
-          int arg1 = Integer.parseInt(split[1]);
+          int arg0 = Integer.parseInt(split[1]);
+          int arg1 = Integer.parseInt(split[2]);
 
-          scripts[arg0][arg1] = 
-              new AreaScript(split[0], arg0, 
-                  arg1, false, findNPC(split[3]));
+          scripts.add(new AreaScript(split[0], x+arg0*16, y+arg1*16, 
+              false, findNPC(split[3])));
+
         } else if (s.startsWith("warp"))
         {
           s = s.replace("warp ", "");
           String[] split = s.split(" ");
 
-          int arg0 = Integer.parseInt(split[2]);
-          int arg1 = Integer.parseInt(split[1]);
+          int arg0 = Integer.parseInt(split[1]);
+          int arg1 = Integer.parseInt(split[2]);
 
-          scripts[arg0][arg1] =
-              new WarpScript(split[0], arg0,
-                  arg1, false);
+          scripts.add(new WarpScript(split[0], x+arg0*16, y+arg1*16, false));
         }
       } while ((s=reader.readLine()) != null);
 
@@ -246,7 +237,6 @@ public class EditorMap implements Playable{
           "The file was not found / was corrupt, therefore, the " + 
           "default settings were used");
       tiles = new TileList[10][10];
-      pal = Editor.getPalette();
 
 
       for (int i = tiles.length-1; i >= 0; i--) {
@@ -257,6 +247,11 @@ public class EditorMap implements Playable{
 
       KeyHandler.reloadKeyboard();
     }         
+    
+    Mode.setMap(tiles);
+    
+    tileMode = new TileMode();
+    moveMode = new MoveMode(collision);
 
 
   }
@@ -266,28 +261,6 @@ public class EditorMap implements Playable{
    */
   @Override
   public void getInput() {
-    mouseSame = getMouseX() == mx && getMouseY() == my && lButtonIsDown;
-    lButtonWasDown = lButtonIsDown;
-    lButtonIsDown = Mouse.isButtonDown(0);
-
-    mx = getMouseX();
-    my = getMouseY();
-
-    rButtonWasDown = rButtonIsDown;
-    rButtonIsDown = Mouse.isButtonDown(1) && !KeyHandler.keyDown(Key.CTRL);
-
-    mButtonWasDown = mButtonIsDown;
-    mButtonIsDown = Mouse.isButtonDown(2);
-
-    rStartDragging = Mouse.isButtonDown(1) && KeyHandler.keyDown(Key.CTRL) && 
-        !rIsDragging;
-
-    rIsDragging = Mouse.isButtonDown(1) && rIsDragging || rStartDragging;
-
-    lStartDragging = Mouse.isButtonDown(0) && KeyHandler.keyDown(Key.CTRL) && 
-        !lIsDragging;
-
-    lIsDragging = Mouse.isButtonDown(0) && lIsDragging || lStartDragging;
 
 
     //Makes sure that up and down / left and right can't be both true
@@ -301,7 +274,7 @@ public class EditorMap implements Playable{
 
     right =button(Control.MAP_RIGHT) && !button(Control.MAP_LEFT);
 
-    isReset = button(Control.REVERT_MAP);
+    isReset = button(Control.RESET_LOC);
 
     isSave = button(Control.SAVE);
 
@@ -310,6 +283,8 @@ public class EditorMap implements Playable{
     //    System.out.println(isSave + ", " + isNewSave);
 
     isGrid = button(Control.GRID);
+    
+    Mode.getInput();
   }
 
 
@@ -317,82 +292,6 @@ public class EditorMap implements Playable{
    * Used for the editor to help with performance
    */
   public void update(){
-    //Sets mouse tile to the one from the palette
-    if(lButtonIsDown && checkMapBounds()){
-      int mx = getMouseX();
-      int my = getMouseY();
-
-      if(mode == Modes.TILE  && !isSelection){
-        tiles[my][mx] = pal.getSelected();
-      }else if(!mouseSame && mode == Modes.MOVE){
-        collision[my][mx] = true;
-      }
-      saved = false;
-      if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
-        Display.setTitle(Display.getTitle()+"*");
-      }
-    }
-
-    //Sets palette's selected to mouse tile
-    if(rButtonIsDown && checkMapBounds()){
-      if(mode == Modes.TILE && !rButtonWasDown){
-        pal.setLoc(tiles[getMouseY()][getMouseX()]);
-        clearSelection();
-      }else if(!mouseSame && mode == Modes.MOVE){
-        collision[my][mx] = false;
-        saved = false;
-      }
-    }
-
-    //Flood Fills tiles
-    if(mButtonIsDown && !mButtonWasDown && checkMapBounds()){
-      int mx = getMouseX();
-      int my = getMouseY();
-
-      if(mode == Modes.TILE){
-        flood(mx, my, tiles[my][mx]);
-      }else if(mode == Modes.MOVE){
-        flood(mx, my, !collision[my][mx]);
-      }
-      saved = false;
-      if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
-        Display.setTitle(Display.getTitle()+"*");
-      }
-    }
-
-    //Creates a selection
-    if(rStartDragging || lStartDragging){
-      initX = getMouseX();
-      initY = getMouseY();
-    }
-
-    if(rIsDragging && checkMapBounds()){
-      if(mode == Modes.TILE){
-        createSelection();
-      }else if(mode == Modes.MOVE){
-        createSelection(false);
-      }
-    }
-
-    if(lIsDragging && checkMapBounds() && mode == Modes.MOVE){
-      createSelection(true);
-    }
-
-    if(isSelection && lButtonIsDown && checkMapBounds() && !lButtonWasDown && 
-        mode == Modes.TILE){
-      for(int i = 0; i < selection.length; i++){
-        for (int j = 0; j < selection[0].length; j++) {
-          if(checkTileBounds(getMouseY()+i, getMouseX()+j)){
-            tiles[getMouseY()+i][getMouseX()+j] = 
-                selection[i][j];
-          }
-        }
-      }
-      saved = false;
-      if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
-        Display.setTitle(Display.getTitle()+"*");
-      }
-    }
 
     //Resets tiles to default position
     if(isSave){
@@ -425,8 +324,9 @@ public class EditorMap implements Playable{
       dx = -SPEED;
     }
 
+    
     move(dx, dy);
-
+    
     if(isReset){
       x = 0;
       y = 0;
@@ -436,35 +336,70 @@ public class EditorMap implements Playable{
       mode = Modes.MOVE;
     }
 
-    if(lButtonIsDown && !lButtonWasDown && checkButtonBounds()){
+    if(KeyHandler.keyClick(Key.LBUTTON) && checkButtonBounds()){
       switch(Mouse.getX()/(16*MainE.scale)-Palette.xOffset){
         case 0:
-          mode = Modes.TILE;
+          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
+            case 0: Editor.newMap();    break;
+            case 1: mode = Modes.TILE; break;
+            default: //Do nothing
+          }
           break;
         case 1:
-          mode = Modes.MOVE;
+          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
+            case 0:           
+              if(savePath == null){
+                newSave();
+              }else{
+                save(savePath, saveName);
+              }
+              break;
+            case 1: mode = Modes.MOVE; break;
+            default:
+          }
           break;
         case 2:
-          mode = Modes.TILE;
+          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
+            case 0: newSave(); break;
+            case 1: mode = Modes.NPC; break;
+            default:
+          }
           break;
         case 3:
-          Editor.newMap();
+          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
+            case 0: Editor.revertMap(); break;
+            case 1:       changeGrid();   break;
+            default:
+          }
+
           break;
         case 4:
-          if(savePath == null){
-            newSave();
-          }else{
-            save(savePath, saveName);
+          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
+            case 0: Editor.loadMap(); break;
+            case 1: ; break;
+            default:
           }
           break;
         case 5:
-          newSave();
+          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
+            case 0: Editor.testGame(); break;
+            case 1: ; break;
+            default:
+          }
           break;
         case 6:
-          Editor.loadMap();
+          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
+            case 0: ; break;
+            case 1: ; break;
+            default:
+          }
           break;
         case 7:
-          mode = Modes.TILE;
+          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
+            case 0: ; break;
+            case 1: ; break;
+            default:
+          }
           break;
         default:
           //Do nothing, invalid (and impossible, I hope)
@@ -472,12 +407,21 @@ public class EditorMap implements Playable{
       }
     }
 
-    x+=dx;
-    y+=dy;
-
     dx = 0;
     dy = 0;
 
+    switch(mode){
+      case MOVE:
+        moveMode.update();
+        break;
+      case NPC:
+        break;
+      case TILE:
+        tileMode.update();
+        break;
+      default:
+        break;
+    }
 
   }
 
@@ -499,72 +443,43 @@ public class EditorMap implements Playable{
         }
       }
     }
-
-    if(selection != null){
-      for (int i = 0; i < selection.length; i++) {
-        for (int j = 0; j < selection[0].length; j++) {
-          Draw.rect(x+tiles[0].length*SIZE+j*SIZE, y+i*SIZE, SIZE, SIZE, 
-              selection[i][j].getX(), selection[i][j].getY(), 1);
-          if(grid){
-            Draw.rect(x+selection[0].length*SIZE+j*SIZE, y+i*SIZE, SIZE, SIZE, 
-                0, 16, SIZE, 16+SIZE, 2);
-          }
-        }
-      }
-      
-      if(checkMapBounds() && mode == Modes.TILE){
-        Draw.rect(x+mx*SIZE, y+my*SIZE, selection[0].length*SIZE, selection.length*SIZE, 
-            16, 16,16,16, 2);
-      }
+    switch(mode){
+      case MOVE:
+        moveMode.render();
+        break;
+      case NPC:
+        break;
+      case TILE:
+        tileMode.render();
+        break;
+      default:
+        break;
     }
 
-    for (NPC[] npcR: npcs) {
-      for (NPC npc: npcR) {
-        if (npc != null) 
-        {
+    
+    if(mode == Modes.NPC){
+      for (NPC npc: npcs) {
+        if(checkTileInBounds(npc.getX(), npc.getY())){
           npc.render();
         }
       }
-    }
 
-    if(mode == Modes.MOVE){
-      int k = 0;
-      for (int i = 0; i < tiles.length; i++) {
-        for (int j = 0; j < tiles[0].length; j++) {
-          if(checkTileInBounds(x+j*SIZE, y+i*SIZE)){
-            if(collision[i][j]){
-              Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, 16, 16, 16, 16, 2);
-            }else{
-              Draw.rect(x+j*SIZE, y+i*SIZE, SIZE, SIZE, 17, 16, 17, 16, 2);
-            }
-            k++;
-          }
+      for (AreaScript script: scripts) {
+        if(checkTileInBounds(script.getX(), script.getY())){
+          script.render();
         }
       }
-      //TODO Debug
-//      System.out.println(k);
-    }
-    
-    Draw.rect(WIDTH - SIZE*8, HEIGHT-SIZE, SIZE*8, SIZE, 0, 32, 2);
-    
-    if(checkButtonBounds()){
-      int x;
-      
-      switch(Mouse.getX()/(16*MainE.scale)-Palette.xOffset){
-        case 0: x = WIDTH - SIZE*8; break;
-        case 1: x = WIDTH - SIZE*7; break;
-        case 2: x = WIDTH - SIZE*6; break;
-        case 3: x = WIDTH - SIZE*5; break;
-        case 4: x = WIDTH - SIZE*4; break;
-        case 5: x = WIDTH - SIZE*3; break;
-        case 6: x = WIDTH - SIZE*2; break;
-        case 7: x = WIDTH - SIZE;   break;
-        default:x = 0;
-      }
-      
-      Draw.rect(x, HEIGHT-SIZE, SIZE, SIZE, 64, 0, 2);
     }
 
+    Draw.rect(WIDTH - SIZE*8, HEIGHT-SIZE*2, SIZE*8, SIZE*2, 0, 32, 2);
+
+    if(checkButtonBounds()){
+      int x = WIDTH - SIZE*(8-(Mouse.getX()/(16*MainE.scale)-Palette.xOffset));
+      int y = HEIGHT - SIZE*(2-(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)));
+
+      Draw.rect(x, y, SIZE, SIZE, 64, 0, 2);
+    }
+    
   }
 
 
@@ -578,22 +493,15 @@ public class EditorMap implements Playable{
 
     x+=dx;
     y+=dy;
-    for (int i = 0; i < tiles.length; i++) {
-      for (int j = 0; j < tiles[0].length; j++) {
-        if (npcs[i][j] != null) 
-        {
-          npcs[i][j].setPixLocation((int) x+j*16+npcs[i][j].getXTravelled(), 
-              (int) y+i*16+npcs[i][j].getYTravelled());
-          npcs[i][j].update();
 
-        }
+    for(NPC npc:npcs){
+      npc.setPixLocation((int)(npc.getX()+dx)+npc.getXTravelled(), 
+          (int)(npc.getY()+dy)+npc.getYTravelled());
+      npc.update();
+    }
 
-        if (scripts[i][j] != null)
-        {
-          scripts[i][j].setAbsoluteLocation(x+j*16,y+i*16);
-        }
-
-      }
+    for(AreaScript script:scripts){
+      script.setAbsoluteLocation(script.getX()+dx,script.getY()+dy);
     }
 
   }
@@ -709,117 +617,17 @@ public class EditorMap implements Playable{
     return false;
   }
 
-
-
   /**
-   * Creates a new selection
-   */
-  private void createSelection() {
-    selection = new TileList[Math.abs(getMouseY()-initY)+1]
-        [Math.abs(getMouseX()-initX)+1];
-    int firstX, lastX;
-    int firstY, lastY;
-
-    firstX = Math.min(initX, getMouseX());
-    firstY = Math.min(initY, getMouseY());
-
-    lastX = Math.max(initX, getMouseX());
-    lastY = Math.max(initY, getMouseY());
-
-
-    for(int i = 0; i <= lastY - firstY; i++){
-      for(int j = 0; j <= lastX - firstX; j++){
-        selection[i][j] =  tiles[firstY+i][firstX+j];
-      }
-    }
-
-    isSelection = true;
-  }
-  /**
-   * Creates a new selection
-   */
-  private void createSelection(boolean type) {
-    int firstX, lastX;
-    int firstY, lastY;
-
-    firstX = Math.min(initX, getMouseX());
-    firstY = Math.min(initY, getMouseY());
-
-    lastX = Math.max(initX, getMouseX());
-    lastY = Math.max(initY, getMouseY());
-
-
-    for(int i = firstY; i <= lastY; i++){
-      for(int j = firstX; j <= lastX; j++){
-        collision[i][j] = type;
-      }
-    }
-  }
-
-
-  /**
-   * Recursive method that flood fills tiles
+   * Finds the NPC with the requested name
    * 
-   * @param mouseX starting tile x
-   * @param mouseY starting tile y
-   * @param type tile to search and destroy
-   */
-  private void flood(int mouseX, int mouseY, TileList type) {
-    if (mouseX < 0 || mouseX >= tiles[0].length ||
-        mouseY < 0 || mouseY >= tiles.length){
-      return;
-    }
-    if(tiles[mouseY][mouseX] != type || 
-        tiles[mouseY][mouseX] == pal.getSelected()){
-      return;
-    }
-
-    tiles[mouseY][mouseX] = pal.getSelected();
-    flood(mouseX-1, mouseY,   type);
-    flood(mouseX+1, mouseY,   type);
-    flood(mouseX,   mouseY+1, type);
-    flood(mouseX,   mouseY-1, type);
-  }
-
-  /**
-   * Recursive method that flood fills collisions
-   * 
-   * @param mouseX starting tile x
-   * @param mouseY starting tile y
-   * @param type tile to search and destroy
-   */
-  private void flood(int mouseX, int mouseY, boolean type) {
-    if (mouseX < 0 || mouseX >= tiles[0].length ||
-        mouseY < 0 || mouseY >= tiles.length){
-      return;
-    }
-    if(collision[mouseY][mouseX] == type){
-      return;
-    }
-
-    collision[mouseY][mouseX] = type;
-    flood(mouseX-1, mouseY,   type);
-    flood(mouseX+1, mouseY,   type);
-    flood(mouseX,   mouseY+1, type);
-    flood(mouseX,   mouseY-1, type); 
-  }
-
-
-  /**
-   * 
-   * 
-   * @param s
-   * @return
+   * @param s The name to find
+   * @return The NPC in question, null if not found
    */
   public NPC findNPC(String s)
   {
-    for (NPC[] npcR: npcs) {
-      for (NPC npc: npcR) {
-        if (npc != null){
-          if (npc.getName().equals(s)){
-            return npc;
-          }
-        }
+    for (NPC npc: npcs) {
+      if (npc.getName().equals(s)){
+        return npc;
       }
     }
 
@@ -827,24 +635,18 @@ public class EditorMap implements Playable{
   }
 
   /**
+   * Finds the Script with the requested name
    * 
-   * 
-   * @param s
-   * @return
+   * @param s The name to find
+   * @return The Script in question, null if not found
    */
   public AreaScript getScript(String s)
   {
-    for (AreaScript[] scriptR: scripts)
+    for (AreaScript scr: scripts)
     {
-      for (AreaScript scr: scriptR)
-      {
-        if (scr != null)
-        {
-          System.out.println(scr.getName());
-          if (scr.getName().equals(s)){
-            return scr;
-          }
-        }
+      System.out.println(scr.getName());
+      if (scr.getName().equals(s)){
+        return scr;
 
       }
     }
@@ -852,70 +654,15 @@ public class EditorMap implements Playable{
     return null;
   }
 
-
-
-
-
-  /**
-   * Checks if the Mouse is in bounds of the map
-   * @return Mouse is in map
-   */
-  private boolean checkMapBounds() {
-    return (Mouse.getX()/MainE.getScale() < Palette.xOffset*16 ||
-        Mouse.getY()/MainE.getScale() < Palette.yOffset*16) &&
-        (getMouseY() >= 0 &&
-        getMouseY() < tiles.length &&
-        getMouseX() >= 0 &&
-        getMouseX() < tiles[0].length);
-  }
-  
   /**
    * Checks if the Mouse is in bounds of the buttons
    * @return Mouse is on a button
    */
   private boolean checkButtonBounds() {
     return (Mouse.getX()/MainE.getScale() >= WIDTH-SIZE*8 &&
-        Mouse.getY()/MainE.getScale() > HEIGHT-SIZE);
+        Mouse.getY()/MainE.getScale() > HEIGHT-SIZE*2);
   }
 
-
-  /**
-   * Checks if the tile is valid
-   * 
-   * @param tx the X index of the tile
-   * @param ty the Y index of the tile
-   * @return true if the tile is in bounds
-   */
-  private boolean checkTileBounds(int tx, int ty) {
-    return ty >= 0 &&           
-        ty < tiles.length && 
-        tx >= 0 &&           
-        tx < tiles[0].length;
-  }
-
-
-  /**
-   * Converts Mouse X into a tile index, adjusting for map position
-   * @return adjusted mouse x
-   */
-  private int getMouseX(){
-    return ((Mouse.getX()/MainE.getScale())-(int)x)/(16);
-  }
-
-  /**
-   * Converts Mouse Y into a tile index, adjusting for map position
-   * @return adjusted mouse y
-   */
-  private int getMouseY() {
-    return ((Mouse.getY()/MainE.getScale())-(int)y)/(16);
-  }
-
-  /**
-   * @return Whether the tile is on the map
-   */
-  private boolean checkTileInBounds(float x, float y) {
-    return x+SIZE > 0 && x < WIDTH-SIZE*8 && y+SIZE > 0 && y < HEIGHT;
-  }
 
   /**
    * Swtiches the state of the grid of every tile
@@ -923,14 +670,6 @@ public class EditorMap implements Playable{
   private static void changeGrid(){
     grid = !grid;
   }  
-
-  public TileList[][] getSelection(){
-    return selection;
-  }
-
-  public static void setSelection(TileList[][] sel){
-    selection = sel;
-  }
 
   public int getWidth(){
     return tiles[0].length;
@@ -940,24 +679,7 @@ public class EditorMap implements Playable{
     return tiles.length;
   }
 
-  /**
-   * Sets isSelection to s
-   * 
-   * @param selec value to set the selection to
-   */
-  public static void setIsSelection(boolean selec) {
-    isSelection = selec;
-  }
-
-  /**
-   * Clears the selection, making it disappear
-   */
-  public static void clearSelection(){
-    selection = null;
-    isSelection = false;
-  }
-
-  public float getX() {
+  public static float getX() {
     return x;
   }
 
@@ -969,12 +691,34 @@ public class EditorMap implements Playable{
     return saveName;
   }
 
-  public float getY() {
+  public static float getY() {
     return y;
   }
 
-  public boolean wasSaved(){
+  public static boolean wasSaved(){
     return saved;
   }
+  
+  /**
+   * Creates the asterisk next to the name indicating the map has changed
+   */
+  public static void setUnsaved(){
+    saved = false;
+    if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
+      Display.setTitle(Display.getTitle()+"*");
+    }
+  }
+  
+  /**
+   * @return Whether the tile is on the map
+   */
+  public static boolean checkTileInBounds(float x, float y) {
+    return x+SIZE > 0 && x < WIDTH-SIZE*8 && y+SIZE > 0 && y < HEIGHT;
+  }
+
+  public static TileList[][] getMap(){
+    return tiles;
+  }
+  
 }
 

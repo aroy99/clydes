@@ -4,6 +4,9 @@
 
 package komorebi.clyde.editor;
 
+import static komorebi.clyde.engine.KeyHandler.keyDown;
+
+import komorebi.clyde.editor.modes.TileMode;
 import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.Key;
@@ -23,7 +26,6 @@ import org.lwjgl.opengl.Display;
  * The current palette to choose from
  * 
  * @author Aaron Roy
- * @version 0.0.1.0
  */
 public class Palette implements Playable{
 
@@ -38,7 +40,7 @@ public class Palette implements Playable{
   //Holds current palette tiles
   private TileList[][] tiles = new TileList[HEIGHT][WIDTH];
 
-  //Offset of palette in tiles
+  /**Offset of palette in tiles*/
   public static int xOffset = Display.getWidth() / (MainE.scale * 16) - WIDTH;
   public static int yOffset = 0;
 
@@ -100,10 +102,10 @@ public class Palette implements Playable{
     rButtonWasDown = rButtonIsDown;
     rButtonIsDown = Mouse.isButtonDown(1);
     
-    startDragging = Mouse.isButtonDown(1) && controlPressed() && 
+    startDragging = Mouse.isButtonDown(1) && keyDown(Key.CTRL) && 
         !isDragging;
     
-    isDragging = Mouse.isButtonDown(1) && controlPressed();    
+    isDragging = Mouse.isButtonDown(1) && keyDown(Key.CTRL);
   }
 
 
@@ -115,12 +117,12 @@ public class Palette implements Playable{
     if (checkBounds() && lButtonIsDown && !lButtonWasDown) {
       selX = getMouseX()+xOffset;
       selY = getMouseY()+yOffset;
-      EditorMap.clearSelection();
+      TileMode.clearSelection();
     }
 
     if(checkBounds() && rButtonIsDown && !rButtonWasDown && 
-        !KeyHandler.keyDown(Key.CTRL)){
-      EditorMap.clearSelection();
+        !keyDown(Key.CTRL)){
+      TileMode.clearSelection();
     }
     
     if(startDragging){
@@ -189,16 +191,6 @@ public class Palette implements Playable{
   }
 
 
-
-
-  /**
-   * @return if the control key was pressed
-   */
-  private boolean controlPressed(){
-    return (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) ||
-        Keyboard.isKeyDown(Keyboard.KEY_RCONTROL));
-  }
-
   /**
    * Creates a new selection
    */
@@ -222,9 +214,9 @@ public class Palette implements Playable{
 
     }
 
-    EditorMap.setSelection(sel);
+    TileMode.setSelection(sel);
 
-    EditorMap.setIsSelection(true);
+    TileMode.setIsSelection(true);
   }
 
 
