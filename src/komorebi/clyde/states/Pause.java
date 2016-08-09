@@ -5,8 +5,10 @@ package komorebi.clyde.states;
 
 import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.GameHandler;
+import komorebi.clyde.engine.Item;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
+import komorebi.clyde.engine.Main;
 import komorebi.clyde.script.SpeechHandler;
 import komorebi.clyde.script.TextHandler;
 
@@ -52,6 +54,18 @@ public class Pause extends State {
           break;
         case ITEMS:
           Draw.rect(5, 5, 200, 200, 0, 60, 200, 260, 6);
+          int x=10, y=180;
+          
+          for (Item item: Main.getGame().getItems())
+          {
+            item.render(x, y);
+            text.write(item.type().getIDString().replace(
+                item.type().getIDString().substring(0, 1), 
+                item.type().getIDString().substring(0, 1).toUpperCase()), 
+                x, y-12, 8);
+            text.write(item.type().getNiftyTidbit(), x+44, y, 8);
+            y-=40;
+          }
           break;
         case OPTIONS:
           Draw.rect(5, 5, 200, 200, 0, 60, 200, 260, 6);

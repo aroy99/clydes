@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import komorebi.clyde.engine.GameHandler;
+import komorebi.clyde.engine.Item;
+import komorebi.clyde.engine.Item.Items;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
 import komorebi.clyde.entities.Clyde;
@@ -36,9 +38,10 @@ import komorebi.clyde.script.Lock;
  * @version 
  */
 public class Game extends State{
-
+  
   public ArrayList<NPC> npcs;
   public ArrayList<AreaScript> scripts;
+  public ArrayList<Item> items = new ArrayList<Item>();
 
   private boolean hasText, hasChoice, isPaused;
   private int pickIndex;
@@ -342,5 +345,15 @@ public class Game extends State{
     
     (new Thread(new Execution(null, branches))).start();
     
+  }
+  
+  public void receiveItem(Items item)
+  {
+    items.add(new Item(item));
+  }
+  
+  public ArrayList<Item> getItems()
+  {
+    return items;
   }
 }

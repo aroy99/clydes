@@ -19,7 +19,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 
-import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
@@ -50,7 +49,6 @@ public class TileSetEditor implements Playable {
   private static final int HEIGHT = 256;
   private static final int OFFX = 8;
 
-  private Animation selection;
   private int selX, selY;
   private int swapX, swapY;
   private int delX, delY, delSx, delSy;
@@ -73,6 +71,8 @@ public class TileSetEditor implements Playable {
   private boolean save;
   private boolean newSave;
   private String savePath, saveName;
+  
+  private boolean grid;
 
   public TileSetEditor()
   {
@@ -84,7 +84,6 @@ public class TileSetEditor implements Playable {
     max = 16;
 
     left = new TileList[32][8];
-    right = new TileList[16][8];
 
     for (int i=0, k=0; i<left.length; i++)
     {
@@ -93,31 +92,8 @@ public class TileSetEditor implements Playable {
         left[i][j] = TileList.getTile(k);
       }
     }
-
-    for (int i=0; i<right.length; i++)
-    {
-      for (int j=0; j<right[0].length; j++)
-      {
-        right[i][j] = TileList.BLANK;
-      }
-    }
-
-    selection = new Animation(8, 8, 16, 16, 2);
-    for(int i=3; i >= 0; i--){
-      selection.add(0 , 0 , i);
-      selection.add(16, 0 , i);
-    }
-
-    selX = 0;
-    selY = 0;
-
-    selTiles = new TileList[1][1];
-    selTiles[0][0]=TileList.BLANK;
-
-    history = new ArrayList<TileList[][]>();
-    updateHistory();
-
-    historyIndex = 0;
+    
+    newFile();
   }
 
   /* (non-Javadoc)
@@ -395,7 +371,7 @@ public class TileSetEditor implements Playable {
 
     if (openButton() && mouseClick)
     {
-      load();
+      if (closeFile()) load();
     }
     
     if (newSaveButton() && mouseClick)
@@ -406,7 +382,13 @@ public class TileSetEditor implements Playable {
     
     if (newButton() && mouseClick)
     {
-      System.out.println("New");
+      if (closeFile()) newFile();
+    }
+    
+    if (gridButton() && mouseClick)
+    {
+      grid = !grid;
+      MainT.switchGrid();
     }
 
     if ((KeyHandler.keyDown(Key.DOWN) ||(left() && dWheel<0))&& max<left.length && 
@@ -460,7 +442,7 @@ public class TileSetEditor implements Playable {
       for (int j=0; j<left[0].length; j++)
       {
         Draw.rect(j*16, HEIGHT-16-(i*16)+(min*16), 16, 16, left[i][j].getX(), 
-            left[i][j].getY(), left[i][j].getX()+16, left[i][j].getY()+16, 1);
+            left[i][j].getY(), left[i][j].getX()+16, left[i][j].getY()+16, 9);
       }
     }
 
@@ -473,7 +455,7 @@ public class TileSetEditor implements Playable {
         {
           Draw.rect(OFFX*16+j*16+16, HEIGHT-16-(i*16), 16, 16, right[i][j].getX(), 
               right[i][j].getY(), right[i][j].getX()+16, right[i][j].getY()+16,
-              1);
+              9);
         }
       }
     }
@@ -552,6 +534,14 @@ public class TileSetEditor implements Playable {
     {
       Draw.rect(134, 8, 9, 7, 201, 69, 210, 76, 6);
     }
+    
+    if (grid)
+    {
+      Draw.rect(128, 208, 16, 16, 237, 90, 253, 106, 6);
+    } else
+    {
+      Draw.rect(128, 208, 16, 16, 221, 90, 237, 106, 6);
+    }
   }
 
   public boolean validSwap()
@@ -629,6 +619,11 @@ public class TileSetEditor implements Playable {
   public boolean undoButton()
   {
     return getMouseTx()==8 && getMouseTy()==15;
+  }
+  
+  public boolean gridButton()
+  {
+    return getMouseTx()==8 && getMouseTy()==13;
   }
 
   public int getMouseTx()
@@ -715,11 +710,18 @@ public class TileSetEditor implements Playable {
       System.out.println("Save complete");
       save = true;
       writer.close();
-      if(name.substring(name.length()-5).equals(".tset")){
-        Display.setTitle("Clyde\'s Tile Editor - " + name);
-      }else{
+      if (name.length()>5)
+      {
+        if(name.substring(name.length()-5).equals(".tset")){
+          Display.setTitle("Clyde\'s Tile Editor - " + name);
+        }else{
+          Display.setTitle("Clyde\'s Tile Editor - " + name + ".tset");
+        }
+      } else
+      {
         Display.setTitle("Clyde\'s Tile Editor - " + name + ".tset");
       }
+      
 
 
       return true;
@@ -840,12 +842,62 @@ public class TileSetEditor implements Playable {
     history.add(tiles);
     historyIndex++;
     
-    if (history.size()>10)
+    if (history.size()>20)
     {
       history.remove(0);
       historyIndex--;
     }
    
+  }
+  
+  public boolean closeFile()
+  {
+    boolean continyu = true; //clever
+    if(!save){
+      
+      int returnee = JOptionPane.showConfirmDialog(null, "Would you like to save?");
+      
+      switch(returnee){
+        case JFileChooser.APPROVE_OPTION:
+          if (!newSave) continyu = newSave();
+          else
+          {
+            continyu = save(savePath, saveName);
+          }
+          break;
+        case JFileChooser.CANCEL_OPTION:
+          continyu = true;
+          break;
+        default:
+          continyu = false;
+          break;
+      }
+    }
+    return continyu;    
+  }
+  
+  public void newFile()
+  {
+    right = new TileList[16][8];
+
+    for (int i=0; i<right.length; i++)
+    {
+      for (int j=0; j<right[0].length; j++)
+      {
+        right[i][j] = TileList.BLANK;
+      }
+    }
+
+    selX = 0;
+    selY = 0;
+
+    selTiles = new TileList[1][1];
+    selTiles[0][0]=TileList.BLANK;
+
+    history = new ArrayList<TileList[][]>();
+    updateHistory();
+
+    historyIndex = 0;
   }
 
 

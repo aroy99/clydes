@@ -16,7 +16,7 @@ public class Lock {
   }
 
   public void pauseThread()
-  {
+  {    
     synchronized (this)
     {
       try

@@ -20,12 +20,6 @@ import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glMatrixMode;
 import static org.lwjgl.opengl.GL11.glOrtho;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-
-
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.openal.AL;
@@ -33,9 +27,9 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.newdawn.slick.openal.SoundStore;
 
-import komorebi.clyde.audio.AudioHandler;
+import komorebi.clyde.engine.Draw;
+import komorebi.clyde.engine.GameHandler;
 import komorebi.clyde.engine.KeyHandler;
-import komorebi.clyde.states.Editor;
 
 
 /**
@@ -53,6 +47,7 @@ public class MainT {
    */
 
     public static int scale = 2;
+    public static boolean grid;
     
     private static boolean running = true;
     private static TileSetEditor edit = new TileSetEditor();
@@ -112,7 +107,9 @@ public class MainT {
       glClear(GL_COLOR_BUFFER_BIT);   //clears the matrix with black
       glLoadIdentity();
 
+      Draw.rect(0, 0, 128, 256, 220, 12, 221, 13, 6); //Magenta palette background
       edit.render();
+      if (grid) Grid.render();
 
       Display.update();   //updates the display with the changes
       Display.sync(60);   //makes up for lost time
@@ -134,7 +131,7 @@ public class MainT {
         if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE) || 
             Display.isCloseRequested()) {
           
-            running = false;
+            running = !edit.closeFile();
           
         }
 
@@ -176,4 +173,8 @@ public class MainT {
       return scale;
     }
 
+    public static void switchGrid()
+    {
+      grid = !grid;
+    }
   }

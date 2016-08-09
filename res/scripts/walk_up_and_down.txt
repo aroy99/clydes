@@ -2,4 +2,3 @@ walk up
 pause 50
 walk down
 pause 50
-end

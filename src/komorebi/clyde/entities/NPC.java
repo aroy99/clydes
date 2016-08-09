@@ -10,11 +10,11 @@ import java.util.ArrayList;
 
 import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Main;
+import komorebi.clyde.engine.ThreadHandler;
 import komorebi.clyde.script.Execution;
 import komorebi.clyde.script.Lock;
 import komorebi.clyde.script.SpeechHandler;
 import komorebi.clyde.script.TalkingScript;
-import komorebi.clyde.script.TextHandler;
 import komorebi.clyde.script.WalkingScript;
 
 
@@ -30,6 +30,8 @@ public class NPC extends Entity {
 
   private String name;
 
+  private boolean started;
+  
   public Face direction = Face.DOWN;
   private boolean isVisible, isMoving, isRunning, isWaiting;
   private boolean hasInstructions;
@@ -78,10 +80,10 @@ public class NPC extends Entity {
     text = new SpeechHandler(true);
     SpeechHandler.setSpeed(3);
 
-    surround[0] = new Rectangle((int) this.x, (int) this.y+16, 16, 16);
-    surround[1] = new Rectangle((int) this.x + 16, (int) this.y, 16, 16);
-    surround[2] = new Rectangle((int) this.x, (int) this.y - 16, 16, 16);
-    surround[3] = new Rectangle((int) this.x - 16, (int) this.y, 16, 16);
+    surround[0] = new Rectangle((int) this.x, (int) this.y+24, 16, 24);
+    surround[1] = new Rectangle((int) this.x + 16, (int) this.y, 16, 24);
+    surround[2] = new Rectangle((int) this.x, (int) this.y - 24, 16, 24);
+    surround[3] = new Rectangle((int) this.x - 16, (int) this.y, 16, 24);
 
   }
 
@@ -92,8 +94,6 @@ public class NPC extends Entity {
     ent=Entities.NPC;
 
     isVisible = false;
-    SpeechHandler.setSpeed(3);
-
 
     isMoving=false;
     hasInstructions=false;
@@ -328,8 +328,8 @@ public class NPC extends Entity {
   {
 
     this.lock = lock;
-
-    walk(dir,tiles);
+    
+    walk(dir,tiles);    
     lock.pauseThread();
   }
 
@@ -524,9 +524,9 @@ public class NPC extends Entity {
   public void setPixLocation(int x, int y)
   {
     this.x = x;
-    surround[0].setLocation(x, y+16);
+    surround[0].setLocation(x, y+24);
     surround[1].setLocation(x+16, y);
-    surround[2].setLocation(x, y-16);
+    surround[2].setLocation(x, y-24);
     surround[3].setLocation(x-16, y);
 
     this.y = y;
@@ -696,8 +696,15 @@ public class NPC extends Entity {
 
   public void disengage()
   {
+    if (isTalking)
+    {
+      walkScript.resume();
+    } else
+    {
+      isWalking = false;
+    }
     isTalking = false;
-    isWalking = false;
+    
   }
 
   public void setTalkingScript(TalkingScript nScript)
@@ -712,14 +719,14 @@ public class NPC extends Entity {
 
   public void abortTalkingScript()
   {
-    talkScript.abort();
+    talkScript.pause();
     isTalking = false;
     isWalking = true;
   }
 
   public void abortWalkingScript()
   {
-    walkScript.abort();
+    walkScript.pause();
     isTalking = true;
     isWalking = false;
   }
@@ -757,6 +764,7 @@ public class NPC extends Entity {
   public void runWalkingScript()
   {
     isWalking = true;
+    started = true;
     walkScript.run();
   }
   
@@ -765,9 +773,9 @@ public class NPC extends Entity {
     x+=dx;
     y+=dy;
     
-    surround[0].setLocation((int) x, (int) y+16);
+    surround[0].setLocation((int) x, (int) y+24);
     surround[1].setLocation((int) x+16, (int) y);
-    surround[2].setLocation((int) x, (int) y-16);
+    surround[2].setLocation((int) x, (int) y-24);
     surround[3].setLocation((int) x-16, (int) y);
   }
   
@@ -789,5 +797,10 @@ public class NPC extends Entity {
   public void nextParagraph()
   {
     text.nextParagraph();
+  }
+  
+  public boolean started()
+  {
+    return started;
   }
 }

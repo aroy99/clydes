@@ -11,18 +11,11 @@ import komorebi.clyde.entities.NPC;
  * @version 
  */
 public class TalkingScript extends Script {
-  
-  private NPC npc;
-  
+    
   public TalkingScript(String script, NPC npc)
   {
     this.script = script;
     this.npc = npc;
-  }
-  
-  public void run()
-  {
-    ScriptHandler.read(this, npc);
   }
   
   public String getScript()

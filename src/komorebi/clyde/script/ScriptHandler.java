@@ -18,6 +18,7 @@ import komorebi.clyde.states.Game;
  * @author Aaron Roy
  * @version 
  */
+@Deprecated
 public class ScriptHandler {
 
   private static BufferedReader read;
@@ -31,6 +32,7 @@ public class ScriptHandler {
    * Interprets a given script and has a given NPC execute them
    * @param script The script to be executed
    */
+  @Deprecated
   public static void read(Script script, int abortIndex)
   {
     

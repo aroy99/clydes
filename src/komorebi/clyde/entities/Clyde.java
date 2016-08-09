@@ -303,6 +303,32 @@ public class Clyde extends Entity implements Playable{
     this.lock.pauseThread();
   }
   
+  public void align(Lock lock)
+  {
+    switch (dir)
+    {
+      case DOWN:
+        align(Face.LEFT, lock);
+        align(Face.DOWN, lock);
+        break;
+      case LEFT:
+        align(Face.DOWN, lock);
+        align(Face.LEFT, lock);
+        break;
+      case RIGHT:
+        align(Face.DOWN, lock);
+        align(Face.RIGHT, lock);
+        break;
+      case UP:
+        align(Face.LEFT, lock);
+        align(Face.UP, lock);
+        break;
+      default:
+        break;
+      
+    }
+  }
+  
   public void turn(Face dir)
   {
     this.dir = dir;

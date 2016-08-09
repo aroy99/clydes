@@ -26,5 +26,19 @@ public class WarpScript extends AreaScript {
   {
     return map;
   }
+  
+  public void read()
+  {
+    BranchList branches = new BranchList();
+    InstructionList instructions = new InstructionList("Main");
+    instructions.add(Instructions.FADE_OUT);
+    instructions.add(Instructions.LOAD_MAP, map);
+    instructions.add(Instructions.WAIT, 40);
+    instructions.add(Instructions.FADE_IN);
+    
+    branches.add(instructions);
+    
+    execution = new Execution(null, branches);
+  }
 
 }

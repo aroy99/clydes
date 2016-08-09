@@ -47,11 +47,13 @@ public enum Instructions {
   SIMUL_RUN_BRANCH,
   PLAY_SONG,
   STOP_SONG,
+  ALIGN,
   ALIGN_LEFT,
   ALIGN_RIGHT,
   ALIGN_UP,
   ALIGN_DOWN,
   GO_TO,
+  GIVE_ITEM,
   END;
 }
 

@@ -23,6 +23,7 @@ import komorebi.clyde.entities.Face;
 import komorebi.clyde.entities.NPC;
 import komorebi.clyde.entities.NPCType;
 import komorebi.clyde.script.AreaScript;
+import komorebi.clyde.script.Script;
 import komorebi.clyde.script.TalkingScript;
 import komorebi.clyde.script.WalkingScript;
 import komorebi.clyde.script.WarpScript;
@@ -116,8 +117,6 @@ public class Map implements Playable{
 
           n.setWalkingScript(new WalkingScript(split[4], n));
           n.setTalkingScript(new TalkingScript(split[5], n));
-
-
         } else if (s.startsWith("script"))
         {
           s = s.replace("script ", "");
@@ -140,6 +139,16 @@ public class Map implements Playable{
         }
       }
 
+      for (Script script: scripts)
+      {
+        script.read();
+      }
+      
+      for (NPC npc: npcs)
+      {
+        npc.getWalkingScript().read();
+        npc.getTalkingScript().read();
+      }
 
       reader.close();
     } catch (IOException | NumberFormatException e) {
@@ -200,7 +209,7 @@ public class Map implements Playable{
           npc.approach();
         } 
 
-        if (!npc.isTalking() && !npc.isWalking())
+        if (!npc.started())
         {
           npc.runWalkingScript();
         }

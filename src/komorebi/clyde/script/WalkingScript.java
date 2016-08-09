@@ -12,8 +12,6 @@ import komorebi.clyde.entities.NPC;
  * @version 
  */
 public class WalkingScript extends Script {
-
-  NPC npc;
   
   public WalkingScript(String s, NPC npc)
   {
@@ -27,8 +25,10 @@ public class WalkingScript extends Script {
   public void run()
   {
     isRunning = true;
-    ScriptHandler.read(this, npc, abortionIndex);
+    execution.setLoopable(true);
+    super.run();
   }
+  
  
   /* (non-Javadoc)
    * @see komorebi.clyde.script.Script#abort()
@@ -36,7 +36,8 @@ public class WalkingScript extends Script {
   @Override
   public void abort() {
     isInterrupted = true;
-    execution.abort();
     isRunning = false;
+    pause();
+
   }
 }

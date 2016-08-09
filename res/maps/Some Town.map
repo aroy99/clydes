@@ -20,7 +20,7 @@
 1  1  1 40 41 42 43  1  1  1  1  1  1  1 24 25 26 27  1  1 
 1  1  1 36 37 38 39  1  1  1  1  1  1  1 20 21 21 23  1  1 
 1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1 
-//npc joe 2 2 NESS do_nothing do_nothing
+npc joe 2 2 NESS do_nothing do_nothing
 npc vin 5 5 NESS walk_up_and_down stay_or_go
-//script surprise_attack 1 1 joe
+script surprise_attack 1 1 joe
 warp Test_Map_2 8 2

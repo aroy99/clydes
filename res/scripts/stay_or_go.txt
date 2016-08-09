@@ -1,9 +1,8 @@
 lock
-align down
-align left
-ask "What should we do?" "Go away" "Go" "Garden" "Music"
+align
+ask "What should we do?" "Go away" "Go" "Garden" "Surprise"
 
-branch Talk
+branch Go away
 go to 8 8
 unlock
 end
@@ -23,13 +22,14 @@ runbranch test1
 unlock
 end
 
-branch Music
-play ms_mugelworth.ogg
-pause 100
-stop music
-pause 100
-play police_station.ogg
+branch Surprise
+say Here's your surprise...\pA brand new key!
+give key
+give notebook
+give glasses
+give clippy
 unlock
+end
 
 branch test1
 walk left left left left down down down down down down

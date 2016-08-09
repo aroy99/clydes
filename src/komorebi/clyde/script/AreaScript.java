@@ -15,7 +15,6 @@ public class AreaScript extends Script {
 
   private boolean hasRun = false;
   private boolean isRepeatable;
-  private NPC npc;
 
   private float x, y;
 
@@ -28,7 +27,6 @@ public class AreaScript extends Script {
    */
   public AreaScript(String s, int x, int y, boolean repeat)
   {
-
     script = s;
     isRepeatable = repeat;
     this.x=x*16;
@@ -50,7 +48,7 @@ public class AreaScript extends Script {
     isRepeatable = repeat;
     this.x=x*16;
     this.y=y*16;
-    this.npc = person;
+    npc = person;
 
   }
 
@@ -61,7 +59,8 @@ public class AreaScript extends Script {
   {
     hasRun = true;
 
-    ScriptHandler.read(this, npc);
+    super.run();
+    
     if (isRepeatable)
     {
       hasRun = false;
