@@ -50,19 +50,22 @@ public class MainE {
   private static BufferedReader read;
 
   private static JDialog frame;
-  
+
   private static boolean running = true;
-  
+
   private static TextHandler handler;
   private static long lastFrame, lastFPS;
   private static int fps;
+  
+  public static final int WIDTH = 800;
+  public static final int HEIGHT = 608;
 
   /**
    * Starts the program, reading an int from settings and using it for the scale.
    * @param args not used
    */
   public static void main(String[] args) {
-  
+
     try {
       read = new BufferedReader(
           new FileReader(new File("res/settings")));
@@ -100,9 +103,9 @@ public class MainE {
   public static void initDisplay() {
     //create display
     try {
-      Display.setDisplayMode(new DisplayMode(800 * scale, 608 * scale));
+      Display.setDisplayMode(new DisplayMode(WIDTH * scale, HEIGHT * scale));
       Display.setTitle("Clyde\'s Editor");
-//    Display.setResizable(true);
+      //    Display.setResizable(true);
       Display.create();
       Display.setVSyncEnabled(true);
 
@@ -118,10 +121,10 @@ public class MainE {
   private static void initGame() {
     edit = new Editor();
     AudioHandler.init();
-    
+
     getDelta();          // call once before loop to initialise lastFrame
     lastFPS = getTime(); // call before loop to initialise fps timer
-    
+
     handler = new TextHandler(false);
 
   }
@@ -143,7 +146,7 @@ public class MainE {
 
     edit.render();
     handler.render();
-    
+
     Display.update();   //updates the display with the changes
     Display.sync(60);   //makes up for lost time
 
@@ -157,7 +160,7 @@ public class MainE {
 
     while (running) {
       int delta = getDelta();
-      
+
       getInput();
       update(delta);
       render();
@@ -183,7 +186,7 @@ public class MainE {
   private static void initGl() {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();              //resets the Matrix
-    glOrtho(0,800,0,608,-1,1);     //creates a 3D space
+    glOrtho(0,WIDTH,0,HEIGHT,-1,1);     //creates a 3D space
     glMatrixMode(GL_MODELVIEW);
     glEnable(GL_TEXTURE_2D);       //enables Textures
     glEnable(GL_BLEND);
@@ -191,11 +194,12 @@ public class MainE {
     //Enables transparency
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glClearColor(246f / 255,246f / 255,246f / 255,1);//sets the clearing color to black
+    //sets the clearing color to light gray
+    glClearColor(246f / 255,246f / 255,246f / 255,1);
 
     glDisable(GL_DEPTH_TEST);      //kills off the third dimension
   }
-  
+
   /**
    *  Destroys the display and keyboard, closing the window.
    */
@@ -207,27 +211,27 @@ public class MainE {
   public static int getScale() {
     return scale;
   }
-  
+
   private static long getTime(){
     return System.currentTimeMillis();
   }
-  
+
   private static int getDelta(){
     long time = getTime();
     int delta = (int)(time - lastFrame);
     lastFrame = time;
-    
+
     return delta;
   }
-  
+
   /**
    * Calculate the FPS and set it in the title bar
    */
   private static void updateFPS(int delta) {
     if (getTime() - lastFPS > 1000) {
       handler.clear();
-      handler.write("FPS: " + fps, 0, 600, 8);
-      handler.write("Delta: " + delta, 0, 590, 8); 
+      handler.write("FPS: " + fps, 1, 10, 8);
+      handler.write("Delta: " + delta, 1, 1, 8);
       fps = 0; //reset the FPS counter
       lastFPS += 1000; //add one second
     }
