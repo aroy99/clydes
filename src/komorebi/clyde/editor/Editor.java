@@ -17,6 +17,7 @@ import komorebi.clyde.map.EditorMap;
 
 import org.lwjgl.opengl.Display;
 
+import java.awt.Button;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -48,8 +49,7 @@ public class Editor implements Playable{
   
   
   private static EditorMap map;
-  
-  private static Palette pal;
+  private static Buttons buttons;
   public static float aspect;
   public static float xSpan = 1;
   public static float ySpan = 1;
@@ -59,14 +59,11 @@ public class Editor implements Playable{
    * Creates a new editor with a map that is 20*20
    */
   public Editor(){
-    pal = new Palette();
     map = new EditorMap(20, 20);
+    buttons = new Buttons(map);
   }
 
 
-  /**
-   * @see komorebi.clyde.states.State#getInput()
-   */
   @Override
   public void getInput() {
     KeyHandler.getInput();
@@ -81,13 +78,10 @@ public class Editor implements Playable{
     
     isNew =  button(Control.NEW);
 
-    pal.getInput();
     map.getInput();
+    buttons.getInput();
   }
 
-  /**
-   * @see komorebi.clyde.states.State#update()
-   */
   @Override
   public void update() {
     if(isLoad){
@@ -102,17 +96,14 @@ public class Editor implements Playable{
       newMap();
     }
     
-    pal.update();
     map.update();
+    buttons.update();
   }
 
-  /* (non-Javadoc)
-   * @see komorebi.clyde.states.State#render()
-   */
   @Override
   public void render() {
     map.render();
-    pal.render();
+    buttons.render();
   }
 
 
@@ -143,6 +134,7 @@ public class Editor implements Playable{
   
       if(width != 0 && height != 0){
         map = new EditorMap(width, height);
+        buttons.setMap(map);
       }
       KeyHandler.reloadKeyboard();
     }
@@ -168,6 +160,7 @@ public class Editor implements Playable{
       if(returnee == JFileChooser.APPROVE_OPTION){
         map = new EditorMap(chooser.getSelectedFile().getAbsolutePath(), 
             chooser.getSelectedFile().getName());
+        buttons.setMap(map);
       }
     }
   
@@ -179,7 +172,7 @@ public class Editor implements Playable{
    */
   public static boolean requestSave() {
     boolean continyu = true;
-    if(!map.wasSaved()){
+    if(!EditorMap.wasSaved()){
       
       int returnee = JOptionPane.showConfirmDialog(null, "Would you like to save?");
       
@@ -210,25 +203,19 @@ public class Editor implements Playable{
         JOptionPane.YES_OPTION){
       if(map.getPath() != null){
         map = new EditorMap(map.getPath(), map.getName());
+        buttons.setMap(map);
       }else{
         map = new EditorMap(map.getWidth(),map.getHeight());
+        buttons.setMap(map);
       }
     }
-  }
-
-
-  /**
-   * @return The palette so it can be used by the map
-   */
-  public static Palette getPalette() {
-    return pal;
   }
   
   /**
    * @return true if the current map wasn't edited without saving, false if not
    */
   public static boolean wasSaved(){
-    return map.wasSaved();
+    return EditorMap.wasSaved();
   }
 
   /**

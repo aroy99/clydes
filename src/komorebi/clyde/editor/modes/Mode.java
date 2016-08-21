@@ -15,6 +15,7 @@ import komorebi.clyde.map.TileList;
 import org.lwjgl.input.Mouse;
 
 /**
+ * Represents one of the three modes for editing in Clyde's
  * 
  * @author Aaron Roy
  */
@@ -42,18 +43,20 @@ public abstract class Mode implements Renderable{
   /**
    * Gets input in a static way
    */
-  public static void getInput(){
-    lButtonWasDown = lButtonIsDown;
-    lButtonIsDown = Mouse.isButtonDown(0);
-
-    mouseSame = getMouseX() == mx && getMouseY() == my && lButtonIsDown;
+  public static void getModeInput(){    
+    mouseSame = getMouseX() == mx && getMouseY() == my &&
+        (lButtonIsDown || rButtonIsDown);
     
     mx = getMouseX();
     my = getMouseY();
 
+    lButtonWasDown = lButtonIsDown;
+    lButtonIsDown = Mouse.isButtonDown(0);
+
     rButtonWasDown = rButtonIsDown;
     rButtonIsDown = Mouse.isButtonDown(1) && !KeyHandler.keyDown(Key.CTRL);
 
+    
     mButtonWasDown = mButtonIsDown;
     mButtonIsDown = KeyHandler.keyClick(Key.MBUTTON);
 
@@ -66,10 +69,6 @@ public abstract class Mode implements Renderable{
         !lIsDragging;
 
     lIsDragging = Mouse.isButtonDown(0) && lIsDragging || lStartDragging;
-    
-
-
-
   }
   
   /**
@@ -104,5 +103,20 @@ public abstract class Mode implements Renderable{
   public static void setMap(TileList[][] map){
     tiles = map;
   }
+  
+  /**
+   * Checks if the tile is valid
+   * 
+   * @param tx the X index of the tile
+   * @param ty the Y index of the tile
+   * @return true if the tile is in bounds
+   */
+  protected boolean checkTileBounds(int tx, int ty) {
+    return ty >= 0 &&           
+        ty < tiles.length && 
+        tx >= 0 &&           
+        tx < tiles[0].length;
+  }
+
 
 }

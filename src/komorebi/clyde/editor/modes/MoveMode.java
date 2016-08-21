@@ -10,6 +10,7 @@ import komorebi.clyde.map.EditorMap.Modes;
 import org.lwjgl.opengl.Display;
 
 /**
+ * Movement Permissions Editor
  * 
  * @author Aaron Roy
  * @version 
@@ -19,41 +20,21 @@ public class MoveMode extends Mode{
   private boolean[][] collision;
 
   /**
-   * @param collision
+   * @param col The collision data for the map
    */
   public MoveMode(boolean[][] col) {
     collision = col;
   }
 
-  /**
-   * Creates a new selection
-   */
-  private void createSelection(boolean type) {
-    int firstX, lastX;
-    int firstY, lastY;
-
-    firstX = Math.min(initX, getMouseX());
-    firstY = Math.min(initY, getMouseY());
-
-    lastX = Math.max(initX, getMouseX());
-    lastY = Math.max(initY, getMouseY());
-
-
-    for(int i = firstY; i <= lastY; i++){
-      for(int j = firstX; j <= lastX; j++){
-        collision[i][j] = type;
-      }
-    }
-  }
-
+  @Override
   public void update(){
     if(rButtonIsDown && checkMapBounds() && !mouseSame){
-      collision[my][mx] = true;
+      collision[my][mx] = false;
       EditorMap.setUnsaved();
     }
 
     if(lButtonIsDown && checkMapBounds() && !mouseSame){
-      collision[my][mx] = false;
+      collision[my][mx] = true;
       EditorMap.setUnsaved();
     }
 
@@ -69,6 +50,18 @@ public class MoveMode extends Mode{
     if(rStartDragging || lStartDragging){
       initX = getMouseX();
       initY = getMouseY();
+      
+      if(initX < 0){
+        initX = 0;
+      }else if(initX >= tiles[0].length){
+        initX = tiles[0].length-1;
+      }
+      
+      if(initY < 0){
+        initY = 0;
+      }else if(initY >= tiles.length){
+        initY = tiles.length-1;
+      }
     }
 
     if(rIsDragging && checkMapBounds()){
@@ -80,6 +73,7 @@ public class MoveMode extends Mode{
     }
   }
 
+  @Override
   public void render(){
     float x = EditorMap.getX();
     float y = EditorMap.getY();
@@ -96,6 +90,27 @@ public class MoveMode extends Mode{
       }
     }
 
+  }
+
+  /**
+   * Creates a new selection
+   */
+  private void createSelection(boolean type) {
+    int firstX, lastX;
+    int firstY, lastY;
+  
+    firstX = Math.min(initX, getMouseX());
+    firstY = Math.min(initY, getMouseY());
+  
+    lastX = Math.max(initX, getMouseX());
+    lastY = Math.max(initY, getMouseY());
+  
+  
+    for(int i = firstY; i <= lastY; i++){
+      for(int j = firstX; j <= lastX; j++){
+        collision[i][j] = type;
+      }
+    }
   }
 
   /**

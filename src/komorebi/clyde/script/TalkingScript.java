@@ -7,8 +7,8 @@ import komorebi.clyde.entities.NPC;
 
 /**
  * 
- * @author Aaron Roy
- * @version 
+ * 
+ * @author Andrew Faulkenberry
  */
 public class TalkingScript extends Script {
   

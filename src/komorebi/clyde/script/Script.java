@@ -5,8 +5,8 @@ package komorebi.clyde.script;
 
 /**
  * 
- * @author Aaron Roy
- * @version 
+ * 
+ * @author Andrew Faulkenberry
  */
 public abstract class Script {
 

@@ -1,17 +1,14 @@
 /**
- * TileMode.java		Aug 4, 2016, 6:16:33 PM
+ * TileMode.java   Aug 4, 2016, 6:16:33 PM
  */
 package komorebi.clyde.editor.modes;
 
-import komorebi.clyde.editor.Editor;
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.engine.Draw;
-import komorebi.clyde.engine.MainE;
-import komorebi.clyde.map.EditorMap.Modes;
+import komorebi.clyde.engine.Playable;
 import komorebi.clyde.map.EditorMap;
 import komorebi.clyde.map.TileList;
 
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 
 /**
@@ -19,49 +16,70 @@ import org.lwjgl.opengl.Display;
  * 
  * @author Aaron Roy
  */
-public class TileMode extends Mode{
+public class TileMode extends Mode implements Playable{
 
-  private static TileList[][] selection;            //The selection
-  private static Palette pal = Editor.getPalette();  
+  private static TileList[][] selection;
+  private static Palette pal = new Palette();
 
+  @Override
+  public void getInput() {
+    pal.getInput();
+  }
+  
+  @Override
   public void update(){
+    pal.update();
+    
     //Sets mouse tile to the one from the palette
     if(lButtonIsDown && checkMapBounds() && !isSelection){
-
+  
       tiles[my][mx] = pal.getSelected();
-
+  
       EditorMap.setUnsaved();
       if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
         Display.setTitle(Display.getTitle()+"*");
       }
     }
-
+  
     //Sets palette's selected to mouse tile
     if(rButtonIsDown && checkMapBounds() && !rButtonWasDown){
       pal.setLoc(tiles[getMouseY()][getMouseX()]);
       clearSelection();
-
+  
     }
-
+  
     //Flood Fills tiles
     if(mButtonIsDown && !mButtonWasDown && checkMapBounds()){
       int mx = getMouseX();
       int my = getMouseY();
-
+  
       flood(mx, my, tiles[my][mx]);
       EditorMap.setUnsaved();
     }
-
+  
     //Creates a selection
-    if(rStartDragging || lStartDragging){
+    if(rStartDragging){
       initX = getMouseX();
       initY = getMouseY();
+      
+      if(initX < 0){
+        initX = 0;
+      }else if(initX >= tiles[0].length){
+        initX = tiles[0].length-1;
+      }
+      
+      if(initY < 0){
+        initY = 0;
+      }else if(initY >= tiles.length){
+        initY = tiles.length-1;
+      }
+      
     }
-
+  
     if(rIsDragging && checkMapBounds()){
       createSelection();
     }
-
+  
     if(isSelection && lButtonIsDown && checkMapBounds() && !lButtonWasDown){
       for(int i = 0; i < selection.length; i++){
         for (int j = 0; j < selection[0].length; j++) {
@@ -73,9 +91,31 @@ public class TileMode extends Mode{
       }
       EditorMap.setUnsaved();
     }
-
+  
   }
 
+
+  @Override
+  public void render(){
+    //Render selection
+    if(selection != null){
+      for (int i = 0; i < selection.length; i++) {
+        for (int j = 0; j < selection[0].length; j++) {
+          Draw.rect(EditorMap.getX()+tiles[0].length*SIZE+j*SIZE, 
+              EditorMap.getY()+i*SIZE, SIZE, SIZE, 
+              selection[i][j].getX(), selection[i][j].getY(), 1);
+        }
+      }
+      //Render preview block
+      if(checkMapBounds()){
+        Draw.rect(EditorMap.getX()+mx*SIZE, EditorMap.getY()+my*SIZE, 
+            selection[0].length*SIZE, selection.length*SIZE, 
+            16, 16,16,16, 2);
+      }
+    }
+    
+    pal.render();
+  }
 
   /**
    * Creates a new selection
@@ -85,41 +125,21 @@ public class TileMode extends Mode{
         [Math.abs(getMouseX()-initX)+1];
     int firstX, lastX;
     int firstY, lastY;
-
+  
     firstX = Math.min(initX, getMouseX());
     firstY = Math.min(initY, getMouseY());
-
+  
     lastX = Math.max(initX, getMouseX());
     lastY = Math.max(initY, getMouseY());
-
-
+  
+  
     for(int i = 0; i <= lastY - firstY; i++){
       for(int j = 0; j <= lastX - firstX; j++){
         selection[i][j] =  tiles[firstY+i][firstX+j];
       }
     }
-
+  
     isSelection = true;
-  }
-
-  public void render(){
-
-    if(selection != null){
-      for (int i = 0; i < selection.length; i++) {
-        for (int j = 0; j < selection[0].length; j++) {
-          Draw.rect(EditorMap.getX()+tiles[0].length*SIZE+j*SIZE, 
-              EditorMap.getY()+i*SIZE, SIZE, SIZE, 
-              selection[i][j].getX(), selection[i][j].getY(), 1);
-        }
-      }
-
-      if(checkMapBounds()){
-        Draw.rect(EditorMap.getX()+mx*SIZE, EditorMap.getY()+my*SIZE, 
-            selection[0].length*SIZE, selection.length*SIZE, 
-            16, 16,16,16, 2);
-      }
-    }
-
   }
 
   public TileList[][] getSelection(){
@@ -173,21 +193,5 @@ public class TileMode extends Mode{
     selection = null;
     isSelection = false;
   }
-
-  /**
-   * Checks if the tile is valid
-   * 
-   * @param tx the X index of the tile
-   * @param ty the Y index of the tile
-   * @return true if the tile is in bounds
-   */
-  private boolean checkTileBounds(int tx, int ty) {
-    return ty >= 0 &&           
-        ty < tiles.length && 
-        tx >= 0 &&           
-        tx < tiles[0].length;
-  }
-
-
 
 }

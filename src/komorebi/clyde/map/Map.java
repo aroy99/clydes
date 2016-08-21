@@ -144,7 +144,7 @@ public class Map implements Playable{
           int arg0 = Integer.parseInt(split[2]);
           int arg1 = Integer.parseInt(split[1]);
 
-          npcs[arg0][arg1] = new NPC(split[0], arg0, arg1,  NPCType.toEnum(split[3]));
+          npcs[arg0][arg1] = new NPC(split[0], arg0*16, arg1*16,  NPCType.toEnum(split[3]));
 
           npcs[arg0][arg1].setWalkingScript(
               new WalkingScript(split[4], npcs[arg0][arg1]));

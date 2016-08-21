@@ -10,6 +10,7 @@ import komorebi.clyde.editor.Editor;
 import komorebi.clyde.editor.Palette;
 import komorebi.clyde.editor.modes.Mode;
 import komorebi.clyde.editor.modes.MoveMode;
+import komorebi.clyde.editor.modes.NPCMode;
 import komorebi.clyde.editor.modes.TileMode;
 import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.Key;
@@ -27,6 +28,7 @@ import komorebi.clyde.script.WarpScript;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 
+import java.awt.geom.Area;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -78,14 +80,15 @@ public class EditorMap implements Playable{
   private static float dx, dy;
   private static final float SPEED = 20;
 
-  private String savePath;  //Path to save the map by default
-  private String saveName;  //Name to save the map by default
+  private String path;  //Path to save the map by default
+  private String name;  //Name to save the map by default
 
   public static final int WIDTH = Display.getWidth();
   public static final int HEIGHT = Display.getHeight();
   
   private TileMode tileMode;
   private MoveMode moveMode;
+  private NPCMode npcMode;
 
   /**
    * The various modes this map can be in
@@ -104,6 +107,7 @@ public class EditorMap implements Playable{
    * @param row number of rows (y)
    */
   public EditorMap(int col, int row){
+    saved = true;
     tiles = new TileList[row][col];
     collision = new boolean[row][col];
     npcs = new ArrayList<NPC>();
@@ -121,6 +125,7 @@ public class EditorMap implements Playable{
     
     tileMode = new TileMode();
     moveMode = new MoveMode(collision);
+    npcMode = new NPCMode(npcs, scripts);
   }
 
 
@@ -131,7 +136,8 @@ public class EditorMap implements Playable{
    * @param name The name of the file
    */
   public EditorMap(String key, String name){
-
+    
+    saved = true;
 
     try {
       BufferedReader reader = new BufferedReader(new FileReader(
@@ -177,8 +183,8 @@ public class EditorMap implements Playable{
       }
 
 
-      savePath = key;
-      saveName = name;
+      path = key;
+      this.name = name;
 
       Display.setTitle("Clyde\'s Editor - "+name);
 
@@ -231,6 +237,7 @@ public class EditorMap implements Playable{
 
 
       reader.close();
+      
     } catch (IOException | NumberFormatException e) {
       e.printStackTrace();
       JOptionPane.showMessageDialog(null, 
@@ -252,13 +259,10 @@ public class EditorMap implements Playable{
     
     tileMode = new TileMode();
     moveMode = new MoveMode(collision);
-
+    npcMode = new NPCMode(npcs, scripts);
 
   }
 
-  /* (non-Javadoc)
-   * @see komorebi.clyde.engine.Playable#getInput()
-   */
   @Override
   public void getInput() {
 
@@ -284,21 +288,19 @@ public class EditorMap implements Playable{
 
     isGrid = button(Control.GRID);
     
-    Mode.getInput();
+    Mode.getModeInput();
+    tileMode.getInput();
   }
 
-
-  /**
-   * Used for the editor to help with performance
-   */
+  @Override
   public void update(){
 
     //Resets tiles to default position
     if(isSave){
-      if(savePath == null){
+      if(path == null){
         newSave();
       }else{
-        save(savePath, saveName);
+        save();
       }
     }
 
@@ -336,77 +338,6 @@ public class EditorMap implements Playable{
       mode = Modes.MOVE;
     }
 
-    if(KeyHandler.keyClick(Key.LBUTTON) && checkButtonBounds()){
-      switch(Mouse.getX()/(16*MainE.scale)-Palette.xOffset){
-        case 0:
-          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
-            case 0: Editor.newMap();    break;
-            case 1: mode = Modes.TILE; break;
-            default: //Do nothing
-          }
-          break;
-        case 1:
-          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
-            case 0:           
-              if(savePath == null){
-                newSave();
-              }else{
-                save(savePath, saveName);
-              }
-              break;
-            case 1: mode = Modes.MOVE; break;
-            default:
-          }
-          break;
-        case 2:
-          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
-            case 0: newSave(); break;
-            case 1: mode = Modes.NPC; break;
-            default:
-          }
-          break;
-        case 3:
-          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
-            case 0: Editor.revertMap(); break;
-            case 1:       changeGrid();   break;
-            default:
-          }
-
-          break;
-        case 4:
-          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
-            case 0: Editor.loadMap(); break;
-            case 1: ; break;
-            default:
-          }
-          break;
-        case 5:
-          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
-            case 0: Editor.testGame(); break;
-            case 1: ; break;
-            default:
-          }
-          break;
-        case 6:
-          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
-            case 0: ; break;
-            case 1: ; break;
-            default:
-          }
-          break;
-        case 7:
-          switch(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)){
-            case 0: ; break;
-            case 1: ; break;
-            default:
-          }
-          break;
-        default:
-          //Do nothing, invalid (and impossible, I hope)
-          System.out.println("This shouldn't be happening m8");
-      }
-    }
-
     dx = 0;
     dy = 0;
 
@@ -425,10 +356,6 @@ public class EditorMap implements Playable{
 
   }
 
-
-  /* (non-Javadoc)
-   * @see komorebi.clyde.engine.Renderable#render()
-   */
   @Override
   public void render() {
     for (int i = 0; i < tiles.length; i++) {
@@ -469,19 +396,8 @@ public class EditorMap implements Playable{
           script.render();
         }
       }
-    }
-
-    Draw.rect(WIDTH - SIZE*8, HEIGHT-SIZE*2, SIZE*8, SIZE*2, 0, 32, 2);
-
-    if(checkButtonBounds()){
-      int x = WIDTH - SIZE*(8-(Mouse.getX()/(16*MainE.scale)-Palette.xOffset));
-      int y = HEIGHT - SIZE*(2-(Mouse.getY()/(16*MainE.scale)-(Palette.HEIGHT+4)));
-
-      Draw.rect(x, y, SIZE, SIZE, 64, 0, 2);
-    }
-    
+    }    
   }
-
 
   /**
    * Moves the entire map and all entities contained by it by the specified amount
@@ -508,10 +424,9 @@ public class EditorMap implements Playable{
 
 
   /**
-   * @param path The file location of the path being saved
-   * @param name The name of the file that is being saved
+   * Saves the map
    */
-  public boolean save(String path,String name) {
+  public boolean save() {
     PrintWriter writer;
 
     try {
@@ -539,7 +454,26 @@ public class EditorMap implements Playable{
         }
         writer.println();
       }
-
+      
+      //The NPCs
+      for(NPC npc: npcs){
+        writer.println("npc " + npc.getName() + " " + npc.getOrigTX() + 
+            " " + npc.getOrigTY() + " " + npc.getType() + " " + 
+            npc.getWalkingScript().getScript() + " " + npc.getTalkingScript().getScript());
+      }
+      
+      //The Scripts and Warps
+      for(AreaScript script: scripts){
+        if(script instanceof WarpScript){
+          writer.println("warp " + ((WarpScript)script).getMap() + " " + 
+              script.getOrigTX() + " " + script.getOrigTY());
+        }else{
+          writer.println("script " + script.getName() + " " + script.getOrigTX() + 
+              " " + script.getOrigTY() + 
+              (script.hasNPC()?" " + script.getNPC().getName() : ""));
+        }
+      }
+      
       saved = true;
       writer.close();
       if(name.substring(name.length()-4).equals(".map")){
@@ -608,10 +542,10 @@ public class EditorMap implements Playable{
 
     if(returnee == JFileChooser.APPROVE_OPTION){
 
-      savePath = chooser.getSelectedFile().getAbsolutePath();
-      saveName = chooser.getSelectedFile().getName();
+      path = chooser.getSelectedFile().getAbsolutePath();
+      name = chooser.getSelectedFile().getName();
 
-      return save(savePath, saveName);
+      return save();
     }
 
     return false;
@@ -655,19 +589,9 @@ public class EditorMap implements Playable{
   }
 
   /**
-   * Checks if the Mouse is in bounds of the buttons
-   * @return Mouse is on a button
-   */
-  private boolean checkButtonBounds() {
-    return (Mouse.getX()/MainE.getScale() >= WIDTH-SIZE*8 &&
-        Mouse.getY()/MainE.getScale() > HEIGHT-SIZE*2);
-  }
-
-
-  /**
    * Swtiches the state of the grid of every tile
    */
-  private static void changeGrid(){
+  public static void changeGrid(){
     grid = !grid;
   }  
 
@@ -684,11 +608,11 @@ public class EditorMap implements Playable{
   }
 
   public String getPath() {
-    return savePath;
+    return path;
   }
 
   public String getName() {
-    return saveName;
+    return name;
   }
 
   public static float getY() {
@@ -707,6 +631,15 @@ public class EditorMap implements Playable{
     if(Display.getTitle().charAt(Display.getTitle().length()-1) != '*'){
       Display.setTitle(Display.getTitle()+"*");
     }
+  }
+  
+  /**
+   * Changes the mode of the editor
+   * 
+   * @param newMode The mode to switch to
+   */
+  public static void setMode(Modes newMode){
+    mode = newMode;
   }
   
   /**

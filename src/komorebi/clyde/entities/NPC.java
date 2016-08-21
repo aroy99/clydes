@@ -1,13 +1,14 @@
 /**
 
  * NPC.java  Jun 9, 2016, 3:09:11 PM
-**/
+ **/
 package komorebi.clyde.entities;
 
 import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
 import komorebi.clyde.engine.Main;
+import komorebi.clyde.map.EditorMap;
 import komorebi.clyde.script.Execution;
 import komorebi.clyde.script.TalkingScript;
 import komorebi.clyde.script.TextHandler;
@@ -18,6 +19,7 @@ import org.lwjgl.Sys;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.function.ToDoubleBiFunction;
 
 
 
@@ -50,15 +52,15 @@ public class NPC extends Entity {
 
   private int xTravelled;
   private int yTravelled;
-  
+
   private Rectangle[] surround = new Rectangle[4];
   private TalkingScript talkScript;
-  
+
   private boolean isTalking;
-  
+
   private WalkingScript walkScript;
-  
-  
+
+
   Animation rightAni, leftAni, downAni, upAni;
 
   /**
@@ -67,9 +69,12 @@ public class NPC extends Entity {
    */
   public NPC(String name, float x, float y, NPCType type) {
     super(x, y, 16, 24);
-    tx = (int)x/16;
-    ty = (int)y/16;
-    
+    tx = (int)(x-EditorMap.getX())/16;
+    ty = (int)(y-EditorMap.getY())/16;
+
+    //TODO Debug
+    System.out.println(tx + ", " + ty);
+
     this.name = name;
     ent=Entities.NPC;
 
@@ -85,7 +90,7 @@ public class NPC extends Entity {
     surround[1] = new Rectangle((int) this.x + 16, (int) this.y, 16, 16);
     surround[2] = new Rectangle((int) this.x, (int) this.y - 16, 16, 16);
     surround[3] = new Rectangle((int) this.x - 16, (int) this.y, 16, 16);
-    
+
   }
 
   public NPC(String name)
@@ -113,7 +118,7 @@ public class NPC extends Entity {
    * Updates the behavior of the NPC, such as speed and movement
    */
   public void update() {
-    
+
     if (framesToGo <= 0 && hasInstructions)
     {
       isMoving=false;
@@ -185,8 +190,8 @@ public class NPC extends Entity {
     } else if (isWaiting){
       framesToGo--;
     }
-    
-    
+
+
 
   }
 
@@ -220,8 +225,8 @@ public class NPC extends Entity {
       }
 
       text.render();
-      
-      
+
+
     }
 
 
@@ -272,7 +277,7 @@ public class NPC extends Entity {
    */
   private void walk(Face dir, int tiles)
   {
-    
+
     hasInstructions=true;
     framesToGo = tiles*16;
     isMoving=true;
@@ -304,7 +309,7 @@ public class NPC extends Entity {
 
   }
 
- /**
+  /**
    * Moves the NPC a given number of tiles in a specified direction, pausing the
    * thread
    * 
@@ -319,7 +324,7 @@ public class NPC extends Entity {
 
     walk(dir,tiles);
     instructor.getLock().pauseThread();
-    
+
   }
 
   /**
@@ -362,7 +367,7 @@ public class NPC extends Entity {
     }
   }
 
-  
+
   /**
    * Moves the NPC a given number of tiles in a specified direction at a brisk 
    * pace, pausing the thread
@@ -381,7 +386,7 @@ public class NPC extends Entity {
 
   }
 
- /**
+  /**
    * Turns the NPC to face a different direction
    * 
    * @param dir The direction for the NPC to face
@@ -392,7 +397,7 @@ public class NPC extends Entity {
     direction=dir;
   }
 
-   /**
+  /**
    * Turns the NPC to face a different direction, pausing the thread
    * 
    * @param dir The direction for the NPC to face
@@ -411,7 +416,7 @@ public class NPC extends Entity {
     setAttributes(type);
   }
 
-   /**
+  /**
    * Creates all of the required objects for the specified NPC type
    * 
    * @param type The NPC type to set the attributes
@@ -509,7 +514,7 @@ public class NPC extends Entity {
     this.instructor = instructor;
     setTileLocation(tx,ty);
   }
-  
+
   /**
    * Relocates the NPC to a specific spot on the screen
    * @param x The x cooridnate of the new bottom left corner, in pixels, of the NPC
@@ -522,7 +527,7 @@ public class NPC extends Entity {
     surround[1].setLocation(x+16, y);
     surround[2].setLocation(x, y-16);
     surround[3].setLocation(x-16, y);
-    
+
     this.y = y;
   }
 
@@ -575,6 +580,21 @@ public class NPC extends Entity {
   {
     return ((int) y)/16;
   }
+
+  /**
+   * @return the original tile x of this NPC
+   */
+  public int getOrigTX(){
+    return tx;
+  }
+
+  /**
+   * @return the original tile y of this NPC
+   */
+  public int getOrigTY(){
+    return ty;
+  }
+
   public void clearText()
   {
     text.clear();
@@ -635,7 +655,7 @@ public class NPC extends Entity {
   {
     return npcs;
   }
-  
+
   public void setVisible(boolean b)
   {
     isVisible = b;
@@ -650,7 +670,7 @@ public class NPC extends Entity {
   {
     return yTravelled;
   }
-  
+
   /**
    * 
    * @param clydeX
@@ -663,9 +683,9 @@ public class NPC extends Entity {
         (surround[1].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.LEFT) ||
         (surround[2].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.UP) ||
         (surround[3].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.RIGHT);
-        
+
   }
-  
+
   /**
    * Runs the NPC's talking script when Clyde prompts them
    */
@@ -675,47 +695,47 @@ public class NPC extends Entity {
     abortWalkingScript();
     talkScript.run();
   }
-  
+
   public void setTalkingScript(TalkingScript nScript)
   {
     talkScript = nScript;
   }
-  
+
   public void setWalkingScript(WalkingScript nScript)
   {
     walkScript = nScript;
   }
-  
+
   public void abortTalkingScript()
   {
     talkScript.abort();
     isTalking = false;
   }
-  
+
   public void abortWalkingScript()
   {
     walkScript.abort();
     isTalking = true;
   }
-  
+
   public TalkingScript getTalkingScript()
   {
     return talkScript;
   }
-  
+
   public WalkingScript getWalkingScript()
   {
     return walkScript;
   }
-  
+
   public boolean isTalking()
   {
     return isTalking;
   }
-  
+
   public void setIsTalking(boolean b)
   {
     isTalking = b;
   }
- 
+
 }

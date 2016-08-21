@@ -90,9 +90,6 @@ public class Palette implements Playable{
     }
   }
 
-  /* (non-Javadoc)
-   * @see komorebi.clyde.engine.Playable#getInput()
-   */
   @Override
   public void getInput(){
             
@@ -109,9 +106,6 @@ public class Palette implements Playable{
   }
 
 
-  /* (non-Javadoc)
-   * @see komorebi.clyde.engine.Renderable#update()
-   */
   @Override
   public void update(){
     if (checkBounds() && lButtonIsDown && !lButtonWasDown) {
@@ -128,6 +122,18 @@ public class Palette implements Playable{
     if(startDragging){
       initX = getMouseX();
       initY = getMouseY();
+      
+      if(initX < 0){
+        initX = 0;
+      }else if(initX >= WIDTH){
+        initX = WIDTH-1;
+      }
+      
+      if(initY < 0){
+        initY = 0;
+      }else if(initY >= HEIGHT){
+        initY = HEIGHT-1;
+      }
     }
     if(isDragging && checkBounds()){
       createSelection();
@@ -136,9 +142,6 @@ public class Palette implements Playable{
 
   }
 
-  /* (non-Javadoc)
-   * @see komorebi.clyde.engine.Renderable#render()
-   */
   @Override
   public void render(){
     for (int i = 0; i < tiles.length; i++) {
@@ -221,8 +224,8 @@ public class Palette implements Playable{
 
 
   /**
-   * Checks if the Mouse is in bounds of the map
-   * @return Mouse is in map
+   * Checks if the Mouse is in bounds of the palette
+   * @return Mouse is in palette
    */
   private boolean checkBounds() {
     return (Mouse.getX()/MainE.getScale() >= Palette.xOffset*16 &&
@@ -231,23 +234,20 @@ public class Palette implements Playable{
   }
 
   /**
-   * Converts Mouse X into a tile index, adjusting for map position
+   * Converts Mouse X into a tile index, adjusting for palette position
    * @return adjusted mouse x
    */
   private int getMouseX(){
-    return (Mouse.getX()/MainE.getScale())/(16)-xOffset;
+    return Mouse.getX()/MainE.getScale()/16-xOffset;
   }
 
 
-       
-
-
   /**
-   * Converts Mouse Y into a tile index, adjusting for map position
+   * Converts Mouse Y into a tile index, adjusting for palette position
    * @return adjusted mouse y
    */
   private int getMouseY() {
-    return (Mouse.getY()/MainE.getScale())/(16)-yOffset;
+    return Mouse.getY()/MainE.getScale()/16-yOffset;
   }
 
 }

@@ -7,6 +7,7 @@ import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.Renderable;
 import komorebi.clyde.entities.Clyde;
 import komorebi.clyde.entities.NPC;
+import komorebi.clyde.map.EditorMap;
 
 /**
  * 
@@ -21,6 +22,7 @@ public class AreaScript extends Script{
   private boolean isOptional;
 
   protected float x, y;
+  protected int tx, ty;
 
   /**
    * Creates a new area script
@@ -32,6 +34,8 @@ public class AreaScript extends Script{
    */
   public AreaScript(String s, float x, float y, boolean repeat)
   {
+    tx = (int)(x-EditorMap.getX())/16;
+    ty = (int)(y-EditorMap.getY())/16;
 
     script = s;
     isRepeatable = repeat;
@@ -42,6 +46,9 @@ public class AreaScript extends Script{
 
   public AreaScript(String s, float x, float y, boolean repeat, NPC person)
   {
+    tx = (int)(x-EditorMap.getX())/16;
+    ty = (int)(y-EditorMap.getY())/16;
+    
     script = s;
     isRepeatable = repeat;
     this.x=x;
@@ -78,6 +85,21 @@ public class AreaScript extends Script{
   public int getTileY() {
     return (int) y/16;
   }
+  
+  /**
+   * @return the original tile x of this Script
+   */
+  public int getOrigTX(){
+    return tx;
+  }
+
+  /**
+   * @return the original tile y of this Script
+   */
+  public int getOrigTY(){
+    return ty;
+  }
+
 
   public float getX(){
     return x;
@@ -96,6 +118,14 @@ public class AreaScript extends Script{
   public String getName()
   {
     return script;
+  }
+  
+  public NPC getNPC(){
+    return npc;
+  }
+  
+  public boolean hasNPC(){
+    return npc != null;
   }
 
   public void setOptional(boolean tf)
