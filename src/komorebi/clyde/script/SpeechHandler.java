@@ -15,15 +15,18 @@ public class SpeechHandler extends TextHandler {
   private boolean hasChoice;
   private int pickerIndex;
   private boolean alreadyAsked;
-  private boolean paraWait;
-  private int paraStop;
-  private static boolean scrolling;
-
+  
   private int scrollIndex;
   private int buffer;
-  private static int speed;
   
+  private static int speed;
+  private static boolean scrolling;
+  
+  private boolean delayed;
+  private int delayIndex;
+
   private int dotCount;
+  private boolean dots;
 
   public SpeechHandler(boolean b)
   {
@@ -31,13 +34,13 @@ public class SpeechHandler extends TextHandler {
     scrolling = b;
     speed = 1;
   }
-  
+
   public static void setSpeed(int speed)
   {
     scrolling = true;
     SpeechHandler.speed = speed;
   }
-  
+
   public static void setScrolling(boolean b)
   {
     scrolling = b;
@@ -45,28 +48,23 @@ public class SpeechHandler extends TextHandler {
 
   @Override
   public void render()
-  { 
+  {
+    
     if (!words.isEmpty())
     {
       Draw.rect(15, 15, 220, 59, 0, 0, 220, 59, 6);
     }
-    
+
     if (hasChoice)
     {
       if (!alreadyAsked)
       {
-        if (scrolling)
-        {
-          scrollingRender(words.get(0), scrollIndex);
-        } else
-        {
-          super.render(words.get(0));
-          skipScroll();
-        }
+        scrollingRender(words.get(0));
       } else {
-        for (char[] letters: words)
+        
+        for (Word word: words)
         {
-          super.render(letters);
+          super.render(word);
         }
         
         int x = 0, y= 0;
@@ -81,36 +79,31 @@ public class SpeechHandler extends TextHandler {
 
         Draw.rect(x, y, 8, 8, 0, 0, 8, 8, 7);
       }
-      
-      
+
+
     } else if (!words.isEmpty())
-    {
-      if (scrolling)
-      {
-        scrollingRender(words.get(0), scrollIndex);
-      } else {
-        render(words.get(0));
-      }
+    { 
+      scrollingRender(words.get(0));
     }
-    
-    if (paraWait)
+
+    if (dots)
     {
-      
+
       if (dotCount>=10 && dotCount<50)
       {
         Draw.rect(210, 25, 1, 1, 1, 0, 2, 1, 6);
       }
-      
+
       if (dotCount>=20 && dotCount<60)
       {
         Draw.rect(215, 25, 1, 1, 1, 0, 2, 1, 6);
       }
-      
+
       if (dotCount>=30 && dotCount<70)
       {
         Draw.rect(220, 25, 1, 1, 1, 0, 2, 1, 6);
       }
-     
+
       dotCount++;
       if (dotCount>=80)
       {
@@ -119,18 +112,29 @@ public class SpeechHandler extends TextHandler {
     }
 
   }
-  
-  private void scrollingRender(char[] letters, int scroll)
+
+  private void scrollingRender(Word word)
   {
-    int horiz = xLocations.get(words.indexOf(letters));
-    int vert = yLocations.get(words.indexOf(letters));
-    int size = ptSize.get(words.indexOf(letters));
-      
+
+    int horiz = word.getX();
+    int vert = word.getY();
+    int size = word.getFontSize();
+    char[] letters = word.currentParagraph();
+
     int ohor = horiz;
+    int scroll;
     
+    if (scrolling)
+    {
+      scroll = scrollIndex;
+    } else
+    {
+      scroll = word.currentParagraph().length;
+    }
+
     for (int i=0; i < scroll; i++)
     {
-      
+
       if (letters[i]=='\\')
       {
         if (letters[i+1]=='n')
@@ -139,14 +143,22 @@ public class SpeechHandler extends TextHandler {
           horiz = ohor;
           i++;
           continue; 
-        } else if (letters[i+1]=='p')
+        } else if (letters[i+1]=='d')
         {
-          paraWait = true;
-          paraStop = i+2;
           i++;
           continue;
         }
       }
+
+      if (letters[scroll-1]=='\\' && letters[scroll]=='d')
+      {
+        if (!delayed)
+        {
+          delayed = true;
+          delayIndex = 10;
+        }
+      }
+
       int under = 0, texUnder = 0;
 
       if (letters[i]=='g' || letters[i] == 'j' || letters[i] == 'p' ||
@@ -163,7 +175,16 @@ public class SpeechHandler extends TextHandler {
       horiz+=(getLength(letters[i])+1);
     }
     
-    if (!paraWait)
+    if (scrollIndex==word.currentParagraph().length)
+    {
+      alreadyAsked = true;
+      if (word.hasNext())
+      {
+        dots = true;
+      }
+    }
+
+    if (!dots && !delayed)
     {
       if (scrollIndex<letters.length)
       {
@@ -177,98 +198,26 @@ public class SpeechHandler extends TextHandler {
         scrollIndex = 0;
         alreadyAsked = true;
       }
-    }
-    
-    
-  }
-  
-  @Override
-  public void render(char[] letters)
-  {
-    int horiz = xLocations.get(words.indexOf(letters));
-    int vert = yLocations.get(words.indexOf(letters));
-    int size = ptSize.get(words.indexOf(letters));
-
-    int ohor = horiz;
-    
-    if (!paraWait)
+    } else if (delayed)
     {
-      for (int i=0; i < letters.length; i++)
+      delayIndex--;
+
+      if (delayIndex<=0)
       {
-        if (letters[i]=='\\')
+        delayed=false;
+        buffer++;
+        if (buffer>=speed)
         {
-          if (letters[i+1]=='n')
-          {
-            vert-=size*2;
-            horiz = ohor;
-            i++;
-            continue;
-          } else if (letters[i+1]=='p')
-          {
-            paraWait = true;
-            paraStop = i+2;
-            i++;
-            break;
-          }
-          
-        } 
-
-        int under = 0, texUnder = 0;
-
-        if (letters[i]=='g' || letters[i] == 'j' || letters[i] == 'p' ||
-            letters[i] == 'q' || letters[i] == 'y')
-        {   
-          under = size;
-          texUnder = 8;
+          scrollIndex++;
+          buffer=0;
         }
-
-
-        Draw.rect(horiz, vert-under, size, size+under, 
-            getTexX(letters[i]), getTexY(letters[i]), 
-            getTexX(letters[i])+8, getTexY(letters[i]) + 8+texUnder, 5);
-        horiz+=(getLength(letters[i])+1);
-      }
-    } else 
-    {
-      for (int i=0; i < paraStop-2; i++)
-      {
-        if (letters[i]=='\\')
-        {
-          if (letters[i+1]=='n')
-          {
-            vert-=size*2;
-            horiz = ohor;
-            i++;
-            continue;
-          } else if (letters[i+1]=='p')
-          {
-            paraWait = true;
-            paraStop = i+2;
-            
-          }
-          
-        } 
-
-        int under = 0, texUnder = 0;
-
-        if (letters[i]=='g' || letters[i] == 'j' || letters[i] == 'p' ||
-            letters[i] == 'q' || letters[i] == 'y')
-        {   
-          under = size;
-          texUnder = 8;
-        }
-
-
-        Draw.rect(horiz, vert-under, size, size+under, 
-            getTexX(letters[i]), getTexY(letters[i]), 
-            getTexX(letters[i])+8, getTexY(letters[i]) + 8+texUnder, 5);
-        horiz+=(getLength(letters[i])+1);
       }
     }
-    
-    
+
+
   }
-  
+ 
+
   /**
    * Draws the arrow pointing to one of two text-based choices
    * @param option Which option the arrow should correspond to, where 1 represents the left option and 2 represents the right option
@@ -303,39 +252,45 @@ public class SpeechHandler extends TextHandler {
   {
     super.write(s,x,y,fontPt);
   }
-  
+
   public void skipScroll()
   {
     alreadyAsked = true;
-    scrollIndex = 0;
+    scrollIndex = words.get(0).currentParagraph().length;
   }
-  
+
   public boolean alreadyAsked()
   {
     return alreadyAsked;
   }
-  
+
   public boolean isWaitingOnParagraph()
   {
-    return paraWait;
+    return dots;
   }
-  
+
   public void nextParagraph()
   {
-    char[] newWord = new char[words.get(0).length-paraStop+1];
-    for (int i=paraStop; i<words.get(0).length; i++)
-    {
-      newWord[i-paraStop] = words.get(0)[i];
-    }
     
-    words.set(0, newWord);
-    paraWait = false;
+    words.get(0).nextParagraph();
+    dots = false;
     if (scrolling) 
     {
       scrollIndex =0;
     }
-    
     dotCount = 0;
+
+  }
+
+  public static String charToString(char[] array)
+  {
+    String s = "";
+    for (char c: array)
+    {
+      s = s + c;
+    }
+
+    return s;
   }
 
 }

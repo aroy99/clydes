@@ -22,6 +22,7 @@ public class Pause extends State {
   private PopUp pop;
   private TextHandler text = new TextHandler();
   private int pickIndex;
+  private int prevMon, prevConf;
   
   public enum PopUp
   {
@@ -161,9 +162,12 @@ public class Pause extends State {
     text.write("Save", 188, 155, 8);
     text.write("Cancel", 188, 140, 8);
     
-    text.write("100 Cs", 6, 195, 8);
-    text.write("2 conf", 6, 205, 8);
+    text.write(Main.getGame().getMoney() + " Cs", 6, 195, 8);
+    text.write(Main.getGame().getConfidence() + " conf", 6, 205, 8);
     pickIndex = 1;
+    
+    prevMon = Main.getGame().getMoney();
+    prevConf = Main.getGame().getConfidence();
     
     pop = PopUp.NONE;
   }
@@ -300,6 +304,17 @@ public class Pause extends State {
   public void setPopUp(PopUp pop)
   {
     this.pop = pop;
+  }
+  
+  public void reload()
+  {
+    text.replace(prevMon + " Cs", 
+        Main.getGame().getMoney() + " Cs");
+    text.replace(prevConf + " conf", 
+        Main.getGame().getConfidence() + " conf");
+    
+    prevMon = Main.getGame().getMoney();
+    prevConf = Main.getGame().getConfidence();
   }
 
 }

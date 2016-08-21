@@ -33,7 +33,6 @@ public class TalkingScript extends Script {
    */
   @Override
   public void abort() {
-    execution.abort();
     setIsRunning(false);
   }
   

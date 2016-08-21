@@ -4,6 +4,7 @@
 
 package komorebi.clyde.map;
 
+import java.awt.Rectangle;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,7 +47,7 @@ public class Map implements Playable{
   private float x, y;       //Current location
   private float dx, dy;
 
-  private float clydeX, clydeY;
+  private Rectangle clyde;  
   private Face clydeDirection;
 
   private static final int WIDTH = Display.getWidth();
@@ -202,7 +203,7 @@ public class Map implements Playable{
       {
         npc.update();
 
-        if (npc.isApproached(clydeX, clydeY, clydeDirection) && 
+        if (npc.isApproached(clyde, clydeDirection) && 
             KeyHandler.keyClick(Key.SPACE))
         {
           npc.turn(clydeDirection.opposite());
@@ -329,10 +330,9 @@ public class Map implements Playable{
     return tiles.length;
   }
 
-  public void setClydeLocation(float x, float y, Face direction)
+  public void setClydeLocation(Rectangle c, Face direction)
   {
-    this.clydeX = x;
-    this.clydeY = y;
+    this.clyde = c;
     this.clydeDirection = direction;
   }
 

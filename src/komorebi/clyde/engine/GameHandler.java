@@ -96,6 +96,10 @@ public class GameHandler implements Playable{
    * @param nstate The state to switch to
    */
   public static void switchState(States nstate){
+    if (nstate == States.PAUSE)
+    {
+      pause.reload();
+    }
     state = nstate;
   }
 

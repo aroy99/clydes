@@ -16,24 +16,16 @@ public class TextHandler {
 
   public static final int SCALE = 16;
 
-  public ArrayList<char[]> words;
-  public ArrayList<Integer> xLocations;
-  public ArrayList<Integer> yLocations;
-  public ArrayList<Integer> ptSize;
-  
-
+  public ArrayList<Word> words;
 
   /**
    * Creates a text handler object which will render words in a speaker-bubble style
    */
   public TextHandler()
   {
-    words = new ArrayList<char[]>();
-    xLocations = new ArrayList<Integer>();
-    yLocations = new ArrayList<Integer>();
-    ptSize = new ArrayList<Integer>();
+    words = new ArrayList<Word>();
   }
-  
+
 
   public static int getTexX(char c)
   {
@@ -145,19 +137,19 @@ public class TextHandler {
       case' ':case'!':case'"':case'$':case'%':case'\'':case'(':case')':case'*':case'+':
         return 0;
       case',':case'-':case'.':case'/':case'0':case'1':case'2':case'3':case'4':case'5':
-        case'6':case'7':
+      case'6':case'7':
         return SCALE;
       case'8':case'9':case':':case';':case'=':case'?':case'A':case'B':case'C':
         return SCALE*2;
       case'D':case'E':case'F':case'G':case'H':case'I':case'J':case'K':case'L':case'M':
-        case'N':case'O':
+      case'N':case'O':
         return SCALE*3;
       case'P':case'Q':case'R':case'S':case'T':case'U':case'V':case'W':case'X':case'Y':case'Z':
         return SCALE*4;
       case'a':case'b':case'c':case'd':case'e':case'f':case'g':
         return SCALE*5;
       case'h':case'i':case'j':case'k':case'l':case'm':case'n':case'o':case'p':case'q':
-        case'r':case's':
+      case'r':case's':
         return SCALE*6;
       case'[':case']':case'~':case't':case'u':case'v':case'w':case'x':case'y':case'z':
         return SCALE*7;
@@ -167,7 +159,7 @@ public class TextHandler {
 
     return 0;
   }
-  
+
   public static int getLength(char c)
   {
     switch (c)
@@ -208,10 +200,7 @@ public class TextHandler {
    */
   public void write(String s, int x, int y, int fontPt)
   {
-    words.add(s.toCharArray());
-    xLocations.add(x);
-    yLocations.add(y);
-    ptSize.add(fontPt);
+    words.add(new Word(s, x, y, fontPt));
   }
 
   /**
@@ -219,21 +208,21 @@ public class TextHandler {
    */
   public void render()
   {
-    
-    for (char[] letters: words)
-    {
-      render(letters);
-    }
 
+    for (Word word: words)
+    {
+      render(word);
+    }
     
   }
-  
-  public void render(char[] letters)
-  {
-    int horiz = xLocations.get(words.indexOf(letters));
-    int vert = yLocations.get(words.indexOf(letters));
-    int size = ptSize.get(words.indexOf(letters));
 
+  public void render(Word word)
+  {
+    int horiz = word.getX();
+    int vert = word.getY();
+    int size = word.getFontSize();
+    char[] letters = word.currentParagraph();
+    
     for (int i=0; i < letters.length; i++)
     {
 
@@ -253,9 +242,9 @@ public class TextHandler {
       horiz+=(getLength(letters[i])+1);
     }
   }
-  
-  
-  
+
+
+
 
   /**
    * Clears the text handler's memory
@@ -263,8 +252,16 @@ public class TextHandler {
   public void clear()
   {
     words.clear();
-    xLocations.clear();
-    yLocations.clear();
-    ptSize.clear();
+  }
+  
+  public void replace(String erase, String replace)
+  {
+    for (Word word: words)
+    {
+      if (word.getString().equals(erase))
+      {
+        word.setString(replace);
+      }
+    }
   }
 }

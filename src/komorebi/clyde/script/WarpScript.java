@@ -3,6 +3,9 @@
  */
 package komorebi.clyde.script;
 
+import komorebi.clyde.script.Task.TaskWithNumber;
+import komorebi.clyde.script.Task.TaskWithString;
+
 /**
  * 
  * @author Aaron Roy
@@ -29,16 +32,17 @@ public class WarpScript extends AreaScript {
   
   public void read()
   {
-    BranchList branches = new BranchList();
+   
     InstructionList instructions = new InstructionList("Main");
-    instructions.add(Instructions.FADE_OUT);
-    instructions.add(Instructions.LOAD_MAP, map);
-    instructions.add(Instructions.WAIT, 40);
-    instructions.add(Instructions.FADE_IN);
+    instructions.add(new Task(Instructions.FADE_OUT));
     
-    branches.add(instructions);
+    instructions.add(new TaskWithString(Instructions.LOAD_MAP, map));
     
-    execution = new Execution(null, branches);
+    instructions.add(new TaskWithNumber(Instructions.WAIT, 40));
+    instructions.add(new Task(Instructions.FADE_IN));
+    
+    
+    execution = new Execution(null, instructions);
   }
 
 }

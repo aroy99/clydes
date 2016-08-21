@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import komorebi.clyde.engine.GameHandler;
 import komorebi.clyde.engine.Item;
@@ -21,15 +22,14 @@ import komorebi.clyde.entities.NPC;
 import komorebi.clyde.entities.NPCType;
 import komorebi.clyde.map.Map;
 import komorebi.clyde.script.AreaScript;
-import komorebi.clyde.script.BranchList;
 import komorebi.clyde.script.Execution;
 import komorebi.clyde.script.Fader;
 import komorebi.clyde.script.InstructionList;
 import komorebi.clyde.script.Instructions;
 import komorebi.clyde.script.Lock;
-
-
-
+import komorebi.clyde.script.Task;
+import komorebi.clyde.script.Task.TaskWithNumber;
+import komorebi.clyde.script.Task.TaskWithString;
 
 /**
  * Represents the game
@@ -38,23 +38,49 @@ import komorebi.clyde.script.Lock;
  * @version 
  */
 public class Game extends State{
-  
+
   public ArrayList<NPC> npcs;
   public ArrayList<AreaScript> scripts;
   public ArrayList<Item> items = new ArrayList<Item>();
+  
+  public boolean[] booleans;
 
-  private boolean hasText, hasChoice, isPaused;
+  private boolean hasText, hasChoice;
   private int pickIndex;
   private int maxOpt;
 
   private NPC speaker;
-  
-  private Execution pauser;
-  private int pauseFrames;
+
   private BufferedReader read;
 
-  private Lock lock;
-
+  private ArrayList<Lock> waitingLocks;
+  private ArrayList<Int> pauseFrames;
+  
+  private int confidence, money;
+  
+  public class Int {
+    private int val;
+    
+    public Int(int value)
+    {
+      val = value;
+    }
+    
+    public void increment()
+    {
+      val++;
+    }
+    
+    public void decrement()
+    {
+      val--;
+    }
+    
+    public int intValue()
+    {
+      return val;
+    }
+  }
 
   /**
    * Creates the player and loads the map
@@ -66,20 +92,13 @@ public class Game extends State{
     npcs = new ArrayList<NPC>();
     scripts = new ArrayList<AreaScript>();
 
+    pauseFrames = new ArrayList<Int>();
+    waitingLocks = new ArrayList<Lock>();
 
-    //loadMap("Map1");
+    booleans = new boolean[256];
 
-    //NPC joe = new NPC("joe",-1,6, NPCType.POKEMON);
-    //NPC vin = new NPC("vin",0,0, NPCType.NESS);
-
-
-    /*npcs.add(joe);
-        npcs.add(vin);
-
-        scripts.add(new Script("joe", joe, 5, 5, false));
-        scripts.add(new Script("vin", vin, 1, 1, false));
-     */
-
+    confidence = 0;
+    money = 15;
 
 
   }
@@ -98,9 +117,10 @@ public class Game extends State{
       {
         if (speaker.isWaitingOnParagraph())
         {
+          System.out.println("Next");
           speaker.nextParagraph();
         } else {
-          if (hasChoice && !speaker.doneAsking())
+          if (!speaker.doneAsking())
           {
             speaker.skipScroll();
           } else
@@ -119,12 +139,12 @@ public class Game extends State{
           }
         } 
       } 
-     }
-      
-    
+    }
+
+
     //Debug
-    
-  
+
+
 
     if (KeyHandler.keyClick(Key.LEFT))
     {
@@ -157,13 +177,11 @@ public class Game extends State{
     {
       GameHandler.switchState(States.MENU);
     }
-    
+
     if (KeyHandler.keyClick(Key.P))
     {
       GameHandler.switchState(States.PAUSE);
     }
-
-
 
   }
 
@@ -172,26 +190,29 @@ public class Game extends State{
    */
   @Override
   public void update() {
-    // TODO Auto-generated method stub
-    
+    // TODO Auto-generated method stub    
     KeyHandler.update();
-    
+
     play.update();
-    map.setClydeLocation(play.getX(), play.getY(), play.getDirection());
-    
+    map.setClydeLocation(play.getAbsoluteArea(), play.getDirection());
+
     map.update();
     Fader.update();
 
-    if (isPaused)
-    {
-      pauseFrames--;
-      if (pauseFrames == 0)
+    for (Iterator<Int> it = pauseFrames.iterator(); it.hasNext();)
+    {      
+      Int i = it.next();
+      i.decrement();
+      if (i.intValue()==0)
       {
-        isPaused=false;
-        lock.resumeThread();
+        waitingLocks.get(pauseFrames.indexOf(i)).resumeThread();
+        waitingLocks.remove(pauseFrames.indexOf(i));
+        it.remove();
       }
+
     }
-    
+
+
 
   }
 
@@ -210,7 +231,7 @@ public class Game extends State{
   public static Map getMap(){
     return map;
   }
-  
+
   public static void setMap(Map m)
   {
     map = m;
@@ -227,27 +248,21 @@ public class Game extends State{
     this.speaker = npc;
     this.hasText = true;
   }
-  
+
   /**
    * Pauses the game for a specified number of frames
    * @param frames The number of frames to be paused
    * @param ex The script execution whose thread will be locked while the game
    *        is paused
    */
-  public void pause(int frames, Execution ex)
-  { 
-    isPaused = true;
-    pauseFrames=frames;
-    pauser = ex;
-    pauser.getLock().pauseThread();
-  }
-  
+
+
   public void pause(int frames, Lock lock)
   {
-    isPaused = true;
-    pauseFrames=frames;
-    this.lock = lock;
-    this.lock.pauseThread();
+    pauseFrames.add(new Int(frames));
+    waitingLocks.add(lock);
+
+    lock.pauseThread();
   }
 
   /**
@@ -327,33 +342,68 @@ public class Game extends State{
 
 
   }
-  
+
   /**
    * Fades the screen out, loads a new map and fades the screen back in
    * @param newMap The new map to be loaded (sans .map extension)
    */
   public void warp(String newMap)
   {
-    BranchList branches = new BranchList();
     InstructionList instructions = new InstructionList("Main");
-    instructions.add(Instructions.FADE_OUT);
-    instructions.add(Instructions.LOAD_MAP, newMap);
-    instructions.add(Instructions.WAIT, 40);
-    instructions.add(Instructions.FADE_IN);
+    instructions.add(new Task(Instructions.FADE_OUT));
     
-    branches.add(instructions);
+    instructions.add(new TaskWithString(Instructions.LOAD_MAP, newMap));
     
-    (new Thread(new Execution(null, branches))).start();
-    
+    instructions.add(new TaskWithNumber(Instructions.WAIT, 40));
+    instructions.add(new Task(Instructions.FADE_IN));
+
+
+    (new Thread(new Execution(null, instructions))).start();
+
   }
-  
+
   public void receiveItem(Items item)
   {
     items.add(new Item(item));
   }
-  
+
   public ArrayList<Item> getItems()
   {
     return items;
+  }
+  
+  public int getMoney()
+  {
+    return money;
+  }
+  
+  public int getConfidence()
+  {
+    return confidence;
+  }
+  
+  public void giveMoney(int add)
+  {
+    money += add;
+  }
+  
+  public void takeMoney(int subtract)
+  {
+    money -= subtract;
+  }
+  
+  public void giveConfidence(int add)
+  {
+    confidence += add;
+  }
+  
+  public void setFlag(int index, boolean b)
+  {
+    booleans[index] = b;
+  }
+  
+  public boolean checkFlag(int index)
+  {
+    return booleans[index];
   }
 }

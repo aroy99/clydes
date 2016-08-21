@@ -3,6 +3,8 @@
  */
 package komorebi.clyde.entities;
 
+import java.awt.Rectangle;
+
 import org.lwjgl.input.Keyboard;
 
 import komorebi.clyde.engine.Animation;
@@ -29,8 +31,6 @@ public class Clyde extends Entity implements Playable{
   private float dx;
   private float dy;
   
-  private float rx, ry;
-
   private int framesToGo;
   private boolean hasInstructions;
 
@@ -44,15 +44,17 @@ public class Clyde extends Entity implements Playable{
   
   private Lock lock;
 
+
   /**
    * @param x x pos, from left
    * @param y y pos from bottom
    */
   public Clyde(float x, float y) {
     super(x, y, 16, 24);
-    rx = x;
-    ry = y;
     ent = Entities.CLYDE;
+    
+    area = new Rectangle((int) x, (int) y, 16, 24);
+    rArea = new Rectangle((int) rx, (int) ry, 16, 24);
 
     upAni =    new Animation(4, 8, 16, 24, 0);
     downAni =  new Animation(4, 8, 16, 24, 0);
@@ -78,7 +80,6 @@ public class Clyde extends Entity implements Playable{
     rightAni.add(48,24, true);
     rightAni.add(48, 0, true);
     rightAni.add(0, 48, 3, true);
-
 
   }
 
@@ -166,8 +167,12 @@ public class Clyde extends Entity implements Playable{
     rightAni.setSpeed(speed);
 
     Game.getMap().move(-dx, -dy);
+    
     rx += dx;
     ry += dy;
+    
+    rArea.x+=dx;
+    rArea.y+=dy;
 
     if (hasInstructions)
     {
@@ -303,30 +308,54 @@ public class Clyde extends Entity implements Playable{
     this.lock.pauseThread();
   }
   
-  public void align(Lock lock)
+  public void align(NPC npc, Lock lock)
   {
-    switch (dir)
+    Rectangle r = npc.intersectedHitbox(area);
+    goToPixX(r.x, lock);
+    goToPixY(r.y, lock);
+    dir = npc.faceMe(area);
+  }
+  
+  public void goToPixX(int goTo, Lock lock)
+  {
+    int distance = goTo - (int) x;
+    
+    framesToGo = Math.abs(distance);
+    hasInstructions = true;
+    
+    if (distance<0)
     {
-      case DOWN:
-        align(Face.LEFT, lock);
-        align(Face.DOWN, lock);
-        break;
-      case LEFT:
-        align(Face.DOWN, lock);
-        align(Face.LEFT, lock);
-        break;
-      case RIGHT:
-        align(Face.DOWN, lock);
-        align(Face.RIGHT, lock);
-        break;
-      case UP:
-        align(Face.LEFT, lock);
-        align(Face.UP, lock);
-        break;
-      default:
-        break;
-      
+      left = true;
+      dir = Face.LEFT;
+    } else if (distance>0)
+    {
+      right = true;
+      dir = Face.RIGHT;
     }
+    
+    this.lock = lock;
+    lock.pauseThread();
+  }
+  
+  public void goToPixY(int goTo, Lock lock)
+  {
+    
+    int distance = goTo - (int) y;
+    framesToGo = Math.abs(distance);
+    hasInstructions = true;
+    
+    if (distance<0)
+    {
+      down = true;
+      dir = Face.DOWN;
+    } else if (distance>0)
+    {
+      up = true;
+      dir = Face.UP;
+    }
+    
+    this.lock = lock;
+    lock.pauseThread();
   }
   
   public void turn(Face dir)
@@ -382,5 +411,22 @@ public class Clyde extends Entity implements Playable{
     
   }
   
+  public void stop()
+  {
+    dx=0;
+    dy=0;
+  }
+  
+  public Rectangle getRelativeArea()
+  {
+    return rArea;
+  }
+  
+  public Rectangle getAbsoluteArea()
+  {
+    return area;
+  }
+  
+
 
 }

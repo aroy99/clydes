@@ -8,10 +8,19 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import komorebi.clyde.engine.ThreadHandler;
 import komorebi.clyde.entities.NPC;
 import komorebi.clyde.entities.NPCType;
+import komorebi.clyde.script.Task.TaskWithBoolean;
+import komorebi.clyde.script.Task.TaskWithBranch;
+import komorebi.clyde.script.Task.TaskWithLocation;
+import komorebi.clyde.script.Task.TaskWithNumber;
+import komorebi.clyde.script.Task.TaskWithNumberAndLocation;
+import komorebi.clyde.script.Task.TaskWithString;
+import komorebi.clyde.script.Task.TaskWithStringArray;
+import komorebi.clyde.script.Task.TaskWithTask;
 import komorebi.clyde.states.Game;
 
 /**
@@ -33,11 +42,9 @@ public abstract class Script {
   private BufferedReader read;
 
   private InstructionList currentBranch;
-  private BranchList branches;
+  private ArrayList<TaskWithBranch> branches;
   public NPC npc;
-  
-  private Lock pauseLock;
- 
+
   public abstract void abort();
   /**
    * Interprets a given script and has a given NPC execute them
@@ -47,8 +54,7 @@ public abstract class Script {
   {
 
     InstructionList ex = new InstructionList("Main");
-    branches = new BranchList();
-    branches.add(ex);
+    branches = new ArrayList<TaskWithBranch>();
 
     setCurrentBranch(ex);
 
@@ -60,288 +66,467 @@ public abstract class Script {
     }
 
     String s;
+    Task task;
     int line = 1;
 
     try {
       while ((s = read.readLine()) != null) {
         s=s.trim();
-        if (s.startsWith("walk"))
+        if ((task=interpret(s, line))!=null)
         {
-          s=s.replace("walk ", "");
-
-          String[] dir = s.split(" ");
-          for (int i=0; i < dir.length; i++)
-          {
-            if (dir[i].equals("left"))
-            {
-              currentBranch.add(Instructions.WALK_LEFT);
-            } else if (dir[i].equals("right"))
-            {
-              currentBranch.add(Instructions.WALK_RIGHT);
-            } else if (dir[i].equals("down"))
-            {
-              currentBranch.add(Instructions.WALK_DOWN);
-            } else if (dir[i].equals("up"))
-            {
-              currentBranch.add(Instructions.WALK_UP);
-            } else
-            {
-              throwError(line, "Direction \'" + s + "\' not recognized");
-            }
-          }
-        } else if (s.startsWith("jog"))
-        {
-          s=s.replace("jog ", "");
-
-          String[] dir = s.split(" ");
-          for (int i=0; i < dir.length; i++)
-          {
-            if (dir[i].equals("left"))
-            {
-              currentBranch.add(Instructions.JOG_LEFT);
-            } else if (dir[i].equals("right"))
-            {
-              currentBranch.add(Instructions.JOG_RIGHT);
-            } else if (dir[i].equals("down"))
-            {
-              currentBranch.add(Instructions.JOG_DOWN);
-            } else if (dir[i].equals("up"))
-            {
-              currentBranch.add(Instructions.JOG_UP);
-            } else
-            {
-              throwError(line, "Direction \'" + s + "\' not recognized");
-            }
-          }
-        } else if (s.startsWith("change"))
-        {
-          s =s.replace("change ", "");
-
-          boolean found = false;
-
-          for (String type: NPCType.allStrings())
-          {
-            if (s.equalsIgnoreCase(type))
-            {
-              currentBranch.add(Instructions.CHANGE_SPRITE, NPCType.toEnum(s));
-              found = true;
-              break;
-            }
-
-            if (!found) throwError(line, "NPC name \'" + s + "\' not recognized");
-          }
-        } else if (s.startsWith("pause"))
-        {
-          s=s.replace("pause ", "");
-          try
-          {
-            int frames = Integer.parseInt(s);
-            currentBranch.add(Instructions.WAIT, frames);
-          } catch (NumberFormatException e)
-          {
-            throwError(line, s + " cannot be resolved to an integer");
-          }
-        } else if (s.startsWith("stop music")) {
-          currentBranch.add(Instructions.STOP_SONG);
-        } else if (s.startsWith("lock"))
-        {
-          currentBranch.add(Instructions.LOCK);
-        } else if (s.startsWith("unlock"))
-        {
-          currentBranch.add(Instructions.UNLOCK);
-        } else if (s.startsWith("turn"))
-        {
-          s = s.replace("turn ", "");
-          if (s.equalsIgnoreCase("left"))
-          {
-            currentBranch.add(Instructions.TURN_LEFT);
-          } else if (s.equalsIgnoreCase("right"))
-          {
-            currentBranch.add(Instructions.TURN_RIGHT);
-          } else if (s.equalsIgnoreCase("up"))
-          {
-            currentBranch.add(Instructions.TURN_UP);
-          } else if (s.equalsIgnoreCase("down"))
-          {
-            currentBranch.add(Instructions.TURN_DOWN);
-          }else
-          {
-            throwError(line, "Direction \'" + s + "\' not recognized");
-          }
-        } else if (s.startsWith("say"))
-        {
-          s = s.replace("say ", "");
-          currentBranch.add(Instructions.SAY, s);
-        } else if (s.startsWith("ask"))
-        {
-          s = s.replace("ask ", "");
-          String[] words = s.split("\"");
-
-          String[] newWords = new String[words.length/2];
-
-          for (int i=0; i < newWords.length; i++)
-          {
-            newWords[i]=words[(i*2)+1];
-          }
-
-          currentBranch.add(Instructions.ASK, newWords);
-          currentBranch.add(Instructions.RUN_BRANCH_ASK);
-
-        } else if (s.startsWith("branch"))
-        {
-
-          s = s.replace("branch ", "");
-          branches.add(new InstructionList(s));
-          currentBranch = branches.getBranch(s);
-        } else if (s.startsWith("fadeout"))
-        {
-          currentBranch.add(Instructions.FADE_OUT);
-        } else if (s.startsWith("fadein"))
-        {
-          currentBranch.add(Instructions.FADE_IN);
-        } else if (s.startsWith("run "))
-        {
-          s = s.replace("run ","");
-          currentBranch.add(Instructions.RUN_SCRIPT, s);
-        } else if (s.startsWith("npc"))
-        {
-          s = s.replace("npc ", "");
-
-          npc = Game.getMap().findNPC(s);
-          if (npc==null) throwError(line, "NPC \'" + s + "\' not recognized");
-        } else if (s.startsWith("sprite"))
-        {
-          s = s.replace("sprite ", "");
-          npc.setAttributes(NPCType.toEnum(s));
-
-        } else if (s.startsWith("at"))
-        {
-          s = s.replace("at ","");
-          String[] args = s.split(",");
-
-
-          npc.setTileLocation(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
-          npc.setVisible(true);
-        } else if (s.startsWith("load"))
-        {
-          s = s.replace("load ", "");
-          currentBranch.add(Instructions.LOAD_MAP, s);
-        } else if (s.startsWith("retile"))
-        {
-          s = s.replace("retile ", "");
-          String[] split = s.split(" ");
-          currentBranch.add(Instructions.RETILE, Integer.parseInt(split[0]), 
-              Integer.parseInt(split[2]), Integer.parseInt(split[1]));
-        } else if (s.startsWith("clydewalk"))
-        {
-          s = s.replace("clydewalk ", "");
-          String[] dir = s.split(" ");
-          for (int i=0; i < dir.length; i++)
-          {
-            if (dir[i].equals("left"))
-            {
-              currentBranch.add(Instructions.CLYDE_WALK_LEFT);
-            } else if (dir[i].equals("right"))
-            {
-              currentBranch.add(Instructions.CLYDE_WALK_RIGHT);
-            }else if (dir[i].equals("down"))
-            {
-              currentBranch.add(Instructions.CLYDE_WALK_DOWN);
-            } else if (dir[i].equals("up"))
-            {
-              currentBranch.add(Instructions.CLYDE_WALK_UP);
-            } else
-            {
-              throwError(line, "Direction \'" + s + "\' not recognized");
-            }
-          }
-        } else if (s.startsWith("runbranch"))
-        {
-          s = s.replace("runbranch ", "");
-          currentBranch.add(Instructions.RUN_BRANCH, s);
-        } else if (s.startsWith("end"))
-        {
-          currentBranch.add(Instructions.END);
-        } else if (s.startsWith("simulrun branch"))
-        {
-          s = s.replace("simulrun branch ", "");
-          currentBranch.add(Instructions.SIMUL_RUN_BRANCH, s);
-        } else if (s.startsWith("clydepause"))
-        {
-          s = s.replace("clydepause ", "");
-          currentBranch.add(Instructions.CLYDE_PAUSE, Integer.parseInt(s));
-        } else if (s.startsWith("clydeturn"))
-        {
-          s = s.replace("clydeturn ", "");
-          if (s.equals("left"))
-          {
-            currentBranch.add(Instructions.CLYDE_TURN_LEFT);
-          } else if (s.equals("right")) {
-            currentBranch.add(Instructions.CLYDE_TURN_RIGHT);
-          } else if (s.equals("up"))
-          {
-            currentBranch.add(Instructions.CLYDE_TURN_UP);
-          } else if (s.equals("down"))
-          {
-            currentBranch.add(Instructions.CLYDE_TURN_DOWN);
-          } else
-          {
-            throwError(line, "Direction \'" + s + "\' not recognized");
-          }
-        } else if (s.startsWith("play"))
-        {
-          s = s.replace("play ", "");
-          currentBranch.add(Instructions.PLAY_SONG, s);
-        } else if (s.startsWith("align"))
-        {
-          s = s.replace("align", "");
-          s = s.trim();
-          if (s.equals("left"))
-          {
-            currentBranch.add(Instructions.ALIGN_LEFT);
-          } else if (s.equals("right"))
-          {
-            currentBranch.add(Instructions.ALIGN_RIGHT);
-          } else if (s.equals("down"))
-          {
-            currentBranch.add(Instructions.ALIGN_DOWN);
-          } else if (s.equals("up"))
-          {
-            currentBranch.add(Instructions.ALIGN_UP);
-          } else if (s.equals("")) {
-            currentBranch.add(Instructions.ALIGN);
-          } else
-          {
-            throwError(line, "Direction \'" + s + "\' not recognized");
-          }
-        } else if (s.startsWith("go to"))
-        {
-          s = s.replace("go to ", "");
-          String[] str = s.split(" ");
-
-          currentBranch.add(Instructions.GO_TO, Integer.parseInt(str[0]), Integer.parseInt(str[1]));
-
-        } else if (s.startsWith("give")){
-          s = s.replace("give ", "");
-          
-          currentBranch.add(Instructions.GIVE_ITEM, s);
+          currentBranch.add(task);
         }
-        else if (!(s.startsWith("//") || s.startsWith(" ") || s.isEmpty()))
-        {
-          throwError(line, "Keyword \'" + s + "\' not recognized");
-        }
-
         line++;
-
       }
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
 
-    execution = new Execution(npc, branches);
+    execution = new Execution(npc, ex);
+  }
 
-    setExecution(execution);
+  public Task interpret(String s, int line)
+  {
+    if (s.startsWith("walk"))
+    {
+      s=s.replace("walk ", "");
+
+      String[] dir = s.split(" ");
+      for (int i=0; i < dir.length; i++)
+      {
+        if (i+1==dir.length)
+        {
+          if (dir[i].equals("left"))
+          {
+            return new Task(Instructions.WALK_LEFT);
+          } else if (dir[i].equals("right"))
+          {
+            return new Task(Instructions.WALK_RIGHT);
+          } else if (dir[i].equals("down"))
+          {
+            return new Task(Instructions.WALK_DOWN);
+          } else if (dir[i].equals("up"))
+          {
+            return new Task(Instructions.WALK_UP);
+          } else
+          {
+            return throwError(line, "Direction \'" + s + "\' not recognized");
+          }
+        } else
+        {
+          if (dir[i].equals("left"))
+          {
+            currentBranch.add(new Task(Instructions.WALK_LEFT));
+          } else if (dir[i].equals("right"))
+          {
+            currentBranch.add(new Task(Instructions.WALK_RIGHT));
+          } else if (dir[i].equals("down"))
+          {
+            currentBranch.add(new Task(Instructions.WALK_DOWN));
+          } else if (dir[i].equals("up"))
+          {
+            currentBranch.add(new Task(Instructions.WALK_UP));
+          } else
+          {
+            return throwError(line, "Direction \'" + s + "\' not recognized");
+          }
+        }
+
+      }
+    } else if (s.startsWith("jog"))
+    {
+      s=s.replace("jog ", "");
+
+      String[] dir = s.split(" ");
+      for (int i=0; i < dir.length; i++)
+      {
+        if (i+1==dir.length)
+        {
+          if (dir[i].equals("left"))
+          {
+            return new Task(Instructions.JOG_LEFT);
+          } else if (dir[i].equals("right"))
+          {
+            return new Task(Instructions.JOG_RIGHT);
+          } else if (dir[i].equals("down"))
+          {
+            return new Task(Instructions.JOG_DOWN);
+          } else if (dir[i].equals("up"))
+          {
+            return new Task(Instructions.JOG_UP);
+          } else
+          {
+            return throwError(line, "Direction \'" + s + "\' not recognized");
+          }
+        } else
+        {
+          if (dir[i].equals("left"))
+          {
+            currentBranch.add(new Task(Instructions.JOG_LEFT));
+          } else if (dir[i].equals("right"))
+          {
+            currentBranch.add(new Task(Instructions.JOG_RIGHT));
+          } else if (dir[i].equals("down"))
+          {
+            currentBranch.add(new Task(Instructions.JOG_DOWN));
+          } else if (dir[i].equals("up"))
+          {
+            currentBranch.add(new Task(Instructions.JOG_UP));
+          } else
+          {
+            return throwError(line, "Direction \'" + s + "\' not recognized");
+          }
+        }
+      }
+
+    } else if (s.startsWith("change"))
+    {
+      s =s.replace("change ", "");
+
+      for (String type: NPCType.allStrings())
+      {
+        if (s.equalsIgnoreCase(type))
+        {
+
+          return new TaskWithString(Instructions.CHANGE_SPRITE, s);
+        }
+      }
+      return throwError(line, "NPC name \'" + s + "\' not recognized");
+    } else if (s.startsWith("pause"))
+    {
+      s=s.replace("pause ", "");
+      try
+      {
+        int frames = Integer.parseInt(s);
+        return new TaskWithNumber(Instructions.WAIT, frames);
+      } catch (NumberFormatException e)
+      {
+        return throwError(line, s + " cannot be resolved to an integer");
+      }
+    } else if (s.startsWith("stop music")) {
+      return new Task(Instructions.STOP_SONG);
+    } else if (s.startsWith("lock"))
+    {
+      return new Task(Instructions.LOCK);
+    } else if (s.startsWith("unlock"))
+    {
+      return new Task(Instructions.UNLOCK);
+    } else if (s.startsWith("turn"))
+    {
+      s = s.replace("turn ", "");
+      if (s.equalsIgnoreCase("left"))
+      {
+        return new Task(Instructions.TURN_LEFT);
+      } else if (s.equalsIgnoreCase("right"))
+      {
+        return new Task(Instructions.TURN_RIGHT);
+      } else if (s.equalsIgnoreCase("up"))
+      {
+        return new Task(Instructions.TURN_UP);
+      } else if (s.equalsIgnoreCase("down"))
+      {
+        return new Task(Instructions.TURN_DOWN);
+      }else
+      {
+        return throwError(line, "Direction \'" + s + "\' not recognized");
+      }
+    } else if (s.startsWith("say"))
+    {
+      s = s.replace("say ", "");
+      return new TaskWithString(Instructions.SAY, s);
+    } else if (s.startsWith("ask"))
+    {
+      s = s.replace("ask ", "");
+      String[] words = s.split("\"");
+
+      String[] newWords = new String[words.length/2];
+      TaskWithBranch[] newBranches = new TaskWithBranch[newWords.length];
+
+      for (int i=0; i < newWords.length; i++)
+      {
+        newWords[i]=words[(i*2)+1];
+        if (i!=0) checkForBranch(newWords[i]);
+        newBranches[i] = getTaskWithBranch(newWords[i]);
+      }
+
+     return new TaskWithStringArray(Instructions.ASK, newWords,
+          newBranches);
+
+    } else if (s.startsWith("branch"))
+    {
+      s = s.replace("branch ", "");
+      checkForBranch(s);
+      
+      currentBranch = getTaskWithBranch(s).getBranch();
+      return null;
+    } else if (s.startsWith("fadeout"))
+    {
+      return new Task(Instructions.FADE_OUT);
+    } else if (s.startsWith("fadein"))
+    {
+      return new Task(Instructions.FADE_IN);
+    } else if (s.startsWith("run "))
+    {
+      s = s.replace("run ","");
+
+      return new TaskWithString(Instructions.RUN_SCRIPT, s);
+    } else if (s.startsWith("npc"))
+    {
+      s = s.replace("npc ", "");
+
+      npc = Game.getMap().findNPC(s);
+      if (npc==null) throwError(line, "NPC \'" + s + "\' not recognized");
+    } else if (s.startsWith("sprite"))
+    {
+      s = s.replace("sprite ", "");
+      npc.setAttributes(NPCType.toEnum(s));
+
+    } else if (s.startsWith("at"))
+    {
+      s = s.replace("at ","");
+      String[] args = s.split(",");
+
+
+      npc.setTileLocation(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
+      npc.setVisible(true);
+    } else if (s.startsWith("load"))
+    {
+      s = s.replace("load ", "");
+
+      return new TaskWithString(Instructions.LOAD_MAP, s);
+    } else if (s.startsWith("retile"))
+    {
+      s = s.replace("retile ", "");
+      String[] split = s.split(" ");
+
+      return new TaskWithNumberAndLocation(Instructions.RETILE,
+          Integer.parseInt(split[0]), Integer.parseInt(split[1]), 
+          Integer.parseInt(split[2]));
+    } else if (s.startsWith("@walk"))
+    {
+      s = s.replace("@walk ", "");
+      String[] dir = s.split(" ");
+      for (int i=0; i < dir.length; i++)
+      {
+        if (i==dir.length-1)
+        {
+          if (dir[i].equals("left"))
+          {
+            return new Task(Instructions.CLYDE_WALK_LEFT);
+          } else if (dir[i].equals("right"))
+          {
+            return new Task(Instructions.CLYDE_WALK_RIGHT);
+          }else if (dir[i].equals("down"))
+          {
+            return new Task(Instructions.CLYDE_WALK_DOWN);
+          } else if (dir[i].equals("up"))
+          {
+            return new Task(Instructions.CLYDE_WALK_UP);
+          } else
+          {
+            throwError(line, "Direction '" + dir[i] + "' not recongized");
+          }
+        } else
+        {
+          if (dir[i].equals("left"))
+          {
+            currentBranch.add(new Task(Instructions.CLYDE_WALK_LEFT));
+          } else if (dir[i].equals("right"))
+          {
+            currentBranch.add(new Task(Instructions.CLYDE_WALK_RIGHT));
+          } else if (dir[i].equals("down"))
+          {
+            currentBranch.add(new Task(Instructions.CLYDE_WALK_DOWN));
+          } else if (dir[i].equals("up"))
+          {
+            currentBranch.add(new Task(Instructions.CLYDE_WALK_UP));
+          } else
+          {
+            throwError(line, "Direction '" + dir[i] + "' not recongized");
+          }
+        }
+        
+      }
+    } else if (s.startsWith("runbranch"))
+    {
+      s = s.replace("runbranch ", "");
+      checkForBranch(s);
+      
+      TaskWithBranch task = getTaskWithBranch(s);
+      task.setInstruction(Instructions.RUN_BRANCH);
+      
+      return task;
+    } else if (s.startsWith("end"))
+    {
+      return new Task(Instructions.END);
+    } else if (s.startsWith("simulrunbranch"))
+    {
+      s = s.replace("simulrunbranch ", "");
+      checkForBranch(s);
+      
+      TaskWithBranch task = getTaskWithBranch(s);
+      task.setInstruction(Instructions.SIMUL_RUN_BRANCH);
+      return task;
+    } else if (s.startsWith("@turn"))
+    {
+      s = s.replace("@turn ", "");
+      if (s.equals("left"))
+      {
+        return new Task(Instructions.CLYDE_TURN_LEFT);
+      } else if (s.equals("right")) {
+        return new Task(Instructions.CLYDE_TURN_RIGHT);
+      } else if (s.equals("up"))
+      {
+        return new Task(Instructions.CLYDE_TURN_UP);
+      } else if (s.equals("down"))
+      {
+        return new Task(Instructions.CLYDE_TURN_DOWN);
+      } else
+      {
+        return throwError(line, "Direction \'" + s + "\' not recognized");
+      }
+    } else if (s.startsWith("play"))
+    {
+      s = s.replace("play ", "");
+
+      return new TaskWithString(Instructions.PLAY_SONG, s);
+    } else if (s.startsWith("align"))
+    {
+      s = s.replace("align", "");
+      s = s.trim();
+      if (s.equals("left"))
+      {
+        return new Task(Instructions.ALIGN_LEFT);
+      } else if (s.equals("right"))
+      {
+        return new Task(Instructions.ALIGN_RIGHT);
+      } else if (s.equals("down"))
+      {
+        return new Task(Instructions.ALIGN_DOWN);
+      } else if (s.equals("up"))
+      {
+        return new Task(Instructions.ALIGN_UP);
+      } else if (s.equals("")) {
+        return new Task(Instructions.ALIGN);
+      } else
+      {
+        return throwError(line, "Direction \'" + s + "\' not recognized");
+      }
+    } else if (s.startsWith("goto")) {
+      s = s.replace("goto ", "");
+      String[] str = s.split(" ");
+
+      return new TaskWithLocation(Instructions.GO_TO, 
+          Integer.parseInt(str[0]), Integer.parseInt(str[1]));
+    } else if (s.startsWith("@goto"))
+    {
+      s = s.replace("@goto ", "");
+      String[] str = s.split(" ");
+
+      return new TaskWithLocation(Instructions.CLYDE_GO_TO, 
+          Integer.parseInt(str[0]), Integer.parseInt(str[1]));
+    } else if (s.startsWith("give")){
+      s = s.replace("give ", "");
+
+      return new TaskWithString(Instructions.GIVE_ITEM, s);
+    } else if (s.startsWith("if"))
+    {
+      String predicate = s.substring(0, s.indexOf(","));
+      String toDo = s.substring(s.indexOf(",")+1, s.length());
+      toDo = toDo.trim();
+      predicate = predicate.replace("if", "");
+      predicate = predicate.trim();
+      
+      boolean reverse = predicate.startsWith("!");
+      if (reverse) predicate = predicate.replace("!", "");
+
+      try
+      {
+        int flag = Integer.parseInt(predicate);
+        return new TaskWithTask(Instructions.IF_BOOLEAN, interpret(toDo, line), 
+            flag, reverse);
+
+      } catch (NumberFormatException nfe)
+      {
+        if (predicate.startsWith("$"))
+        {
+          predicate = predicate.replace("$", "");
+          int compare = Integer.parseInt(predicate);
+
+          return new TaskWithTask(Instructions.IF_MONEY, interpret(toDo, line), 
+              compare, reverse);
+        }
+        else if (predicate.startsWith("#"))
+        {
+          predicate = predicate.replace("#", "");
+          int compare = Integer.parseInt(predicate);
+
+          return new TaskWithTask(Instructions.IF_CONFIDENCE, interpret(toDo, 
+              line), compare, reverse);
+        }
+        else return throwError(line, "Predicates must either correspond to a "
+            + "boolean flag number, a monetary value or a confidence value");
+      }
+
+    } else if (s.startsWith("else"))
+    {
+      if (s.contains(","))
+      {
+        s = s.replace(",","");
+      } else
+      {
+        throwError(line, "'else' keyword must be proceeded by a comma (,)");
+      }
+
+      s = s.replace("else", "");
+      s = s.trim();
+
+      return new TaskWithBoolean(Instructions.ELSE, interpret(s, line));
+    }
+    else if (s.startsWith("pay"))
+    {
+      s = s.replace("pay ", "");
+      if (s.startsWith("$"))
+      {
+        s = s.replace("$", "");
+
+        return new TaskWithNumber(Instructions.PAY_MONEY, Integer.parseInt(s));
+      } else if (s.startsWith("#"))
+      {
+        s = s.replace("#", "");
+
+        return new TaskWithNumber(Instructions.PAY_CONFIDENCE, 
+            Integer.parseInt(s));
+      } else 
+      {
+        return throwError(line, "Cannot use pay keyword without either $ or # token");
+      }
+    } else if (s.startsWith("flag"))
+    {
+      s = s.replace("flag ", "");
+      try
+      {
+        int bool = Integer.parseInt(s);
+        
+        if (bool>255 || bool<0)
+        {
+          throwError(line, "Flag values must be between 0 and 255 (inclusive)");
+        } else
+        {
+          return new TaskWithNumber(Instructions.FLAG_BOOLEAN, bool);
+        }
+      } catch (NumberFormatException nfe)
+      {
+        throwError(line, "Flag values must be integers from 0 to 255 (inclusive)");
+      }
+    }
+    else if (!(s.startsWith("//") || s.startsWith(" ") || s.isEmpty()))
+    {
+      return throwError(line, "Keyword \'" + s + "\' not recognized");
+    }
+
+    return null;
   }
 
   public void run()
@@ -352,19 +537,21 @@ public abstract class Script {
     }
   }
 
-  public void throwError(int line, String message)
+  public Task throwError(int line, String message)
   {
     System.out.println("Syntax error in script " + script + ", line " 
         + line + ":");
     System.out.println(message);
     syntaxError = true;
+
+    return null;
   }
 
   public void setExecution(Execution newEx)
   {
     execution = newEx;
   }
-  
+
   public Execution getExecution()
   {
     return execution;
@@ -404,15 +591,47 @@ public abstract class Script {
   {
     currentBranch = list;
   }
-  
+
   public void pause()
   {
     ThreadHandler.interrupt(this);
   }
-  
+
   public void resume()
   {
     ThreadHandler.unlock(this);
+  }
+
+  public void checkForBranch(String s)
+  {
+    boolean there = false;
+
+    for (TaskWithBranch task: branches)
+    {
+      if (task.getBranch().getBranchName().equals(s)) 
+      {
+        there = true;
+        break;
+      }
+    }
+    
+    if (!there)
+    {
+      branches.add(new TaskWithBranch(null, new InstructionList(s)));
+    }
+  }
+  
+  public TaskWithBranch getTaskWithBranch(String s)
+  {
+    for (TaskWithBranch task: branches)
+    {
+      if (task.getBranch().getBranchName().equals(s)) 
+      {
+        return task;
+      }
+    }
+    
+    return null;
   }
 
 }

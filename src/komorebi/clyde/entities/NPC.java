@@ -4,21 +4,16 @@
  **/
 package komorebi.clyde.entities;
 
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 
 import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Main;
-import komorebi.clyde.engine.ThreadHandler;
 import komorebi.clyde.script.Execution;
 import komorebi.clyde.script.Lock;
 import komorebi.clyde.script.SpeechHandler;
 import komorebi.clyde.script.TalkingScript;
 import komorebi.clyde.script.WalkingScript;
-
-
-
 
 /**
  * 
@@ -31,8 +26,9 @@ public class NPC extends Entity {
   private String name;
 
   private boolean started;
-  
+
   public Face direction = Face.DOWN;
+  
   private boolean isVisible, isMoving, isRunning, isWaiting;
   private boolean hasInstructions;
 
@@ -45,21 +41,28 @@ public class NPC extends Entity {
 
   private SpeechHandler text;
 
-  private int dy, dx;
+  private int dx, dy;
   private int framesToGo;
 
   private int xTravelled;
   private int yTravelled;
 
   private Rectangle[] surround = new Rectangle[4];
+  private Rectangle future;
+
+  private String[] names = new String[4];
   private TalkingScript talkScript;
 
   private boolean isTalking, isWalking;
 
   private WalkingScript walkScript;
-
+  private String answerToQuestion;
 
   Animation rightAni, leftAni, downAni, upAni;
+
+  private int prevdx, prevdy;
+
+  boolean hangOn;
 
   /**
    * @param x The x location (in pixels) of the bottom left corner of the NPC
@@ -67,6 +70,9 @@ public class NPC extends Entity {
    */
   public NPC(String name, float x, float y, NPCType type) {
     super(x*16, y*16, 16, 24);
+
+    rx = (int) x*16;
+    ry = (int) y*16;
 
     this.name = name;
     ent=Entities.NPC;
@@ -84,6 +90,13 @@ public class NPC extends Entity {
     surround[1] = new Rectangle((int) this.x + 16, (int) this.y, 16, 24);
     surround[2] = new Rectangle((int) this.x, (int) this.y - 24, 16, 24);
     surround[3] = new Rectangle((int) this.x - 16, (int) this.y, 16, 24);
+
+    future = new Rectangle((int) this.x, (int) this.y, 16, 24);
+
+    names[0] = "Top";
+    names[1] = "Right";
+    names[2] = "Bottom";
+    names[3] = "Left";
 
   }
 
@@ -112,7 +125,7 @@ public class NPC extends Entity {
    * Updates the behavior of the NPC, such as speed and movement
    */
   public void update() {
-
+    
     if (framesToGo <= 0 && hasInstructions)
     {
       isMoving=false;
@@ -131,7 +144,34 @@ public class NPC extends Entity {
     }
 
     if (isMoving)
-    {
+    {      
+      if (!hangOn && !frontClear() && isWalking)
+      {
+        hangOn = true;
+
+        prevdx = dx;
+        prevdy = dy;
+
+        dx=0;
+        dy=0;
+
+        downAni.hStop();
+        upAni.hStop();
+        leftAni.hStop();
+        rightAni.hStop();
+
+
+      } else if (hangOn && frontClear() && isWalking)
+      {
+        hangOn = false;
+
+        dx = prevdx;
+        dy = prevdy;
+      }
+
+      rx+=dx;
+      ry+=dy;
+
       if (isRunning)
       {
         downAni.setSpeed(8);
@@ -147,25 +187,26 @@ public class NPC extends Entity {
         upAni.setSpeed(4);
       }
 
-      switch (direction)
+      if (!hangOn)
       {
-        case DOWN:
-          downAni.resume();
-          break;
-        case LEFT:
-          leftAni.resume();
-          break;
-        case RIGHT:
-          rightAni.resume();
-          break;
-        case UP:
-          upAni.resume();
-          break;
-        default:
-          break;
+        switch (direction)
+        {
+          case DOWN:
+            downAni.resume();
+            break;
+          case LEFT:
+            leftAni.resume();
+            break;
+          case RIGHT:
+            rightAni.resume();
+            break;
+          case UP:
+            upAni.resume();
+            break;
+          default:
+            break;
+        }
       }
-
-
     } else
     {
       downAni.hStop();
@@ -179,14 +220,27 @@ public class NPC extends Entity {
 
     y+=dy;
     yTravelled+=dy;
+    
+    future.x+=dx;
+    future.y+=dy;
 
-    if (dx != 0) {
-      framesToGo-=Math.abs(dx);
-    } else if (dy != 0){
-      framesToGo-=Math.abs(dy);
-    } else if (isWaiting){
-      framesToGo--;
+    for (Rectangle r: surround)
+    {
+      r.x += dx;
+      r.y += dy;
     }
+
+    if (!hangOn)
+    {
+      if (dx != 0) {
+        framesToGo-=Math.abs(dx);
+      } else if (dy != 0){
+        framesToGo-=Math.abs(dy);
+      } else if (isWaiting){
+        framesToGo--;
+      }
+    }
+
 
 
   }
@@ -221,7 +275,6 @@ public class NPC extends Entity {
       }
 
       text.render();
-
 
     }
 
@@ -328,8 +381,8 @@ public class NPC extends Entity {
   {
 
     this.lock = lock;
-    
-    walk(dir,tiles);    
+
+    walk(dir,tiles);
     lock.pauseThread();
   }
 
@@ -565,7 +618,7 @@ public class NPC extends Entity {
    * @param args The options to write
    * @param instructor The new thread to run the command
    */
-  public void ask(String[] args, Execution ex, Lock lock)
+  public String ask(String[] args, Execution ex, Lock lock)
   {
     text.write(args[0], 20, 58, 8);
     if (args.length>1) text.write(args[1], 30, 40, 8);
@@ -581,17 +634,18 @@ public class NPC extends Entity {
     Main.getGame().setMaxOptions(args.length-1);
     Main.getGame().setAsker(this);
     this.lock.pauseThread();
+    return answerToQuestion;
 
   }
 
   public int getTileX()
   {
-    return ((int) x)/16;
+    return ((int) rx)/16;
   }
 
   public int getTileY()
   {
-    return ((int) y)/16;
+    return ((int) ry)/16;
   }
   public void clearText()
   {
@@ -604,15 +658,16 @@ public class NPC extends Entity {
     lock.resumeThread();
   }
 
+  public void branch(int i)
+  {
+    answerToQuestion = options[i];
+    this.lock.resumeThread();
+  }
+
 
   public void setPickerIndex(int i)
   {
     text.setPickerIndex(i);
-  }
-
-  public void branch(int i)
-  {
-    instructor.setCurrentBranch(options[i]);
   }
 
   public NPCType getType()
@@ -675,12 +730,12 @@ public class NPC extends Entity {
    * @param clydeY
    * @return
    */
-  public boolean isApproached(float clydeX, float clydeY, Face direction)
+  public boolean isApproached(Rectangle clyde, Face direction)
   {
-    return ((surround[0].contains(new Point((int)clydeX, (int)clydeY)) && direction == Face.DOWN) ||
-        (surround[1].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.LEFT) ||
-        (surround[2].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.UP) ||
-        (surround[3].contains(new Point((int) clydeX, (int) clydeY)) && direction == Face.RIGHT))
+    return ((surround[0].intersects(clyde) && direction == Face.DOWN) ||
+        (surround[1].intersects(clyde) && direction == Face.LEFT) ||
+        (surround[2].intersects(clyde) && direction == Face.UP) ||
+        (surround[3].intersects(clyde) && direction == Face.RIGHT))
         && !isTalking;
 
   }
@@ -703,8 +758,7 @@ public class NPC extends Entity {
     {
       isWalking = false;
     }
-    isTalking = false;
-    
+    isTalking = false;    
   }
 
   public void setTalkingScript(TalkingScript nScript)
@@ -726,6 +780,7 @@ public class NPC extends Entity {
 
   public void abortWalkingScript()
   {
+    System.out.println("Abort walk script");
     walkScript.pause();
     isTalking = true;
     isWalking = false;
@@ -767,28 +822,28 @@ public class NPC extends Entity {
     started = true;
     walkScript.run();
   }
-  
+
   public void move(float dx, float dy)
   {
     x+=dx;
     y+=dy;
-    
+
     surround[0].setLocation((int) x, (int) y+24);
     surround[1].setLocation((int) x+16, (int) y);
     surround[2].setLocation((int) x, (int) y-24);
     surround[3].setLocation((int) x-16, (int) y);
   }
-  
+
   public boolean doneAsking()
   {
     return text.alreadyAsked();
   }
-  
+
   public void skipScroll()
   {
     text.skipScroll();
   }
-  
+
   public boolean isWaitingOnParagraph()
   {
     return text.isWaitingOnParagraph();
@@ -798,9 +853,85 @@ public class NPC extends Entity {
   {
     text.nextParagraph();
   }
-  
+
   public boolean started()
   {
     return started;
   }
+
+  public Rectangle intersectedHitbox(Rectangle clyde)
+  {
+    for (int i=0; i<4; i++)
+    {
+      if (surround[i].intersects(clyde))
+      {
+        return surround[i];
+      }
+    }
+
+    return null;
+  }
+
+  public Face faceMe(Rectangle clyde)
+  {
+    int number=-1;
+    for (int i=0; i<4; i++)
+    {
+      if (surround[i].intersects(clyde))
+      {
+        number = i;
+      }
+    }
+
+    switch (number)
+    {
+      case 0: return Face.DOWN;
+      case 1: return Face.LEFT;
+      case 2: return Face.UP;
+      case 3: return Face.RIGHT;
+      default: return null;
+    }
+  }
+
+  public void goTo(boolean horizontal, int tx, Lock lock)
+  {
+    if (horizontal)
+    {
+      if (x>tx*16)
+      {
+        walk(Face.LEFT, getTileX()-tx);
+      } else if (x<tx*16)
+      {
+        walk(Face.RIGHT, tx-getTileX(), lock);
+      }
+    } else
+    {
+      if (y>tx*16)
+      {
+        walk(Face.DOWN, getTileY()-tx, lock);
+      } else if (y<tx*16)
+      {
+        walk(Face.UP, tx-getTileY(), lock);
+      }
+    }
+
+  }
+
+  public boolean frontClear()
+  {
+    future.x+=dx;
+    future.y+=dy;
+
+    if (future.intersects(Main.getGame().getClyde().getRelativeArea()))
+    {
+      future.x-=dx;
+      future.y-=dy;
+      return false;
+    }
+
+    future.x-=dx;
+    future.y-=dy;
+    return true;
+  }
+
 }

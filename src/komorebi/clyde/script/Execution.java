@@ -8,10 +8,20 @@ import komorebi.clyde.audio.Song;
 import komorebi.clyde.engine.Item.Items;
 import komorebi.clyde.engine.Main;
 import komorebi.clyde.engine.ThreadHandler;
+import komorebi.clyde.engine.ThreadHandler.NewThread;
 import komorebi.clyde.entities.Face;
 import komorebi.clyde.entities.NPC;
+import komorebi.clyde.entities.NPCType;
 import komorebi.clyde.map.Map;
 import komorebi.clyde.map.TileList;
+import komorebi.clyde.script.Task.TaskWithBoolean;
+import komorebi.clyde.script.Task.TaskWithBranch;
+import komorebi.clyde.script.Task.TaskWithLocation;
+import komorebi.clyde.script.Task.TaskWithNumber;
+import komorebi.clyde.script.Task.TaskWithNumberAndLocation;
+import komorebi.clyde.script.Task.TaskWithString;
+import komorebi.clyde.script.Task.TaskWithStringArray;
+import komorebi.clyde.script.Task.TaskWithTask;
 import komorebi.clyde.states.Game;
 
 /**
@@ -20,47 +30,45 @@ import komorebi.clyde.states.Game;
  * @version 
  */
 public class Execution implements Runnable {
-    
+
   private Lock lock = new Lock();
-  private Lock lock2 = new Lock();
-  
-  private BranchList branches;
+
+  private InstructionList list;
   private NPC npc;
 
-  private String currentBranch;
   private boolean isBlank;
-  
-  private int recursiveIndex;  
   private boolean loop;
   /**
    * Creates an execution object which will begin on the "Main" branch
    * @param myNpc The NPC the execution should affect
    * @param toDo The list of instructions to be executed on the new thread
    */
-  public Execution(NPC myNpc, BranchList toDo)
+  public Execution(NPC myNpc, InstructionList toDo)
   {
-    branches = toDo;
+
+    
+    list = toDo;
     npc = myNpc;
 
+    
     isBlank = false;
-    currentBranch = "Main";
     loop = false;
   }
-  
+
   /**
    * Creates an execution object which will begin on the "Main" branch
    * @param myNpc The NPC the execution should affect
    * @param toDo The list of instructions to be executed on the new thread
-   * @param abortedIndex The index in the branch list the execution should begin
+   * @param loop Whether the script should automatically loop
    */
-  public Execution(NPC myNpc, BranchList toDo, boolean loop)
+  public Execution(NPC myNpc, InstructionList toDo, boolean loop)
   {
-    branches = toDo;
-    npc = myNpc;
-
-    isBlank = false;
-    currentBranch = "Main";
     
+    list = toDo;
+    npc = myNpc;
+    
+    isBlank = false;
+
     this.loop = loop;
   }
 
@@ -71,32 +79,23 @@ public class Execution implements Runnable {
    * @param toDo The list of instructions to be executed on the new thread
    * @param firstBranch the branch on which the execution will begin
    */
-  public Execution(NPC myNpc, BranchList toDo, String firstBranch)
+  public Execution(NPC myNpc, InstructionList toDo, String firstBranch)
   {
-    branches = toDo;
+    list = toDo;
     npc = myNpc;
 
     isBlank = false;
-    currentBranch = firstBranch;
   }
 
   @Override
   public void run() {
-                
+    
     if (!isBlank)
-    {                  
-      if (loop) while (check()) execute(); 
+    {
+      if (loop) while (true) execute(); 
       else 
       {
         execute();
-        
-        if (recursiveIndex==0)
-        {
-          ThreadHandler.remove(Thread.currentThread());
-        } else if (recursiveIndex>0)
-        {
-          recursiveIndex--;
-        }
       }
     }
   }
@@ -104,202 +103,327 @@ public class Execution implements Runnable {
   {
     return lock;
   }
-  
-  public void setCurrentBranch(String s)
-  {
-    currentBranch = s;
-  }
-  
+
 
   public boolean check()
   {
-    return !ThreadHandler.isInterrupted(Thread.currentThread());
+      try
+      {
+        NewThread newThread = (NewThread) Thread.currentThread();
+        return !newThread.flagged();
+
+      } catch (ClassCastException e)
+      {
+        System.out.println(Thread.currentThread().getName());
+      }
+      return false;
   }
-  
+
   public void execute() {
     
-    String str = currentBranch;
-
-    for (int j = 0; j < branches.getBranch(str).getInstructions().size(); j++)
+    for (int j = 0; j < list.getInstructions().size(); j++)
     {
-      
       if (!check())
       {
-        ThreadHandler.giveLock(Thread.currentThread(), lock);
+        ThreadHandler.giveLock((NewThread) Thread.currentThread(), lock);
         lock.pauseThread();
       }
-      
-      switch (branches.getBranch(str).getInstructions().get(j))
-      {
-        case WALK_DOWN:
-          npc.walk(Face.DOWN, 1, lock);
-          break;
-        case WALK_LEFT:
-          npc.walk(Face.LEFT, 1, lock);
-          break;
-        case WALK_RIGHT:
-          npc.walk(Face.RIGHT, 1, lock);
-          break;
-        case WALK_UP:
-          npc.walk(Face.UP, 1, lock);
-          break;
-        case TURN_LEFT:
-          npc.turn(Face.LEFT);
-          break;
-        case TURN_RIGHT:
-          npc.turn(Face.RIGHT);
-          break;
-        case TURN_UP:
-          npc.turn(Face.UP);
-          break;
-        case TURN_DOWN:
-          npc.turn(Face.DOWN);
-          break;
-        case WAIT:
-          Main.getGame().pause(branches.getBranch(str).getWaitIndex(j), lock);
-          break;
-        case JOG_LEFT:
-          npc.jog(Face.LEFT, 1, lock);
-          break;
-        case JOG_RIGHT:
-          npc.jog(Face.RIGHT, 1, lock);
-          break;
-        case JOG_UP:
-          npc.jog(Face.UP, 1, lock);
-          break;
-        case JOG_DOWN:
-          npc.jog(Face.DOWN, 1, lock);
-          break;
-        case CHANGE_SPRITE:
-          npc.setNPCType(branches.getBranch(str).getSprite(j));
-          break;
-        case SET_LOCATION:
-          npc.setTileLocation(branches.getBranch(str).getXLocation(j), 
-              branches.getBranch(str).getYLocation(j));
-          break;
-        case LOCK:
-          Main.getGame().getClyde().lock();
-          break;
-        case UNLOCK:
-          Main.getGame().getClyde().unlock();
-          break;
-        case SAY:
-          npc.say(branches.getBranch(str).getString(j), lock);
-          break;
-        case ASK:
-          String[] s = branches.getBranch(str).getQuestionOptions(j);
-          npc.ask(s, this, lock);
-          break;
-        case RUN_BRANCH_ASK:
-          recursiveIndex++;
-          run();
-          break;
-        case RUN_BRANCH:
-          currentBranch = branches.getBranch(str).getString(j);
-          recursiveIndex++;
-          run();
-          lock2.resumeThread();
-          break;
-        case FADE_OUT:
-          Fader.fadeOut(lock);
-          break;
-        case FADE_IN:
-          Fader.fadeIn(lock);
-          break;
-        case RUN_SCRIPT:
-          AreaScript script = Game.getMap().getScript(branches.getBranch(str).getString(j));
-          script.run();
-          break;
-        case LOAD_MAP:
-          Game.setMap(new Map("res/maps/" + branches.getBranch(str).getString(j) + ".mapx", true));
-          break;
-        case RETILE:
-          Game.getMap().setTile(TileList.getTile(branches.getBranch(str).getTileID(j)), 
-             branches.getBranch(str).getXLocation(j), branches.getBranch(str).getYLocation(j));
-          break;
-        case CLYDE_WALK_LEFT:
-          Main.getGame().getClyde().walk(Face.LEFT, 1, lock);
-          break;
-        case CLYDE_WALK_RIGHT:
-          Main.getGame().getClyde().walk(Face.RIGHT, 1, lock);
-          break;
-        case CLYDE_WALK_UP:
-          Main.getGame().getClyde().walk(Face.UP, 1, lock);
-          break;
-        case CLYDE_WALK_DOWN:
-          Main.getGame().getClyde().walk(Face.DOWN, 1, lock);
-          break;
-        case CLYDE_PAUSE:
-          Main.getGame().getClyde().pause(branches.getBranch(str).getWaitIndex(j), lock);
-          break;
-        case SIMUL_RUN_BRANCH:
-          Execution ex = new Execution(npc, branches);
-          ex.setCurrentBranch(branches.getBranch(str).getString(j));
-          
-          new Thread(ex).start();
-          break;
-        case CLYDE_TURN_LEFT:
-          Main.getGame().getClyde().turn(Face.LEFT);
-          break;
-        case CLYDE_TURN_RIGHT:
-          Main.getGame().getClyde().turn(Face.RIGHT);
-          break;
-        case CLYDE_TURN_UP:
-          Main.getGame().getClyde().turn(Face.UP);
-          break;
-        case CLYDE_TURN_DOWN:
-          Main.getGame().getClyde().turn(Face.DOWN);
-          break;
-        case ALIGN_LEFT:
-          Main.getGame().getClyde().align(Face.LEFT, lock);
-          break;
-        case ALIGN_RIGHT:
-          Main.getGame().getClyde().align(Face.RIGHT, lock);
-          break;
-        case ALIGN_DOWN:
-          Main.getGame().getClyde().align(Face.DOWN, lock);
-          break;
-        case ALIGN_UP:
-          Main.getGame().getClyde().align(Face.UP, lock);
-          break;
-        case ALIGN:
-          Main.getGame().getClyde().align(lock);
-          break;
-        case PLAY_SONG:
-          AudioHandler.play(Song.get(branches.getBranch(str).getString(j)));
-          break;
-        case GO_TO:
-          Main.getGame().getClyde().goTo(true, 
-              branches.getBranch(str).getXLocation(j), lock);
-          Main.getGame().getClyde().goTo(false, 
-              branches.getBranch(str).getYLocation(j), lock);
-          break;
-        case STOP_SONG:
-          AudioHandler.stop();
-          break;
-        case GIVE_ITEM:
-          Items item;
-          Main.getGame().receiveItem(item = Items.getItem(
-              branches.getBranch(str).getString(j)));
-          npc.say("You received " + item.getPrintString() + "!", lock);
-          break;
-        case END:
-          if (npc != null)
-          {
-            npc.disengage();
-          }
-          break;
-        default:
-          break;
-      }
+
+      execute(list.getInstructions().get(j));
+
+
     }
-    
+
   }
-  
+
+  public void execute(Task task)
+  {        
+    TaskWithNumber taskNum;
+    TaskWithString taskStr;
+    TaskWithBoolean taskBool;
+    TaskWithTask taskTask;
+    TaskWithLocation taskLoc;
+    TaskWithNumberAndLocation taskNumLoc;
+    TaskWithStringArray taskStrArr;
+    TaskWithBranch taskBr;
+    Task nextTask;
+    
+    boolean run;
+
+    switch (task.getInstruction())
+    {
+      case WALK_DOWN:
+        npc.walk(Face.DOWN, 1, lock);
+        break;
+      case WALK_LEFT:
+        npc.walk(Face.LEFT, 1, lock);
+        break;
+      case WALK_RIGHT:
+        npc.walk(Face.RIGHT, 1, lock);
+        break;
+      case WALK_UP:
+        npc.walk(Face.UP, 1, lock);
+        break;
+      case TURN_LEFT:
+        npc.turn(Face.LEFT);
+        break;
+      case TURN_RIGHT:
+        npc.turn(Face.RIGHT);
+        break;
+      case TURN_UP:
+        npc.turn(Face.UP);
+        break;
+      case TURN_DOWN:
+        npc.turn(Face.DOWN);
+        break;
+      case WAIT:
+        taskNum = (TaskWithNumber) task;
+        Main.getGame().pause(taskNum.getNumber(), lock);
+        break;
+      case JOG_LEFT:
+        npc.jog(Face.LEFT, 1, lock);
+        break;
+      case JOG_RIGHT:
+        npc.jog(Face.RIGHT, 1, lock);
+        break;
+      case JOG_UP:
+        npc.jog(Face.UP, 1, lock);
+        break;
+      case JOG_DOWN:
+        npc.jog(Face.DOWN, 1, lock);
+        break;
+      case CHANGE_SPRITE:
+        taskStr = (TaskWithString) task;
+        npc.setNPCType(NPCType.toEnum(taskStr.getString()));
+        break;
+      case SET_LOCATION:
+        taskLoc = (TaskWithLocation) task;
+        npc.setTileLocation(taskLoc.getX(), taskLoc.getY());
+        break;
+      case LOCK:
+        Main.getGame().getClyde().stop();
+        Main.getGame().getClyde().lock();
+        break;
+      case UNLOCK:
+        Main.getGame().getClyde().unlock();
+        break;
+      case SAY:
+        taskStr = (TaskWithString) task;
+        npc.say(taskStr.getString(), lock);
+        break;
+      case ASK:
+        taskStrArr = (TaskWithStringArray) task;
+        String answer = npc.ask(taskStrArr.getStrings(), this, lock);
+        (new Execution(npc, taskStrArr.getTask(answer).getBranch())).run();
+        break;
+      case RUN_BRANCH:
+        taskBr = (TaskWithBranch) task;
+        (new Execution(npc, taskBr.getBranch())).run();
+        break;
+      case FADE_OUT:
+        Fader.fadeOut(lock);
+        break;
+      case FADE_IN:
+        Fader.fadeIn(lock);
+        break;
+      case RUN_SCRIPT:
+        taskStr = (TaskWithString) task;
+        AreaScript script = Game.getMap().getScript(taskStr.getString());
+        script.run();
+        break;
+      case LOAD_MAP:
+        taskStr = (TaskWithString) task;
+        Game.setMap(new Map("res/maps/" + taskStr.getString() + ".map"));
+        break;
+      case RETILE:
+        taskNumLoc = (TaskWithNumberAndLocation) task;
+        Game.getMap().setTile(TileList.getTile(taskNumLoc.getNumber()), 
+            taskNumLoc.getX(), taskNumLoc.getY());
+        break;
+      case CLYDE_WALK_LEFT:
+        Main.getGame().getClyde().walk(Face.LEFT, 1, lock);
+        break;
+      case CLYDE_WALK_RIGHT:
+        Main.getGame().getClyde().walk(Face.RIGHT, 1, lock);
+        break;
+      case CLYDE_WALK_UP:
+        Main.getGame().getClyde().walk(Face.UP, 1, lock);
+        break;
+      case CLYDE_WALK_DOWN:
+        Main.getGame().getClyde().walk(Face.DOWN, 1, lock);
+        break;
+      case CLYDE_PAUSE:
+        taskNum = (TaskWithNumber) task;
+        Main.getGame().getClyde().pause(taskNum.getNumber(), lock);
+        break;
+      case SIMUL_RUN_BRANCH:
+        System.out.println("Simul_run_branch");
+        taskBr = (TaskWithBranch) task;
+        Execution ex = new Execution(npc, taskBr.getBranch());
+        ThreadHandler.newThread(new NewThread(ex));
+        break;
+      case CLYDE_TURN_LEFT:
+        Main.getGame().getClyde().turn(Face.LEFT);
+        break;
+      case CLYDE_TURN_RIGHT:
+        Main.getGame().getClyde().turn(Face.RIGHT);
+        break;
+      case CLYDE_TURN_UP:
+        Main.getGame().getClyde().turn(Face.UP);
+        break;
+      case CLYDE_TURN_DOWN:
+        Main.getGame().getClyde().turn(Face.DOWN);
+        break;
+      case ALIGN_LEFT:
+        Main.getGame().getClyde().align(Face.LEFT, lock);
+        break;
+      case ALIGN_RIGHT:
+        Main.getGame().getClyde().align(Face.RIGHT, lock);
+        break;
+      case ALIGN_DOWN:
+        Main.getGame().getClyde().align(Face.DOWN, lock);
+        break;
+      case ALIGN_UP:
+        Main.getGame().getClyde().align(Face.UP, lock);
+        break;
+      case ALIGN:
+        Main.getGame().getClyde().align(npc, lock);
+        break;
+      case PLAY_SONG:
+        taskStr = (TaskWithString) task;
+        AudioHandler.play(Song.get(taskStr.getString()));
+        break;
+      case GO_TO:
+        taskLoc = (TaskWithLocation) task;
+        npc.goTo(true, taskLoc.getX(), lock);
+        npc.goTo(false, taskLoc.getY(), lock);
+        break;
+      case CLYDE_GO_TO:
+        taskLoc = (TaskWithLocation) task;
+        Main.getGame().getClyde().goTo(true, taskLoc.getX(), lock);
+        Main.getGame().getClyde().goTo(false, taskLoc.getY(), lock);
+        break;
+      case STOP_SONG:
+        AudioHandler.stop();
+        break;
+      case GIVE_ITEM:
+        Items item;
+        taskStr = (TaskWithString) task;
+
+        Main.getGame().receiveItem(item = Items.getItem(taskStr.getString()));
+        npc.say("You received " + item.getPrintString() + "!", lock);
+        break;
+      case PAY_MONEY:
+        taskNum = (TaskWithNumber) task;
+        Main.getGame().giveMoney(taskNum.getNumber());
+        break;
+      case PAY_CONFIDENCE:
+        taskNum = (TaskWithNumber) task;
+        Main.getGame().giveConfidence(taskNum.getNumber());
+        break;
+      case END:
+        if (npc != null)
+        {
+          npc.disengage();
+        }
+
+        ThreadHandler.remove((NewThread) Thread.currentThread());
+        break;
+      case IF_MONEY:
+        taskTask = (TaskWithTask) task;
+        nextTask = getNextTask(task);
+        
+        run = Main.getGame().getMoney()>taskTask.getPredicate();
+        if (taskTask.isReversed()) run = !run;
+
+        if (run)
+        {
+          execute(taskTask.getTask());
+
+          if (nextTask!=null)
+          {
+            if (nextTask.getInstruction()==Instructions.ELSE)
+            {
+              taskBool = (TaskWithBoolean) nextTask;
+              taskBool.setIfTrue(true);
+            }
+          }
+        }
+        break;
+      case IF_CONFIDENCE:
+        taskTask = (TaskWithTask) task;
+
+        nextTask = getNextTask(task);
+        
+        run = Main.getGame().getConfidence()>taskTask.getPredicate();
+        if (taskTask.isReversed()) run = !run;
+
+        if (run)
+        {
+          execute(taskTask.getTask());
+
+          if (nextTask!=null)
+          {
+            if (nextTask.getInstruction()==Instructions.ELSE)
+            {
+              taskBool = (TaskWithBoolean) nextTask;
+              taskBool.setIfTrue(true);
+            }
+          }
+        }
+        break;
+      case IF_BOOLEAN:
+        taskTask = (TaskWithTask) task;
+        nextTask = getNextTask(task);
+        
+        run = Main.getGame().checkFlag(taskTask.getPredicate());
+        if (taskTask.isReversed()) run = !run;
+
+        if (run)
+        {
+          execute(taskTask.getTask());
+
+          if (nextTask!=null)
+          {
+            if (nextTask.getInstruction()==Instructions.ELSE)
+            {
+              taskBool = (TaskWithBoolean) nextTask;
+              taskBool.setIfTrue(true);
+            }
+          }
+        }
+        break;
+      case ELSE:
+        taskBool = (TaskWithBoolean) task;
+
+        if (!taskBool.ifTrue())
+        {
+          execute(taskBool.getTask());
+        }
+        break;
+      case FLAG_BOOLEAN:
+        taskNum = (TaskWithNumber) task;
+        Main.getGame().setFlag(taskNum.getNumber(), true);
+        break;
+      default:
+        break;
+      
+    }
+
+  }
+
   public void setLoopable(boolean b)
   {
     loop = b;
   }
-  
-  
+
+  public Task getNextTask(Task task)
+  {
+    int index = list.getInstructions().indexOf(task);
+    if (index==list.getInstructions().size()-1)
+      return null;
+    return list.getInstructions().get(index+1);
+  }
+
+
 }

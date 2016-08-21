@@ -1,35 +1,27 @@
 lock
 align
-ask "What should we do?" "Go away" "Go" "Garden" "Surprise"
-
-branch Go away
-go to 8 8
+ask "What should we do?" "Go away" "Go" "Garden" "Be dramatic"
+flag 0
 unlock
 end
+
+branch Go away
+@goto 8 8
+goto 5 9
 
 branch Go
 fadeout
-load ATest4
+load Bigger Town
 pause 50
 fadein
-unlock
-end
 
 branch Garden
 say Ok.\nLet's go!
-simulrun branch test2
+simulrunbranch test2
 runbranch test1
-unlock
-end
 
-branch Surprise
-say Here's your surprise...\pA brand new key!
-give key
-give notebook
-give glasses
-give clippy
-unlock
-end
+branch Be dramatic
+say The winner is\d.\d.\d.\pAndrew!
 
 branch test1
 walk left left left left down down down down down down
@@ -44,9 +36,9 @@ retile 64 0 1
 pause 100
 
 branch test2
-clydewalk left left left left left
-clydewalk down down down down down
-clydeturn left
-clydepause 62
-clydewalk up
-clydeturn left
+@walk left left left left left
+@walk down down down down down
+@turn left
+pause 62
+@walk up
+@turn left

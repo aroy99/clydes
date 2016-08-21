@@ -27,7 +27,6 @@ public enum Instructions {
   ASK,
   LOCK,
   UNLOCK,
-  RUN_BRANCH_ASK,
   RUN_BRANCH,
   FADE_OUT,
   FADE_IN,
@@ -53,7 +52,15 @@ public enum Instructions {
   ALIGN_UP,
   ALIGN_DOWN,
   GO_TO,
+  CLYDE_GO_TO,
   GIVE_ITEM,
+  PAY_MONEY,
+  PAY_CONFIDENCE,
+  IF_BOOLEAN,
+  IF_MONEY,
+  IF_CONFIDENCE,
+  ELSE,
+  FLAG_BOOLEAN,
   END;
 }
 

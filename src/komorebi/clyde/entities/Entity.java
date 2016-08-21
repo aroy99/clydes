@@ -3,6 +3,8 @@
  */
 package komorebi.clyde.entities;
 
+import java.awt.Rectangle;
+
 import komorebi.clyde.engine.Renderable;
 
 /**
@@ -13,9 +15,14 @@ import komorebi.clyde.engine.Renderable;
 public abstract class Entity implements Renderable{
   protected float x;
   protected float y;
+  protected float rx, ry;
+  
   protected int sx;
   protected int sy;
 
+  protected Rectangle area;
+  protected Rectangle rArea;
+  
   protected Entities ent;
 
   /**
@@ -41,6 +48,9 @@ public abstract class Entity implements Renderable{
     this.y = y;
     this.sx = sx;
     this.sy = sy;
+    
+    rx = x;
+    ry = y;
   }
 
   public float getX()
