@@ -106,8 +106,8 @@ public enum TileList {
   
   
   
-  private int id;
-  private int x,y;
+  private short id;
+  private short x,y;
 
   /**
    * Creates a new Tile Type
@@ -117,9 +117,9 @@ public enum TileList {
    * @param y The y value of this tile
    */
   TileList(int num, int x, int y){
-    id = num;
-    this.x = x;
-    this.y = y;
+    id = (short)num;
+    this.x = (short)x;
+    this.y = (short)y;
   }
 
   /**
@@ -147,41 +147,41 @@ public enum TileList {
   public String toString(){
     /*
     switch (this) {
-      case BLANK     : return "Blank";
-      case GRASS     : return "Grass";
-      case FLOWER    : return "Flower";
+      case BLANK     : return "Blank"             ;
+      case GRASS     : return "Grass"             ;
+      case FLOWER    : return "Flower"            ;
       case G_DECOR1  : return "Grass Decoration 1";
       case G_DECOR2  : return "Grass Decoration 2";
-      case HEDGE_L   : return "Hedge Left"       ;
-      case HEDGE_C   : return "Hedge Center"     ;
-      case HEDGE_R   : return "Hedge Right"      ;
-      case DOOR1     : return "Door 1"           ;
-      case DOOR2     : return "Door 2"           ;
-      case DOOR3_L   : return "Door 3 Left"      ;
-      case DOOR3_R   : return "Door 3 Right"     ;
-      case DOOR4     : return "Door 4"           ;
-      case DOOR5     : return "Door 5"           ;
-      case ROOF_UL   : return "Roof Up Left"     ;
-      case ROOF_U    : return "Roof Up"          ;
-      case ROOF_UR   : return "Roof Up Right"    ;
-      case ROOF_L    : return "Roof Left"        ;
-      case ROOF_R    : return "Roof Right"       ;
-      case ROOF_C    : return "Roof Center"      ;
-      case ROOF_BL   : return "Roof Bottom Left" ;
-      case ROOF_B    : return "Roof Bottom"      ;
-      case ROOF_BR   : return "Roof Bottom Right";
-      case WIN1      : return "Window 1"       ;
-      case WIN2      : return "Window 2"       ;
-      case JAIL_WIN  : return "Jail Window"    ;
-      case REST_WIN  : return "Rest Window"    ;
-      case CHURCH_WIN: return "Church Window"  ;
-      case D_ARC1    : return "Door Arc 1";
-      case D_ARC2    : return "Door Arc 2";
-      case D_ARC3_L  : return "Door Arc 3 Left";
-      case D_ARC3_R  : return "Door Arc 3 Right";
-      case D_ARC4    : return "Door Arc 4";
-      case D_ARC5    : return "Door Arc 5";
-      default        : return "bleh";
+      case HEDGE_L   : return "Hedge Left"        ;
+      case HEDGE_C   : return "Hedge Center"      ;
+      case HEDGE_R   : return "Hedge Right"       ;
+      case DOOR1     : return "Door 1"            ;
+      case DOOR2     : return "Door 2"            ;
+      case DOOR3_L   : return "Door 3 Left"       ;
+      case DOOR3_R   : return "Door 3 Right"      ;
+      case DOOR4     : return "Door 4"            ;
+      case DOOR5     : return "Door 5"            ;
+      case ROOF_UL   : return "Roof Up Left"      ;
+      case ROOF_U    : return "Roof Up"           ;
+      case ROOF_UR   : return "Roof Up Right"     ;
+      case ROOF_L    : return "Roof Left"         ;
+      case ROOF_R    : return "Roof Right"        ;
+      case ROOF_C    : return "Roof Center"       ;
+      case ROOF_BL   : return "Roof Bottom Left"  ;
+      case ROOF_B    : return "Roof Bottom"       ;
+      case ROOF_BR   : return "Roof Bottom Right" ;
+      case WIN1      : return "Window 1"          ;
+      case WIN2      : return "Window 2"          ;
+      case JAIL_WIN  : return "Jail Window"       ;
+      case REST_WIN  : return "Rest Window"       ;
+      case CHURCH_WIN: return "Church Window"     ;
+      case D_ARC1    : return "Door Arc 1"        ;
+      case D_ARC2    : return "Door Arc 2"        ;
+      case D_ARC3_L  : return "Door Arc 3 Left"   ;
+      case D_ARC3_R  : return "Door Arc 3 Right"  ;
+      case D_ARC4    : return "Door Arc 4"        ;
+      case D_ARC5    : return "Door Arc 5"        ;
+      default        : return "bleh"              ;
     }
     */
     return "blank";

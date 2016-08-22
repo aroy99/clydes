@@ -3,15 +3,19 @@
  */
 package komorebi.clyde.entities;
 
-import java.awt.Rectangle;
-
-import org.lwjgl.input.Keyboard;
-
 import komorebi.clyde.engine.Animation;
+import komorebi.clyde.engine.Camera;
+import komorebi.clyde.engine.Key;
+import komorebi.clyde.engine.KeyHandler;
+import komorebi.clyde.engine.Main;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.script.Execution;
 import komorebi.clyde.script.Lock;
 import komorebi.clyde.states.Game;
+
+import org.lwjgl.input.Keyboard;
+
+import java.awt.Rectangle;
 
 /**
  * @author Aaron Roy
@@ -25,12 +29,12 @@ public class Clyde extends Entity implements Playable{
   private boolean right;
   private boolean run;
   private boolean pause;
-  
+
   private boolean canMove = true;
 
   private float dx;
   private float dy;
-  
+
   private int framesToGo;
   private boolean hasInstructions;
 
@@ -39,11 +43,12 @@ public class Clyde extends Entity implements Playable{
   private Animation leftAni;
   private Animation rightAni;
 
+  private static final float SPEED = 1;
+
   private Face dir = Face.DOWN;    
   private Execution ex;
-  
-  private Lock lock;
 
+  private Lock lock;
 
   /**
    * @param x x pos, from left
@@ -51,8 +56,9 @@ public class Clyde extends Entity implements Playable{
    */
   public Clyde(float x, float y) {
     super(x, y, 16, 24);
+    Camera.center(x, y);
     ent = Entities.CLYDE;
-    
+
     area = new Rectangle((int) x, (int) y, 16, 24);
     rArea = new Rectangle((int) rx, (int) ry, 16, 24);
 
@@ -109,68 +115,98 @@ public class Clyde extends Entity implements Playable{
    */
   @Override
   public void update() {
-    
-    int speed = 8;
 
-    if(left){
-      dx = -1;
-      dir = Face.LEFT;
-      leftAni.resume();
-    } 
-    if(right){
-      dx = 1;
-      dir = Face.RIGHT;
-      rightAni.resume();
-    } 
+    int aniSpeed = 8;
 
-    if(!(left || right)){
-      dx = 0;
-      leftAni.hStop();
-      rightAni.hStop();
-    }
+    if (canMove) {
 
-    if(down){
-      dy = -1;
-      dir = Face.DOWN;
-      downAni.resume();
-    }
-    if(up){
-      dy = 1;
-      dir = Face.UP;
-      upAni.resume();
-    }
+      if(left){
+        dx = -SPEED;
+        dir = Face.LEFT;
+        leftAni.resume();
+      }
+      if(right){
+        dx = SPEED;
+        dir = Face.RIGHT;
+        rightAni.resume();
+      }
+      if(!(left || right)){
+        dx = 0;
+        leftAni.hStop();
+        rightAni.hStop();
+      }
 
-    if(!(up || down)){
-      dy = 0;
-      downAni.hStop();
-      upAni.hStop();
-    }
+      if(down){
+        dy = -SPEED;
+        dir = Face.DOWN;
+        downAni.resume();
+      }
+      if(up){
+        dy = SPEED;
+        dir = Face.UP;
+        upAni.resume();
+      }
 
-    if(run){
-      dx *=2;
-      dy *=2;
-      speed /=2;
-    }
+      if(!(up || down)){
+        dy = 0;
+        downAni.hStop();
+        upAni.hStop();
+      }
 
+      if(run){
+        dx *=2;
+        dy *=2;
+        aniSpeed /=2;
+      }
 
-    /*
+      /*
       if((up && (left || right)) || (down && (left || right))){
         dx *= Math.sqrt(2)/2;
         dy *= Math.sqrt(2)/2;
         speed = (int)Math.round(speed / (Math.sqrt(2)/2));
       }
-     */
+       */
 
-    upAni.setSpeed(speed);
-    downAni.setSpeed(speed);
-    leftAni.setSpeed(speed);
-    rightAni.setSpeed(speed);
+      upAni.setSpeed(aniSpeed);
+      downAni.setSpeed(aniSpeed);
+      leftAni.setSpeed(aniSpeed);
+      rightAni.setSpeed(aniSpeed);
+      
+      //TODO Debug
+      if(!KeyHandler.keyDown(Key.G)){
+        boolean[] col = Game.getMap().checkCollisions(x,y,dx,dy);
+  
+        if(!col[0] || !col[2]){
+          dy=0;
+          dx*=.75f;
+        }
+        if(!col[1] || !col[3]){
+          dx=0;
+          dy*=.75f;
+        }
+      }
 
-    Game.getMap().move(-dx, -dy);
-    
+      
+      Camera.move(dx, dy);
+      x += dx;
+      y += dy;
+      
+      if(KeyHandler.keyClick(Key.R)){
+        x = 100;
+        y = 100;
+        Camera.center(x, y);
+      }
+
+    }else {
+      upAni.hStop();
+      downAni.hStop();
+      leftAni.hStop();
+      rightAni.hStop();
+    }
+
     rx += dx;
     ry += dy;
-    
+
     rArea.x+=dx;
     rArea.y+=dy;
 
@@ -197,6 +233,12 @@ public class Clyde extends Entity implements Playable{
       up = false;
       lock.resumeThread();
     }
+    
+    //TODO Debug
+    if(KeyHandler.keyClick(Key.L)){
+      System.out.println("x: "+x+", y: "+y);
+    }
+
   }
 
   /**
@@ -206,29 +248,29 @@ public class Clyde extends Entity implements Playable{
   public void render() {
     switch (dir) {
       case DOWN:
-        downAni.play(x,y);
+        downAni.playCam(x,y);
         break;
       case UP:
-        upAni.play(x,y);
+        upAni.playCam(x,y);
         break;
       case LEFT:
-        leftAni.play(x,y);
+        leftAni.playCam(x,y);
         break;
       case RIGHT:
-        rightAni.play(x,y);
+        rightAni.playCam(x,y);
         break;
       default:
         break;
     }
   }
-  
+
   public void pause(int frames, Lock lock)
   {
     framesToGo = frames;
-    
+
     pause = true;
     hasInstructions = true;
-    
+
     this.lock = lock;
     this.lock.pauseThread();
   }
@@ -261,28 +303,28 @@ public class Clyde extends Entity implements Playable{
     }
 
   }
-  
+
   public void walk(Face dir, int tiles, Execution ex)
   {
     walk(dir, tiles);
     this.ex = ex;
     this.ex.getLock().pauseThread();    
   }
-  
+
   public void walk(Face dir, int tiles, Lock lock)
   {
     this.lock = lock;
     walk(dir,tiles);
     this.lock.pauseThread();
   }
-  
+
   public void align(Face dir, Lock lock)
   {
     this.lock = lock;
     hasInstructions=true;
-    
+
     this.dir = dir;
-    
+
     switch (dir)
     {
       case DOWN:
@@ -304,10 +346,10 @@ public class Clyde extends Entity implements Playable{
       default:
         break;
     }
-    
+
     this.lock.pauseThread();
   }
-  
+
   public void align(NPC npc, Lock lock)
   {
     Rectangle r = npc.intersectedHitbox(area);
@@ -315,14 +357,14 @@ public class Clyde extends Entity implements Playable{
     goToPixY(r.y, lock);
     dir = npc.faceMe(area);
   }
-  
+
   public void goToPixX(int goTo, Lock lock)
   {
     int distance = goTo - (int) x;
-    
+
     framesToGo = Math.abs(distance);
     hasInstructions = true;
-    
+
     if (distance<0)
     {
       left = true;
@@ -332,18 +374,18 @@ public class Clyde extends Entity implements Playable{
       right = true;
       dir = Face.RIGHT;
     }
-    
+
     this.lock = lock;
     lock.pauseThread();
   }
-  
+
   public void goToPixY(int goTo, Lock lock)
   {
-    
+
     int distance = goTo - (int) y;
     framesToGo = Math.abs(distance);
     hasInstructions = true;
-    
+
     if (distance<0)
     {
       down = true;
@@ -353,11 +395,11 @@ public class Clyde extends Entity implements Playable{
       up = true;
       dir = Face.UP;
     }
-    
+
     this.lock = lock;
     lock.pauseThread();
   }
-  
+
   public void turn(Face dir)
   {
     this.dir = dir;
@@ -382,7 +424,7 @@ public class Clyde extends Entity implements Playable{
   public Face getDirection(){
     return dir;
   }
-  
+
   public void goTo(boolean horizontal, int tx, Lock lock)
   {
     if (horizontal)
@@ -408,25 +450,27 @@ public class Clyde extends Entity implements Playable{
         walk(Face.UP, tx-getTileY(), lock);
       }
     }
-    
+
   }
-  
+
   public void stop()
   {
     dx=0;
     dy=0;
   }
-  
+
   public Rectangle getRelativeArea()
   {
     return rArea;
   }
-  
+
   public Rectangle getAbsoluteArea()
   {
     return area;
   }
   
+  
+
 
 
 }

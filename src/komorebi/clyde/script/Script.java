@@ -25,8 +25,8 @@ import komorebi.clyde.states.Game;
 
 /**
  * 
- * @author Aaron Roy
- * @version 
+ * 
+ * @author Andrew Faulkenberry
  */
 public abstract class Script {
 

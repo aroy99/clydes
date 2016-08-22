@@ -58,6 +58,8 @@ public class Game extends State{
   
   private int confidence, money;
   
+  public static String testLoc;
+  
   public class Int {
     private int val;
     
@@ -86,8 +88,7 @@ public class Game extends State{
    * Creates the player and loads the map
    */
   public Game(){
-    play = new Clyde(120,100);
-    map = new Map("res/maps/Some Town.map");
+    map = new Map("res/maps/"+testLoc);
 
     npcs = new ArrayList<NPC>();
     scripts = new ArrayList<AreaScript>();
@@ -108,15 +109,15 @@ public class Game extends State{
    */
   @Override
   public void getInput() {
-    // TODO Auto-generated method stub
-    play.getInput();
-
+    KeyHandler.getInput();
+    
     if (KeyHandler.keyClick(Key.SPACE))
     {
       if (speaker!=null)
       {
         if (speaker.isWaitingOnParagraph())
         {
+        //TODO Debug
           System.out.println("Next");
           speaker.nextParagraph();
         } else {
@@ -142,7 +143,9 @@ public class Game extends State{
     }
 
 
-    //Debug
+    //TODO Debug
+    map.getInput();
+  
 
 
 
@@ -191,10 +194,6 @@ public class Game extends State{
   @Override
   public void update() {
     // TODO Auto-generated method stub    
-    KeyHandler.update();
-
-    play.update();
-    map.setClydeLocation(play.getAbsoluteArea(), play.getDirection());
 
     map.update();
     Fader.update();
@@ -222,7 +221,6 @@ public class Game extends State{
   @Override
   public void render() {
     map.render();
-    play.render();
 
     Fader.render();
 
@@ -236,12 +234,6 @@ public class Game extends State{
   {
     map = m;
   }
-
-  public Clyde getClyde()
-  {
-    return play;
-  }
-
 
   public void setSpeaker(NPC npc)
   {

@@ -21,11 +21,8 @@ import static org.lwjgl.opengl.GL11.glLoadIdentity;
 import static org.lwjgl.opengl.GL11.glMatrixMode;
 import static org.lwjgl.opengl.GL11.glOrtho;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-
+import komorebi.clyde.editor.Editor;
+import komorebi.clyde.script.TextHandler;
 
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -34,36 +31,44 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.newdawn.slick.openal.SoundStore;
 
-import komorebi.clyde.audio.AudioHandler;
-import komorebi.clyde.states.Editor;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
 /**
  * Use this if you want to run the editor
  * 
  * @author Aaron Roy
- * @version 0.0.1.0
  */
 public class MainE {
 
   public static Editor edit;
   public static int scale = 1;
   private static BufferedReader read;
+
+  private static TextHandler handler;
+  private static long lastFrame, lastFPS;
+  private static int fps;
   
   private static boolean running = true;
+  
+  public static final int WIDTH = 800;
+  public static final int HEIGHT = 608;
 
   /**
    * Starts the program, reading an int from settings and using it for the scale.
    * @param args not used
    */
   public static void main(String[] args) {
-    
+
     try {
       read = new BufferedReader(
           new FileReader(new File("res/settings")));
       String str;
 
       while ((str = read.readLine()) != null) {
-        if (str.charAt(0) == '#') {
+        if(str.equals("") || str.charAt(0) == '#'){
           continue;
         }
         if (scale == 0) {
@@ -94,9 +99,9 @@ public class MainE {
   public static void initDisplay() {
     //create display
     try {
-      Display.setDisplayMode(new DisplayMode(800 * scale, 608 * scale));
+      Display.setDisplayMode(new DisplayMode(WIDTH * scale, HEIGHT * scale));
       Display.setTitle("Clyde\'s Editor");
-//    Display.setResizable(true);
+      //    Display.setResizable(true);
       Display.create();
       Display.setVSyncEnabled(true);
 
@@ -112,6 +117,12 @@ public class MainE {
   private static void initGame() {
     edit = new Editor();
     //AudioHandler.init();
+
+    getDelta();          // call once before loop to initialise lastFrame
+    lastFPS = getTime(); // call before loop to initialise fps timer
+
+    handler = new TextHandler();
+
   }
 
 
@@ -119,9 +130,9 @@ public class MainE {
     edit.getInput();
   }
 
-  private static void update() {
+  private static void update(int delta) {
     edit.update();
-    KeyHandler.update();
+    updateFPS(delta); // update FPS Counter
   }
 
 
@@ -130,6 +141,7 @@ public class MainE {
     glLoadIdentity();
 
     edit.render();
+    handler.render();
 
     Display.update();   //updates the display with the changes
     Display.sync(60);   //makes up for lost time
@@ -143,8 +155,10 @@ public class MainE {
   private static void gameLoop() {
 
     while (running) {
+      int delta = getDelta();
+
       getInput();
-      update();
+      update(delta);
       render();
       SoundStore.get().poll(0);
 
@@ -168,7 +182,7 @@ public class MainE {
   private static void initGl() {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();              //resets the Matrix
-    glOrtho(0,800,0,608,-1,1);     //creates a 3D space
+    glOrtho(0,WIDTH,0,HEIGHT,-1,1);     //creates a 3D space
     glMatrixMode(GL_MODELVIEW);
     glEnable(GL_TEXTURE_2D);       //enables Textures
     glEnable(GL_BLEND);
@@ -176,7 +190,8 @@ public class MainE {
     //Enables transparency
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glClearColor(246f / 255,246f / 255,246f / 255,1);//sets the clearing color to black
+    //sets the clearing color to light gray
+    glClearColor(246f / 255,246f / 255,246f / 255,1);
 
     glDisable(GL_DEPTH_TEST);      //kills off the third dimension
   }
@@ -191,6 +206,32 @@ public class MainE {
 
   public static int getScale() {
     return scale;
+  }
+
+  private static long getTime(){
+    return System.currentTimeMillis();
+  }
+
+  private static int getDelta(){
+    long time = getTime();
+    int delta = (int)(time - lastFrame);
+    lastFrame = time;
+
+    return delta;
+  }
+
+  /**
+   * Calculate the FPS and set it in the title bar
+   */
+  private static void updateFPS(int delta) {
+    if (getTime() - lastFPS > 1000) {
+      handler.clear();
+      handler.write("FPS: " + fps, 1, 10, 8);
+      handler.write("Delta: " + delta, 1, 1, 8);
+      fps = 0; //reset the FPS counter
+      lastFPS += 1000; //add one second
+    }
+    fps++;
   }
 
 }

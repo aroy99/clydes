@@ -36,6 +36,7 @@ public class AudioHandler {
     currentSong = song;
     song.play(true);
     
+    //TODO Debug
     System.out.println("Play " + currentSong);
   }
 

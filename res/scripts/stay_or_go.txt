@@ -11,7 +11,7 @@ goto 5 9
 
 branch Go
 fadeout
-load Bigger Town
+load Bigger_Town
 pause 50
 fadein
 

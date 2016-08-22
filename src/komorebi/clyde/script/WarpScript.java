@@ -6,6 +6,8 @@ package komorebi.clyde.script;
 import komorebi.clyde.script.Task.TaskWithNumber;
 import komorebi.clyde.script.Task.TaskWithString;
 
+import komorebi.clyde.engine.Draw;
+
 /**
  * 
  * @author Aaron Roy
@@ -20,7 +22,7 @@ public class WarpScript extends AreaScript {
    * @param y The y location of the warp (tiles)
    * @param repeat Whether the warp is repeatable
    */
-  public WarpScript(String map, int x, int y, boolean repeat) {
+  public WarpScript(String map, float x, float y, boolean repeat) {
     super(null, x, y, repeat);
     this.map = map;
   }
@@ -43,6 +45,13 @@ public class WarpScript extends AreaScript {
     
     
     execution = new Execution(null, instructions);
+  }
+  
+  /**
+   * Renders the "W" tile
+   */
+  public void render(){
+    Draw.rect(x, y, 16, 16, 48, 0, 2);
   }
 
 }

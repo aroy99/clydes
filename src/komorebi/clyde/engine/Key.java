@@ -17,7 +17,9 @@ public enum Key {
   PAD1, PAD2, PAD3, PAD4, PAD5, PAD6, PAD7, PAD8, PAD9, PAD0, DECIMAL,
   TAB, Q,W,E,R,T,Y,U,I,O,P, OPEN_BRACKET, CLOSE_BRACKET, BACKSLASH,
   CAPS, A,S,D,F,G,H,J,K,L,SEMICOLON, APOSTROPHE, RSHIFT,
-  LSHIFT,Z,X,C,V,B,N,M,COMMA,LCTRL,RCTRL,LALT,RALT,SPACE,LEFT,RIGHT,UP,DOWN;
+  LSHIFT,Z,X,C,V,B,N,M,COMMA,LCTRL,RCTRL,LALT,RALT,SPACE,LEFT,RIGHT,UP,DOWN,
+  CTRL, SHIFT, 
+  LBUTTON, RBUTTON, MBUTTON;
   
   /**
    * Returns the Open GL library's corresponding integer index for the specified
@@ -220,6 +222,12 @@ public enum Key {
         return Keyboard.KEY_Y;
       case Z:
         return Keyboard.KEY_Z;
+      case LBUTTON:
+        return Keyboard.KEYBOARD_SIZE;
+      case RBUTTON:
+        return Keyboard.KEYBOARD_SIZE+1;
+      case MBUTTON:
+        return Keyboard.KEYBOARD_SIZE+2;
       default:
         return 0;
       

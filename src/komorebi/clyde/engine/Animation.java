@@ -155,6 +155,66 @@ public class Animation {
       }
     }
   }
+  
+  /**
+   * Plays the animation at the specified location, minding the Camera
+   * 
+   * @param x x location for the animation
+   * @param y y location for the animation
+   */
+  public void playCam(float x, float y){
+    if(!flipped[currFrame]){
+      switch(rot[currFrame]){
+        case 0:
+          Draw.rectCam(x, y, sx, sy, texx[currFrame], texy[currFrame], 
+              texx[currFrame]+(int)sx, texy[currFrame]+(int)sy, texID);
+          break;
+        case 1:
+          Draw.rectCam(x+sx, y, sy, sx, texx[currFrame], texy[currFrame], 
+              texx[currFrame]+(int)sy, texy[currFrame]+(int)sx, 1, texID);
+          break;
+        case 2:
+          Draw.rectCam(x+sx, y+sy, sx, sy, texx[currFrame], texy[currFrame], 
+              texx[currFrame]+(int)sx, texy[currFrame]+(int)sy, 2, texID);
+          break;
+        case 3:
+          Draw.rectCam(x, y+sy, sy, sx, texx[currFrame], texy[currFrame], 
+              texx[currFrame]+(int)sy, texy[currFrame]+(int)sx, 3, texID);
+          break;
+        default:
+          //Do nothing, invalid value
+      }
+    }else{
+      switch(rot[currFrame]){
+        case 0:
+          Draw.rectCam(x, y, sx, sy, texx[currFrame]+(int)sx, texy[currFrame], 
+              texx[currFrame], texy[currFrame]+(int)sy, texID);
+          break;
+        case 1:
+          break;
+        case 2:
+          break;
+        case 3:
+          Draw.rectCam(x, y+sy, sy, sx, texx[currFrame], texy[currFrame]+(int)sx, 
+              texx[currFrame]+(int)sy, texy[currFrame], 3, texID);
+          break;
+        default:
+          //Do nothing, invalid value
+      }
+    }
+
+    if(playing){
+      counter++;
+      if(counter > time){
+        counter = 0;
+        currFrame++;
+        if(currFrame > frames-1){
+          currFrame = 0;
+        }
+      }
+    }
+  }
+
 
 
   /**

@@ -4,16 +4,19 @@
  **/
 package komorebi.clyde.entities;
 
-import java.awt.Rectangle;
-import java.util.ArrayList;
-
 import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Main;
+import komorebi.clyde.map.EditorMap;
+import komorebi.clyde.map.Map;
 import komorebi.clyde.script.Execution;
 import komorebi.clyde.script.Lock;
 import komorebi.clyde.script.SpeechHandler;
 import komorebi.clyde.script.TalkingScript;
 import komorebi.clyde.script.WalkingScript;
+
+import java.awt.Rectangle;
+import java.util.ArrayList;
+
 
 /**
  * 
@@ -63,16 +66,23 @@ public class NPC extends Entity {
   private int prevdx, prevdy;
 
   boolean hangOn;
+  
+  int tx, ty;
 
   /**
    * @param x The x location (in pixels) of the bottom left corner of the NPC
    * @param y The y location (in pixels) of the bottom left corner of the NPC
    */
   public NPC(String name, float x, float y, NPCType type) {
-    super(x*16, y*16, 16, 24);
+    super(x, y, 16, 24);
+    tx = (int)(x-EditorMap.getX())/16;
+    ty = (int)(y-EditorMap.getY())/16;
 
-    rx = (int) x*16;
-    ry = (int) y*16;
+    //TODO Debug
+    System.out.println(tx + ", " + ty);
+    
+    rx = (int) x;
+    ry = (int) y;
 
     this.name = name;
     ent=Entities.NPC;
@@ -103,6 +113,7 @@ public class NPC extends Entity {
   public NPC(String name)
   {
     super(0,0,16,24);
+    
     this.name = name;
     ent=Entities.NPC;
 
@@ -259,16 +270,16 @@ public class NPC extends Entity {
       switch (direction)
       {
         case DOWN:
-          downAni.play(x,y);
+          downAni.playCam(x,y);
           break;
         case LEFT:
-          leftAni.play(x,y);
+          leftAni.playCam(x,y);
           break;
         case RIGHT:
-          rightAni.play(x,y);
+          rightAni.playCam(x,y);
           break;
         case UP:
-          upAni.play(x,y);
+          upAni.playCam(x,y);
           break;
         default:
           break;
@@ -647,6 +658,21 @@ public class NPC extends Entity {
   {
     return ((int) ry)/16;
   }
+
+  /**
+   * @return the original tile x of this NPC
+   */
+  public int getOrigTX(){
+    return tx;
+  }
+
+  /**
+   * @return the original tile y of this NPC
+   */
+  public int getOrigTY(){
+    return ty;
+  }
+
   public void clearText()
   {
     text.clear();
@@ -735,8 +761,7 @@ public class NPC extends Entity {
     return ((surround[0].intersects(clyde) && direction == Face.DOWN) ||
         (surround[1].intersects(clyde) && direction == Face.LEFT) ||
         (surround[2].intersects(clyde) && direction == Face.UP) ||
-        (surround[3].intersects(clyde) && direction == Face.RIGHT))
-        && !isTalking;
+        (surround[3].intersects(clyde) && direction == Face.RIGHT)) && !isTalking;
 
   }
 
@@ -780,6 +805,7 @@ public class NPC extends Entity {
 
   public void abortWalkingScript()
   {
+    //TODO Debug
     System.out.println("Abort walk script");
     walkScript.pause();
     isTalking = true;
@@ -922,7 +948,7 @@ public class NPC extends Entity {
     future.x+=dx;
     future.y+=dy;
 
-    if (future.intersects(Main.getGame().getClyde().getRelativeArea()))
+    if (future.intersects(Map.getClyde().getRelativeArea()))
     {
       future.x-=dx;
       future.y-=dy;

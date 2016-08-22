@@ -155,7 +155,7 @@ public class Draw {
       int imgX = tex[texID].getImageWidth();
       int imgY = tex[texID].getImageHeight();
 
-      glTranslatef(Math.round(x), Math.round(y), 0);
+      glTranslatef((int)x, (int)y, 0);
       glRotatef(angle * RIGHT_ANGLE, 0.0f, 0.0f, 1.0f);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -180,6 +180,61 @@ public class Draw {
 
     glPopMatrix();
 
+  }
+  
+  /**
+   * Draws a camera fixed sprite on the screen from the specified image, with rotation.
+   * 
+   * @param x the X position on the screen, starting from the left           
+   * @param y the Y position on the screen, starting from the <i>bottom</i>  
+   * @param sx the width                                                     
+   * @param sy the height                                                    
+   * @param texx X position on the picture, starting from the left           
+   * @param texy Y position on the picture, starting from the <i>top</i>     
+   * @param texsx end X position on the picture, starting from the left      
+   * @param texsy end Y position on the picture, starting from the <i>top</i>
+   * @param angle the rotation of the tile / 90 degrees
+   * @param texID see {@link Draw#loadTextures() loadTextures}
+   */
+  public static void rectCam(float x, float y, float sx, float sy, int texx, 
+      int texy, int texsx, int texsy, int angle, int texID) {
+    rect(x-Camera.getX(), y-Camera.getY(), 
+        sx, sy, texx, texy, texsx, texsy, angle, texID);
+  }
+  
+  /**
+   * Draws a camera fixed sprite on the screen from the specified image, assumed the texsx
+   * and texsy are the same as sx and sy
+   * 
+   * @param x the X position on the screen, starting from the left         
+   * @param y the Y position on the screen, starting from the <i>bottom</i>
+   * @param sx the width                                                   
+   * @param sy the height                                                  
+   * @param texx X position on the picture, starting from the left         
+   * @param texy Y position on the picture, starting from the <i>top</i>   
+   * @param texID see {@link Draw#loadTextures() loadTextures}
+   */
+  public static void rectCam(float x, float y, float sx, float sy, int texx, 
+      int texy, int texID) {
+    rectCam(x, y, sx, sy, texx, texy, texx + (int)sx, texy + (int)sy, texID);
+  }
+
+  /**
+   * Draws a camera fixed sprite on the screen from the specified image, no rotation
+   * 
+   * @param x the X position on the screen, starting from the left         
+   * @param y the Y position on the screen, starting from the <i>bottom</i>
+   * @param sx the width                                                   
+   * @param sy the height                                                  
+   * @param texx X position on the picture, starting from the left         
+   * @param texy Y position on the picture, starting from the <i>top</i>   
+   * @param texsx end X position on the picture, starting from the left      
+   * @param texsy end Y position on the picture, starting from the <i>top</i>
+   * @param texID see {@link Draw#loadTextures() loadTextures}
+   */
+  public static void rectCam(float x, float y, float sx, float sy, int texx, 
+      int texy, int texsx, int texsy, int texID) {
+    rectCam(x, y, sx, sy, texx, texy, texsx, texsy, 0, texID);
   }
 
 }

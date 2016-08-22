@@ -3,6 +3,15 @@
  */
 package komorebi.clyde.tileseteditor;
 
+import komorebi.clyde.engine.Draw;
+import komorebi.clyde.engine.Key;
+import komorebi.clyde.engine.KeyHandler;
+import komorebi.clyde.engine.Playable;
+import komorebi.clyde.map.TileList;
+
+import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.Display;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,16 +24,6 @@ import java.util.ArrayList;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
-
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.Display;
-
-import komorebi.clyde.engine.Draw;
-import komorebi.clyde.engine.Key;
-import komorebi.clyde.engine.KeyHandler;
-import komorebi.clyde.engine.Playable;
-import komorebi.clyde.map.TileList;
-import komorebi.clyde.states.Editor;
 
 /**
  * 
@@ -676,7 +675,7 @@ public class TileSetEditor implements Playable {
     chooser.setDialogTitle("Enter the name of the tileset to save");
     int returnee = chooser.showSaveDialog(null);
 
-    Editor.reloadKeyboard();
+    KeyHandler.reloadKeyboard();
 
     if(returnee == JFileChooser.APPROVE_OPTION){
 
@@ -707,6 +706,7 @@ public class TileSetEditor implements Playable {
         }
         writer.println();
       }
+    //TODO Debug
       System.out.println("Save complete");
       save = true;
       writer.close();

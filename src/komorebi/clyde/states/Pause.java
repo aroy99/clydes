@@ -120,6 +120,7 @@ public class Pause extends State {
           {
             case 1:
               SpeechHandler.setScrolling(false);
+            //TODO Debug
               System.out.println("Off");
               break;
             case 2:
@@ -293,6 +294,7 @@ public class Pause extends State {
         
         break;
       case 4:
+      //TODO Debug
         System.out.println("Save!");
         break;
       case 5:

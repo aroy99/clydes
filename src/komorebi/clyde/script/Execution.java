@@ -46,11 +46,11 @@ public class Execution implements Runnable {
   public Execution(NPC myNpc, InstructionList toDo)
   {
 
-    
+
     list = toDo;
     npc = myNpc;
 
-    
+
     isBlank = false;
     loop = false;
   }
@@ -63,10 +63,10 @@ public class Execution implements Runnable {
    */
   public Execution(NPC myNpc, InstructionList toDo, boolean loop)
   {
-    
+
     list = toDo;
     npc = myNpc;
-    
+
     isBlank = false;
 
     this.loop = loop;
@@ -89,7 +89,7 @@ public class Execution implements Runnable {
 
   @Override
   public void run() {
-    
+
     if (!isBlank)
     {
       if (loop) while (true) execute(); 
@@ -107,20 +107,21 @@ public class Execution implements Runnable {
 
   public boolean check()
   {
-      try
-      {
-        NewThread newThread = (NewThread) Thread.currentThread();
-        return !newThread.flagged();
+    try
+    {
+      NewThread newThread = (NewThread) Thread.currentThread();
+      return !newThread.flagged();
 
-      } catch (ClassCastException e)
-      {
-        System.out.println(Thread.currentThread().getName());
-      }
-      return false;
+    } catch (ClassCastException e)
+    {
+      //TODO Debug
+      System.out.println(Thread.currentThread().getName());
+    }
+    return false;
   }
 
   public void execute() {
-    
+
     for (int j = 0; j < list.getInstructions().size(); j++)
     {
       if (!check())
@@ -147,7 +148,7 @@ public class Execution implements Runnable {
     TaskWithStringArray taskStrArr;
     TaskWithBranch taskBr;
     Task nextTask;
-    
+
     boolean run;
 
     switch (task.getInstruction())
@@ -201,11 +202,11 @@ public class Execution implements Runnable {
         npc.setTileLocation(taskLoc.getX(), taskLoc.getY());
         break;
       case LOCK:
-        Main.getGame().getClyde().stop();
-        Main.getGame().getClyde().lock();
+        Map.getClyde().stop();
+        Map.getClyde().lock();
         break;
       case UNLOCK:
-        Main.getGame().getClyde().unlock();
+        Map.getClyde().unlock();
         break;
       case SAY:
         taskStr = (TaskWithString) task;
@@ -241,53 +242,54 @@ public class Execution implements Runnable {
             taskNumLoc.getX(), taskNumLoc.getY());
         break;
       case CLYDE_WALK_LEFT:
-        Main.getGame().getClyde().walk(Face.LEFT, 1, lock);
+        Map.getClyde().walk(Face.LEFT, 1, lock);
         break;
       case CLYDE_WALK_RIGHT:
-        Main.getGame().getClyde().walk(Face.RIGHT, 1, lock);
+        Map.getClyde().walk(Face.RIGHT, 1, lock);
         break;
       case CLYDE_WALK_UP:
-        Main.getGame().getClyde().walk(Face.UP, 1, lock);
+        Map.getClyde().walk(Face.UP, 1, lock);
         break;
       case CLYDE_WALK_DOWN:
-        Main.getGame().getClyde().walk(Face.DOWN, 1, lock);
+        Map.getClyde().walk(Face.DOWN, 1, lock);
         break;
       case CLYDE_PAUSE:
         taskNum = (TaskWithNumber) task;
-        Main.getGame().getClyde().pause(taskNum.getNumber(), lock);
+        Map.getClyde().pause(taskNum.getNumber(), lock);
         break;
       case SIMUL_RUN_BRANCH:
+        //TODO Debug
         System.out.println("Simul_run_branch");
         taskBr = (TaskWithBranch) task;
         Execution ex = new Execution(npc, taskBr.getBranch());
         ThreadHandler.newThread(new NewThread(ex));
         break;
       case CLYDE_TURN_LEFT:
-        Main.getGame().getClyde().turn(Face.LEFT);
+        Map.getClyde().turn(Face.LEFT);
         break;
       case CLYDE_TURN_RIGHT:
-        Main.getGame().getClyde().turn(Face.RIGHT);
+        Map.getClyde().turn(Face.RIGHT);
         break;
       case CLYDE_TURN_UP:
-        Main.getGame().getClyde().turn(Face.UP);
+        Map.getClyde().turn(Face.UP);
         break;
       case CLYDE_TURN_DOWN:
-        Main.getGame().getClyde().turn(Face.DOWN);
+        Map.getClyde().turn(Face.DOWN);
         break;
       case ALIGN_LEFT:
-        Main.getGame().getClyde().align(Face.LEFT, lock);
+        Map.getClyde().align(Face.LEFT, lock);
         break;
       case ALIGN_RIGHT:
-        Main.getGame().getClyde().align(Face.RIGHT, lock);
+        Map.getClyde().align(Face.RIGHT, lock);
         break;
       case ALIGN_DOWN:
-        Main.getGame().getClyde().align(Face.DOWN, lock);
+        Map.getClyde().align(Face.DOWN, lock);
         break;
       case ALIGN_UP:
-        Main.getGame().getClyde().align(Face.UP, lock);
+        Map.getClyde().align(Face.UP, lock);
         break;
       case ALIGN:
-        Main.getGame().getClyde().align(npc, lock);
+        Map.getClyde().align(npc, lock);
         break;
       case PLAY_SONG:
         taskStr = (TaskWithString) task;
@@ -300,8 +302,8 @@ public class Execution implements Runnable {
         break;
       case CLYDE_GO_TO:
         taskLoc = (TaskWithLocation) task;
-        Main.getGame().getClyde().goTo(true, taskLoc.getX(), lock);
-        Main.getGame().getClyde().goTo(false, taskLoc.getY(), lock);
+        Map.getClyde().goTo(true, taskLoc.getX(), lock);
+        Map.getClyde().goTo(false, taskLoc.getY(), lock);
         break;
       case STOP_SONG:
         AudioHandler.stop();
@@ -332,7 +334,7 @@ public class Execution implements Runnable {
       case IF_MONEY:
         taskTask = (TaskWithTask) task;
         nextTask = getNextTask(task);
-        
+
         run = Main.getGame().getMoney()>taskTask.getPredicate();
         if (taskTask.isReversed()) run = !run;
 
@@ -354,7 +356,7 @@ public class Execution implements Runnable {
         taskTask = (TaskWithTask) task;
 
         nextTask = getNextTask(task);
-        
+
         run = Main.getGame().getConfidence()>taskTask.getPredicate();
         if (taskTask.isReversed()) run = !run;
 
@@ -375,7 +377,7 @@ public class Execution implements Runnable {
       case IF_BOOLEAN:
         taskTask = (TaskWithTask) task;
         nextTask = getNextTask(task);
-        
+
         run = Main.getGame().checkFlag(taskTask.getPredicate());
         if (taskTask.isReversed()) run = !run;
 
@@ -407,7 +409,7 @@ public class Execution implements Runnable {
         break;
       default:
         break;
-      
+
     }
 
   }

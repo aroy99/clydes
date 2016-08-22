@@ -50,6 +50,9 @@ public class Main {
   private GameHandler gamehandler;
   public int scale;
   private BufferedReader read;
+  
+  public static final int WIDTH = 256;
+  public static final int HEIGHT = 224;
 
 
   public static void main(String[] args){
@@ -64,15 +67,19 @@ public class Main {
     try {
       read = new BufferedReader(
           new FileReader(new File("res/settings")));
-      String s;
+      String str;
 
-      while ((s = read.readLine()) != null) {
-        if(s.charAt(0) == '#'){
+      while ((str = read.readLine()) != null) {
+        if(str.equals("") || str.charAt(0) == '#'){
           continue;
         }
         if(scale == 0){
-          scale = Integer.parseInt(s);
+          scale = Integer.parseInt(str);
         }
+        else if(Game.testLoc == null){
+          Game.testLoc = str;
+        }
+        
       }
 
     } catch (IOException | NumberFormatException e) {
@@ -95,7 +102,7 @@ public class Main {
   public void initDisplay(){
     //create display
     try {
-      Display.setDisplayMode(new DisplayMode(256*scale,224*scale));
+      Display.setDisplayMode(new DisplayMode(WIDTH*scale,HEIGHT*scale));
       Display.setTitle("Clyde\'s");
       Display.create();
       Display.setVSyncEnabled(true);
@@ -172,7 +179,7 @@ public class Main {
   private void initGL(){
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();              //resets the Matrix
-    glOrtho(0,256,0,224,-1,1);     //creates a 3D space
+    glOrtho(0,WIDTH,0,HEIGHT,-1,1);     //creates a 3D space
     glMatrixMode(GL_MODELVIEW);
     glEnable(GL_TEXTURE_2D);       //enables Textures
     glEnable (GL_BLEND);
