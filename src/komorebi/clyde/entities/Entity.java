@@ -21,7 +21,6 @@ public abstract class Entity implements Renderable{
   protected int sy;
 
   protected Rectangle area;
-  protected Rectangle rArea;
   
   protected Entities ent;
 

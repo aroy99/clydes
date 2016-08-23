@@ -5,9 +5,9 @@ package komorebi.clyde.entities;
 
 import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Camera;
+import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
-import komorebi.clyde.engine.Main;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.script.Execution;
 import komorebi.clyde.script.Lock;
@@ -56,11 +56,9 @@ public class Clyde extends Entity implements Playable{
    */
   public Clyde(float x, float y) {
     super(x, y, 16, 24);
-    Camera.center(x, y);
     ent = Entities.CLYDE;
 
     area = new Rectangle((int) x, (int) y, 16, 24);
-    rArea = new Rectangle((int) rx, (int) ry, 16, 24);
 
     upAni =    new Animation(4, 8, 16, 24, 0);
     downAni =  new Animation(4, 8, 16, 24, 0);
@@ -115,7 +113,7 @@ public class Clyde extends Entity implements Playable{
    */
   @Override
   public void update() {
-
+    
     int aniSpeed = 8;
 
     if (canMove) {
@@ -185,11 +183,6 @@ public class Clyde extends Entity implements Playable{
           dy*=.75f;
         }
       }
-
-      
-      Camera.move(dx, dy);
-      x += dx;
-      y += dy;
       
       if(KeyHandler.keyClick(Key.R)){
         x = 100;
@@ -203,12 +196,10 @@ public class Clyde extends Entity implements Playable{
       leftAni.hStop();
       rightAni.hStop();
     }
-
-    rx += dx;
-    ry += dy;
-
-    rArea.x+=dx;
-    rArea.y+=dy;
+    
+    Camera.move(dx, dy);
+    x += dx;
+    y += dy;
 
     if (hasInstructions)
     {
@@ -223,20 +214,22 @@ public class Clyde extends Entity implements Playable{
         framesToGo--;
       }
     }
-
+    
+    //TODO Debug
+    if(KeyHandler.keyClick(Key.L)){
+      System.out.println("x: "+x+", y: "+y);
+    }
+    
     if (hasInstructions&&framesToGo<=0)
     {
       hasInstructions=false;
+      dx=0;
+      dy=0;
       left = false;
       right = false;
       down = false;
       up = false;
       lock.resumeThread();
-    }
-    
-    //TODO Debug
-    if(KeyHandler.keyClick(Key.L)){
-      System.out.println("x: "+x+", y: "+y);
     }
 
   }
@@ -262,6 +255,11 @@ public class Clyde extends Entity implements Playable{
       default:
         break;
     }
+    
+    area.x = (int) x;
+    area.y = (int) y;
+    
+  
   }
 
   public void pause(int frames, Lock lock)
@@ -361,7 +359,6 @@ public class Clyde extends Entity implements Playable{
   public void goToPixX(int goTo, Lock lock)
   {
     int distance = goTo - (int) x;
-
     framesToGo = Math.abs(distance);
     hasInstructions = true;
 
@@ -369,10 +366,12 @@ public class Clyde extends Entity implements Playable{
     {
       left = true;
       dir = Face.LEFT;
+      dx = -1;
     } else if (distance>0)
     {
       right = true;
       dir = Face.RIGHT;
+      dx = 1;
     }
 
     this.lock = lock;
@@ -390,10 +389,12 @@ public class Clyde extends Entity implements Playable{
     {
       down = true;
       dir = Face.DOWN;
+      dy = -1;
     } else if (distance>0)
     {
       up = true;
       dir = Face.UP;
+      dy = 1;
     }
 
     this.lock = lock;
@@ -459,12 +460,7 @@ public class Clyde extends Entity implements Playable{
     dy=0;
   }
 
-  public Rectangle getRelativeArea()
-  {
-    return rArea;
-  }
-
-  public Rectangle getAbsoluteArea()
+  public Rectangle getArea()
   {
     return area;
   }

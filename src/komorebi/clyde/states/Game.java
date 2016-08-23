@@ -17,7 +17,6 @@ import komorebi.clyde.engine.Item;
 import komorebi.clyde.engine.Item.Items;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
-import komorebi.clyde.entities.Clyde;
 import komorebi.clyde.entities.NPC;
 import komorebi.clyde.entities.NPCType;
 import komorebi.clyde.map.Map;
@@ -109,7 +108,6 @@ public class Game extends State{
    */
   @Override
   public void getInput() {
-    KeyHandler.getInput();
     
     if (KeyHandler.keyClick(Key.SPACE))
     {
@@ -194,6 +192,9 @@ public class Game extends State{
   @Override
   public void update() {
     // TODO Auto-generated method stub    
+
+    
+    KeyHandler.getInput();
 
     map.update();
     Fader.update();

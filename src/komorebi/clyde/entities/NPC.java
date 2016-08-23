@@ -5,6 +5,7 @@
 package komorebi.clyde.entities;
 
 import komorebi.clyde.engine.Animation;
+import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.Main;
 import komorebi.clyde.map.EditorMap;
 import komorebi.clyde.map.Map;
@@ -77,9 +78,6 @@ public class NPC extends Entity {
     super(x, y, 16, 24);
     tx = (int)(x-EditorMap.getX())/16;
     ty = (int)(y-EditorMap.getY())/16;
-
-    //TODO Debug
-    System.out.println(tx + ", " + ty);
     
     rx = (int) x;
     ry = (int) y;
@@ -758,6 +756,8 @@ public class NPC extends Entity {
    */
   public boolean isApproached(Rectangle clyde, Face direction)
   {
+   
+    
     return ((surround[0].intersects(clyde) && direction == Face.DOWN) ||
         (surround[1].intersects(clyde) && direction == Face.LEFT) ||
         (surround[2].intersects(clyde) && direction == Face.UP) ||
@@ -805,8 +805,6 @@ public class NPC extends Entity {
 
   public void abortWalkingScript()
   {
-    //TODO Debug
-    System.out.println("Abort walk script");
     walkScript.pause();
     isTalking = true;
     isWalking = false;
@@ -948,7 +946,7 @@ public class NPC extends Entity {
     future.x+=dx;
     future.y+=dy;
 
-    if (future.intersects(Map.getClyde().getRelativeArea()))
+    if (future.intersects(Map.getClyde().getArea()))
     {
       future.x-=dx;
       future.y-=dy;

@@ -89,7 +89,7 @@ public class Execution implements Runnable {
 
   @Override
   public void run() {
-
+    
     if (!isBlank)
     {
       if (loop) while (true) execute(); 
@@ -108,7 +108,7 @@ public class Execution implements Runnable {
   public boolean check()
   {
     try
-    {
+    {     
       NewThread newThread = (NewThread) Thread.currentThread();
       return !newThread.flagged();
 
@@ -150,7 +150,7 @@ public class Execution implements Runnable {
     Task nextTask;
 
     boolean run;
-
+    
     switch (task.getInstruction())
     {
       case WALK_DOWN:

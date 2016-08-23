@@ -176,6 +176,8 @@ public class Map implements Playable{
       reader.close();
       
       play = new Clyde(tiles[0].length/2*16,0);
+      Camera.center(play.getX(), play.getY(), tiles[0].length*16, tiles.length*16);
+
 
     } catch (IOException | NumberFormatException e) {
       e.printStackTrace();
@@ -216,13 +218,14 @@ public class Map implements Playable{
       if (npc != null) 
       {
         npc.update();
-
-        if (npc.isApproached(play.getAbsoluteArea(), play.getDirection()) && 
+        
+        if (npc.isApproached(play.getArea(), play.getDirection()) && 
             KeyHandler.keyClick(Key.SPACE))
         {
+          //TODO Debug
           npc.turn(play.getDirection().opposite());
           npc.approach();
-        } 
+        }
 
         if (!npc.started())
         {
@@ -236,13 +239,7 @@ public class Map implements Playable{
     {
       if (script.isLocationIntersected(play) &&   !script.hasRun()) {
 
-        if (script instanceof WarpScript)
-        {
-          WarpScript scr = (WarpScript) script;
-          Main.getGame().warp(scr.getMap());
-        } else {
-          script.run();
-        }
+        script.run();
 
       }
     }

@@ -530,7 +530,7 @@ public abstract class Script {
   }
 
   public void run()
-  {    
+  {        
     if (!syntaxError) 
     {
       ThreadHandler.newThread(this);

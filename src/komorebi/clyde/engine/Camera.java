@@ -52,6 +52,31 @@ public class Camera{
     Camera.x = x-128+8;
     Camera.y = y-112+12;
   }
+  
+  public static void center(float x, float y, int mapSx, int mapSy)
+  {
+    if (x-128+8>=0 && x-128+8<=mapSx-Main.WIDTH)
+    {
+      Camera.x = x-128+8;
+    } else if (x-128+8<0)
+    {
+      Camera.x = 0;
+    } else if (x-128+8>mapSx-Main.WIDTH)
+    {
+      Camera.x = mapSx-Main.WIDTH;
+    }
+    
+    if (y-112+12>=0 && y-112+12<=mapSy-Main.HEIGHT)
+    {
+      Camera.y = y-112+12;
+    } else if (y-112+12<0)
+    {
+      Camera.y = 0;
+    } else if (y-112+12>mapSy-Main.HEIGHT)
+    {
+      Camera.y = mapSy - Main.HEIGHT;
+    }
+  }
 
   
   

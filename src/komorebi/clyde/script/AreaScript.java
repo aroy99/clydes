@@ -65,14 +65,11 @@ public class AreaScript extends Script{
    */
   public void run()
   {
+    
     hasRun = true;
 
     super.run();
-    
-    if (isRepeatable)
-    {
-      hasRun = false;
-    }
+
   }
 
   public boolean isLocationIntersected(Clyde clyde)
