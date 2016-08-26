@@ -7,11 +7,16 @@ package komorebi.clyde.map;
 import static komorebi.clyde.engine.Main.HEIGHT;
 import static komorebi.clyde.engine.Main.WIDTH;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+
 import komorebi.clyde.engine.Camera;
 import komorebi.clyde.engine.Draw;
 import komorebi.clyde.engine.Key;
 import komorebi.clyde.engine.KeyHandler;
-import komorebi.clyde.engine.Main;
 import komorebi.clyde.engine.Playable;
 import komorebi.clyde.entities.Clyde;
 import komorebi.clyde.entities.NPC;
@@ -21,12 +26,6 @@ import komorebi.clyde.script.Script;
 import komorebi.clyde.script.TalkingScript;
 import komorebi.clyde.script.WalkingScript;
 import komorebi.clyde.script.WarpScript;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
 
 
 /**
@@ -348,6 +347,8 @@ public class Map implements Playable{
     //Speed affected
     int x1 = (int)((x-16+dx)/16)+1; //Left
     int y1 = (int)((y-16+dy)/16)+1; //Bottom
+    
+    int bufX = Math.abs(x1*16 - (int) (x +dx));
 
     int x2 = (int)((x-1+dx)/16)+1;  //Right
     int y2 = (int)((y-1+dy)/16)+1;  //Top
@@ -367,12 +368,25 @@ public class Map implements Playable{
     ret[0] = y2 < collision.length;
     ret[2] = y1-1 >= 0;
     
+    if (collision[y2][x3] ^ collision[y2][x4])
+    {
+      if (collision[y2][x3] && (16 - bufX) >=13)
+      {
+        play.guide(-1, 0);
+      } else if (collision[y2][x4] && bufX>=13) {
+        play.guide(1, 0);
+      }
+      
+      
+    } 
+    
     ret[0] = ret[0] && collision[y2][x3] && collision[y2][x4];  //North
     ret[2] = ret[2] && collision[y1][x3] && collision[y1][x4];  //South
 
     ret[1] = ret[1] && collision[y3][x2] && collision[y4][x2];  //East
     ret[3] = ret[3] && collision[y3][x1] && collision[y4][x1];  //West
 
+    //TODO Debug
     if(KeyHandler.keyClick(Key.Q)){
       System.out.println(x1 + ", " + x2 + ", " + y1 + ", " + y2);
       System.out.println("dx: " + dx + ", dy: " + dy + "\n" + 
@@ -381,10 +395,21 @@ public class Map implements Playable{
       System.out.println("Never: " + ret[0] + ", Eat: " + ret[1] + 
           ", Slimy: " + ret[2] + ", Worms: " + ret[3]);
     }
+    
+    if (KeyHandler.keyClick(Key.B))
+    {
+      System.out.println(collision[y2][x3]);
+      System.out.println(collision[y2][x4]);
+      System.out.println(bufX);
+    }
 
     return ret;
   }
   
+  public void setCollision(int x, int y, boolean tf)
+  {
+    collision[y][x] = tf;
+  }
   /**
    * Returns two booleans based on if the map should move forward or not
    * 
@@ -442,6 +467,11 @@ public class Map implements Playable{
   public static Clyde getClyde()
   {
     return play;
+  }
+  
+  public ArrayList<NPC> getNPCs()
+  {
+    return npcs;
   }
 
 }

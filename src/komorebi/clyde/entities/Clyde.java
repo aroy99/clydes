@@ -3,6 +3,10 @@
  */
 package komorebi.clyde.entities;
 
+import java.awt.Rectangle;
+
+import org.lwjgl.input.Keyboard;
+
 import komorebi.clyde.engine.Animation;
 import komorebi.clyde.engine.Camera;
 import komorebi.clyde.engine.Draw;
@@ -12,10 +16,6 @@ import komorebi.clyde.engine.Playable;
 import komorebi.clyde.script.Execution;
 import komorebi.clyde.script.Lock;
 import komorebi.clyde.states.Game;
-
-import org.lwjgl.input.Keyboard;
-
-import java.awt.Rectangle;
 
 /**
  * @author Aaron Roy
@@ -29,6 +29,7 @@ public class Clyde extends Entity implements Playable{
   private boolean right;
   private boolean run;
   private boolean pause;
+  private boolean guiding;
 
   private boolean canMove = true;
 
@@ -49,6 +50,8 @@ public class Clyde extends Entity implements Playable{
   private Execution ex;
 
   private Lock lock;
+  
+  public Rectangle future;
 
   /**
    * @param x x pos, from left
@@ -59,6 +62,7 @@ public class Clyde extends Entity implements Playable{
     ent = Entities.CLYDE;
 
     area = new Rectangle((int) x, (int) y, 16, 24);
+    future = new Rectangle((int) x, (int) y, 16, 24);
 
     upAni =    new Animation(4, 8, 16, 24, 0);
     downAni =  new Animation(4, 8, 16, 24, 0);
@@ -117,44 +121,58 @@ public class Clyde extends Entity implements Playable{
     int aniSpeed = 8;
 
     if (canMove) {
+      
+      if (!guiding)
+      {
+        if(left){
+          dx = -SPEED;
+          dir = Face.LEFT;
+          leftAni.resume();
+        }
+        if(right){
+          dx = SPEED;
+          dir = Face.RIGHT;
+          rightAni.resume();
+        }
+        if(!(left || right)){
+          dx = 0;
+          leftAni.hStop();
+          rightAni.hStop();
+        }
 
-      if(left){
-        dx = -SPEED;
-        dir = Face.LEFT;
-        leftAni.resume();
+        if(down){
+          dy = -SPEED;
+          dir = Face.DOWN;
+          downAni.resume();
+        }
+        if(up){
+          dy = SPEED;
+          dir = Face.UP;
+          upAni.resume();
+        }
+
+        if(!(up || down)){
+          dy = 0;
+          downAni.hStop();
+          upAni.hStop();
+        }
+
+        if(run){
+          dx *=2;
+          dy *=2;
+          aniSpeed /=2;
+        }
+        
       }
-      if(right){
-        dx = SPEED;
-        dir = Face.RIGHT;
-        rightAni.resume();
-      }
-      if(!(left || right)){
+      
+      if (blockedByNpc()[0])
+      {
         dx = 0;
-        leftAni.hStop();
-        rightAni.hStop();
-      }
-
-      if(down){
-        dy = -SPEED;
-        dir = Face.DOWN;
-        downAni.resume();
-      }
-      if(up){
-        dy = SPEED;
-        dir = Face.UP;
-        upAni.resume();
-      }
-
-      if(!(up || down)){
+      } 
+      
+      if (blockedByNpc()[1])
+      {
         dy = 0;
-        downAni.hStop();
-        upAni.hStop();
-      }
-
-      if(run){
-        dx *=2;
-        dy *=2;
-        aniSpeed /=2;
       }
 
       /*
@@ -231,6 +249,14 @@ public class Clyde extends Entity implements Playable{
       up = false;
       lock.resumeThread();
     }
+    
+    area.x = (int) x;
+    area.y = (int) y;
+    
+    future.x = (int) x;
+    future.y = (int) y;
+    
+    guiding = false;
 
   }
 
@@ -256,8 +282,9 @@ public class Clyde extends Entity implements Playable{
         break;
     }
     
-    area.x = (int) x;
-    area.y = (int) y;
+    Draw.rectCam(area.x, area.y, area.width, area.height, 
+        220, 4, 221, 5, 6);
+   
     
   
   }
@@ -428,9 +455,12 @@ public class Clyde extends Entity implements Playable{
 
   public void goTo(boolean horizontal, int tx, Lock lock)
   {
+    System.out.println(tx*16 + ", x = " + x);
+    
+    
     if (horizontal)
     {
-      if (rx>tx*16)
+      if (x>tx*16)
       {
         align(Face.LEFT, lock);
         walk(Face.LEFT, getTileX()-tx);
@@ -441,7 +471,7 @@ public class Clyde extends Entity implements Playable{
       }
     } else
     {
-      if (ry>tx*16)
+      if (y>tx*16)
       {
         align(Face.DOWN, lock);
         walk(Face.DOWN, getTileY()-tx, lock);
@@ -465,7 +495,43 @@ public class Clyde extends Entity implements Playable{
     return area;
   }
   
+  public boolean[] blockedByNpc()
+  {
+    boolean[] get = new boolean[2];
+    
+    future.x += dx;
+    
+    for (NPC npc: Game.getMap().getNPCs())
+    {
+      if (npc.getArea().intersects(future))
+      {
+        get[0] = true;
+      }
+    }
+    
+    future.x -= dx;
+    future.y += dy;
+    
+    for (NPC npc: Game.getMap().getNPCs())
+    {
+      if (npc.getArea().intersects(future))
+      {
+        get[1] = true;
+      }
+    }
+    
+    future.y -= dy;
+    
+    return get;
+        
+  }
   
+  public void guide(int dx, int dy)
+  {
+    this.dx = dx;
+    this.dy = dy;
+    guiding = true;
+  }
 
 
 

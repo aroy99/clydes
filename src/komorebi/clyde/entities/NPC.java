@@ -79,6 +79,8 @@ public class NPC extends Entity {
     tx = (int)(x-EditorMap.getX())/16;
     ty = (int)(y-EditorMap.getY())/16;
     
+    area = new Rectangle((int) x, (int) y, 16, 24);
+    
     rx = (int) x;
     ry = (int) y;
 
@@ -232,6 +234,9 @@ public class NPC extends Entity {
     
     future.x+=dx;
     future.y+=dy;
+    
+    area.x += dx;
+    area.y += dy;
 
     for (Rectangle r: surround)
     {
@@ -285,8 +290,10 @@ public class NPC extends Entity {
 
       text.render();
 
+      Draw.rectCam(area.x, area.y, area.width, area.height, 
+          220, 0, 221, 1, 6);
+      
     }
-
 
   }
 
@@ -943,19 +950,39 @@ public class NPC extends Entity {
 
   public boolean frontClear()
   {
+    boolean get;
+    
     future.x+=dx;
     future.y+=dy;
-
-    if (future.intersects(Map.getClyde().getArea()))
+    
+    if (direction == Face.LEFT || direction == Face.RIGHT)
     {
-      future.x-=dx;
-      future.y-=dy;
-      return false;
+      future.grow(1, 0);
+    } else
+    {
+      future.grow(0, 1);
     }
+    
+    get = !future.intersects(Map.getClyde().getArea());
 
+    if (direction == Face.LEFT || direction == Face.RIGHT)
+    {
+      future.grow(-1, 0);
+    } else
+    {
+      future.grow(0, -1);
+    }
+    
     future.x-=dx;
     future.y-=dy;
-    return true;
+
+
+    return get;
+  }
+  
+  public Rectangle getArea()
+  {
+    return area;
   }
 
 }

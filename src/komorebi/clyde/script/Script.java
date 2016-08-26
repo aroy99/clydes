@@ -520,6 +520,37 @@ public abstract class Script {
       {
         throwError(line, "Flag values must be integers from 0 to 255 (inclusive)");
       }
+    } else if (s.startsWith("block"))
+    {
+      s = s.replace("block ", "");
+      String[] split = s.split(" ");
+      
+      try 
+      {
+        int argx = Integer.parseInt(split[0]);
+        int argy = Integer.parseInt(split[1]);
+        
+        return new TaskWithLocation(Instructions.BLOCK, argx, argy);
+      } catch (NumberFormatException nfe)
+      {
+        return throwError(line, s + " cannot be resolved to two integers");
+      }
+      
+    } else if (s.startsWith("unblock"))
+    {
+      s = s.replace("unblock ", "");
+      String[] split = s.split(" ");
+      
+      try 
+      {
+        int argx = Integer.parseInt(split[0]);
+        int argy = Integer.parseInt(split[1]);
+        
+        return new TaskWithLocation(Instructions.UNBLOCK, argx, argy);
+      } catch (NumberFormatException nfe)
+      {
+        return throwError(line, s + " cannot be resolved to two integers");
+      }
     }
     else if (!(s.startsWith("//") || s.startsWith(" ") || s.isEmpty()))
     {

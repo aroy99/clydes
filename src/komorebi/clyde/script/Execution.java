@@ -302,8 +302,8 @@ public class Execution implements Runnable {
         break;
       case CLYDE_GO_TO:
         taskLoc = (TaskWithLocation) task;
-        Map.getClyde().goTo(true, taskLoc.getX(), lock);
-        Map.getClyde().goTo(false, taskLoc.getY(), lock);
+        Map.getClyde().goToPixX(taskLoc.getX()*16, lock);
+        Map.getClyde().goToPixY(taskLoc.getY()*16, lock);
         break;
       case STOP_SONG:
         AudioHandler.stop();
@@ -406,6 +406,14 @@ public class Execution implements Runnable {
       case FLAG_BOOLEAN:
         taskNum = (TaskWithNumber) task;
         Main.getGame().setFlag(taskNum.getNumber(), true);
+        break;
+      case BLOCK:
+        taskLoc = (TaskWithLocation) task;
+        Game.getMap().setCollision(taskLoc.getX(), taskLoc.getY(), false);
+        break;
+      case UNBLOCK:
+        taskLoc = (TaskWithLocation) task;
+        Game.getMap().setCollision(taskLoc.getX(), taskLoc.getY(), true);
         break;
       default:
         break;

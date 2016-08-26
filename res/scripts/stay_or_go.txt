@@ -1,6 +1,6 @@
 lock
 align
-ask "What should we do?" "Go away" "Go" "Garden" "Be dramatic"
+ask "What should we do?" "Go away" "Go" "Garden" "Unblock"
 flag 0
 unlock
 end
@@ -20,8 +20,9 @@ say Ok.\nLet's go!
 simulrunbranch test2
 runbranch test1
 
-branch Be dramatic
-say The winner is\d.\d.\d.\pAndrew!
+branch Unblock
+unblock 4 2
+say Done!
 
 branch test1
 walk left left left left down down down down down down

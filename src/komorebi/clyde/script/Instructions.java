@@ -61,6 +61,8 @@ public enum Instructions {
   IF_CONFIDENCE,
   ELSE,
   FLAG_BOOLEAN,
+  BLOCK,
+  UNBLOCK,
   END;
 }
 
